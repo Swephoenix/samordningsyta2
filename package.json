@@ -1,0 +1,16 @@
+{
+  "name": "samordningsyta2",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dashboard med riktigt inloggningssystem (Node + npm).",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.8.1",
+    "cookie-parser": "^1.4.7",
+    "express": "^4.21.2"
+  }
+}

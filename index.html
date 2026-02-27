@@ -1,0 +1,1860 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <!-- Följande meta-tagg är avgörande för en "app-känsla" på mobilen -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Minimal Dashboard</title>
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --panel-bg: #ffffff;
+            --text-main: #333333;
+            --text-muted: #777777;
+            --border-color: #e0e0e0;
+            --accent: #4A90E2;
+            --accent-hover: #357ABD;
+            --danger: #e74c3c;
+            --radius: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        /* Låser huvudfönstret från att scrolla */
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden; 
+            display: flex;
+            padding: 20px;
+            gap: 20px;
+        }
+        .auth-logout {
+            border: 1px solid var(--border-color);
+            background: #fff;
+            border-radius: 10px;
+            padding: 12px 14px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 700;
+            width: 100%;
+            min-height: 44px;
+        }
+        .auth-logout:hover { background: #f3f5f8; }
+        .meetings-logout-wrap {
+            margin-top: 6px;
+            display: flex;
+            justify-content: stretch;
+            padding-top: 4px;
+            border-top: 1px solid #dde6f6;
+            margin-top: auto;
+        }
+
+        /* Layout Grid */
+        .dashboard {
+            display: grid;
+            grid-template-columns: 300px 1fr 350px;
+            gap: 20px;
+            width: 100%;
+            height: 100%;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border-radius: var(--radius);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
+            background: #fafafa;
+        }
+
+        .panel-content {
+            padding: 20px;
+            overflow-y: auto; /* Intern scroll */
+            flex: 1;
+        }
+
+        /* Vänster kolumn */
+        .left-col { display: flex; flex-direction: column; gap: 20px; }
+        .messages { flex: 1; }
+        .meetings { flex: 1.25; min-height: 250px; }
+        .notes { flex: 1.2; }
+        .left-col .placeholders { flex: 1.35; min-height: 300px; }
+        
+        textarea.note-area {
+            width: 100%;
+            height: 100%;
+            border: none;
+            resize: none;
+            outline: none;
+            color: var(--text-main);
+            line-height: 1.5;
+        }
+
+        .msg-item {
+            padding: 10px;
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        .meeting-item {
+            padding: 8px 10px;
+            background: #eef5ff;
+            border-left: 4px solid var(--accent);
+            margin-bottom: 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .meetings .panel-content {
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .meetings-list {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-right: 2px;
+        }
+        .meeting-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            text-decoration: none;
+            background: #dce9ff;
+            color: #1e5ec7;
+            border: 1px solid #bdd3ff;
+        }
+        .meeting-link:hover {
+            background: #cfe1ff;
+        }
+        .meeting-edit-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            border: 1px solid #c4d5f3;
+            background: #e9f1ff;
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+        .meeting-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .meetings-admin-row {
+            display: none;
+            justify-content: flex-end;
+            margin-bottom: 6px;
+        }
+        .meetings-admin-btn {
+            border: 1px solid #c4d5f3;
+            background: #e9f1ff;
+            color: #1f4f9d;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            padding: 6px 10px;
+            cursor: pointer;
+        }
+
+        /* Mittenkolumn: Chatt */
+        .chat-container { display: flex; flex-direction: column; height: 100%; }
+        .chat-panel-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .chat-presence {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+        .chat-search-bar {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border-color);
+            background: #fafafa;
+            display: grid;
+            grid-template-columns: 1fr auto auto auto;
+            gap: 8px;
+            align-items: center;
+        }
+        .chat-search-input,
+        .chat-date-input {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px 10px;
+            outline: none;
+            background: #fff;
+            color: var(--text-main);
+        }
+        .chat-search-input { min-width: 0; }
+        .chat-date-input { width: 145px; }
+        .chat-search-btn {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: #fff;
+            padding: 8px 12px;
+            cursor: pointer;
+            color: var(--text-main);
+        }
+        .chat-search-btn:hover { background: var(--bg-color); }
+        .chat-feed { flex: 1; overflow-y: auto; padding: 20px; }
+        
+        .date-divider {
+            text-align: center;
+            position: relative;
+            margin: 20px 0;
+        }
+        .date-divider span {
+            background: var(--bg-color);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            color: var(--text-muted);
+        }
+
+        .chat-post {
+            background: var(--bg-color);
+            padding: 15px;
+            border-radius: var(--radius);
+            margin-bottom: 15px;
+        }
+        .chat-post-seen {
+            margin-top: 6px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-align: right;
+        }
+        .chat-post-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85em;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+        .chat-comments {
+            margin-top: 10px;
+            padding-left: 15px;
+            border-left: 2px solid var(--border-color);
+            font-size: 0.9em;
+        }
+        
+        .chat-input-area {
+            padding: 15px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 10px;
+            background: #fafafa;
+        }
+        .chat-input-area input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            outline: none;
+        }
+        .btn-icon {
+            background: none; border: none; font-size: 1.2em; cursor: pointer; color: var(--text-muted);
+        }
+
+        /* Höger kolumn: Kalender & Verktyg */
+        .right-col { display: flex; flex-direction: column; gap: 20px; }
+        .calendar-wrapper { flex: 0 0 auto; }
+        .placeholders { flex: 1; }
+        .calendar-wrapper .panel-content { flex: 0 0 auto; padding-bottom: 14px; }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            text-align: center;
+            margin-top: 10px;
+        }
+        .calendar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .calendar-nav {
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            width: 32px;
+            height: 32px;
+            cursor: pointer;
+            font-size: 1.1em;
+            line-height: 1;
+        }
+        .calendar-nav:hover { background: #e9ecef; }
+        .calendar-title { font-weight: 600; }
+        .cal-day-header { font-size: 0.8em; color: var(--text-muted); font-weight: bold; }
+        .cal-day {
+            padding: 10px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            position: relative;
+            transition: background 0.2s;
+        }
+        .cal-day:hover { background: var(--bg-color); }
+        .cal-day.has-event { font-weight: bold; color: var(--accent); }
+        .cal-day.has-event::after {
+            content: '';
+            position: absolute;
+            bottom: 4px; left: 50%;
+            transform: translateX(-50%);
+            width: 6px; height: 6px;
+            background: var(--accent);
+            border-radius: 50%;
+        }
+
+        .placeholder-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            padding: 12px;
+        }
+        
+        .placeholder-icon {
+            background: var(--bg-color);
+            height: 64px;
+            min-height: 64px;
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+            overflow: visible;
+        }
+        
+        .placeholder-icon:hover {
+            transform: scale(1.05);
+            background: #e9ecef;
+        }
+        .tool-icon-svg {
+            width: 34px;
+            height: 34px;
+            object-fit: contain;
+            display: block;
+            max-width: 100%;
+            max-height: 100%;
+        }
+        .folder-modal-content {
+            width: min(92vw, 980px);
+            height: min(82vh, 620px);
+            background: #fff;
+            border: 1px solid #999;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+        .fs-toolbar {
+            height: 42px;
+            border-bottom: 1px solid #d9d9d9;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            gap: 10px;
+            background: #fff;
+        }
+        .fs-back-btn {
+            padding: 5px 10px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            background: #fff;
+        }
+        .fs-back-btn:hover {
+            background: #e5f3ff;
+            border-color: #cce8ff;
+        }
+        .fs-address-bar {
+            flex: 1;
+            border: 1px solid #d9d9d9;
+            padding: 4px 10px;
+            font-size: 13px;
+            color: #555;
+            background: #fff;
+        }
+        .fs-close-btn {
+            border: 1px solid #d9d9d9;
+            background: #fff;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+        }
+        .fs-close-btn:hover { background: #f3f3f3; }
+        .fs-file-display {
+            flex: 1;
+            padding: 10px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            grid-auto-rows: 100px;
+            gap: 10px;
+            overflow-y: auto;
+            align-content: start;
+            background: #fff;
+        }
+        .fs-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            cursor: pointer;
+            border: 1px solid transparent;
+            padding: 5px;
+            border-radius: 3px;
+        }
+        .fs-item:hover {
+            background: #e5f3ff;
+            border-color: #cce8ff;
+        }
+        .fs-item-icon {
+            font-size: 40px;
+            margin-bottom: 5px;
+        }
+        .fs-item-name {
+            font-size: 12px;
+            word-break: break-all;
+            max-width: 90px;
+        }
+        .fs-context-menu {
+            position: absolute;
+            background: #fff;
+            border: 1px solid #ccc;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.12);
+            padding: 5px 0;
+            display: none;
+            z-index: 3;
+            min-width: 170px;
+        }
+        .fs-menu-item {
+            padding: 8px 15px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .fs-menu-item:hover {
+            background: #0078d7;
+            color: #fff;
+        }
+        .fs-editor-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 4;
+        }
+        .fs-editor-container {
+            background: #fff;
+            width: min(92%, 620px);
+            height: min(78%, 420px);
+            display: flex;
+            flex-direction: column;
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid #cfcfcf;
+        }
+        .fs-editor-header {
+            padding: 10px;
+            background: #eee;
+            border-bottom: 1px solid #ccc;
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+        .fs-text-content {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            resize: none;
+            font-family: monospace;
+            font-size: 14px;
+            outline: none;
+        }
+        .fs-btn-row {
+            padding: 10px;
+            text-align: right;
+            border-top: 1px solid #ccc;
+        }
+        .fs-btn {
+            padding: 5px 15px;
+            cursor: pointer;
+        }
+        .fs-btn-primary {
+            background: #0078d7;
+            color: #fff;
+            border: none;
+        }
+        .event-editor-content {
+            background: #fff;
+            width: min(92vw, 420px);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.2);
+            padding: 18px;
+        }
+        .event-editor-content h3 {
+            margin-bottom: 10px;
+        }
+        .event-editor-row {
+            margin-bottom: 10px;
+        }
+        .event-editor-row label {
+            display: block;
+            font-size: 0.82rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .event-editor-row input {
+            width: 100%;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px 10px;
+        }
+        .event-editor-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .event-editor-btn {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: #fff;
+            padding: 7px 10px;
+            cursor: pointer;
+        }
+        .event-editor-btn.primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+            font-weight: 700;
+        }
+
+        /* Modals & Popups */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none; align-items: center; justify-content: center;
+            z-index: 100;
+        }
+        .modal-content {
+            background: var(--panel-bg);
+            padding: 30px;
+            border-radius: var(--radius);
+            width: 400px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .modal-close { float: right; cursor: pointer; border: none; background: none; font-size: 1.2em; }
+        
+        .zoom-btn {
+            display: block; width: 100%; padding: 10px; margin-top: 20px;
+            background: var(--accent); color: white; text-align: center;
+            text-decoration: none; border-radius: var(--radius); font-weight: bold;
+        }
+
+        .messenger-popup {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 348px;
+            height: 688px;
+            background: #efeff1;
+            border-radius: 18px;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.2);
+            border: 1px solid #dadde2;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 110;
+        }
+        .msgp-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 16px 10px;
+        }
+        .msgp-title {
+            font-size: 2.7rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: #252a30;
+        }
+        .msgp-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .msgp-action-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 11px;
+            border: 1px solid #aeb4bd;
+            background: #f0f1f3;
+            color: #3f454e;
+            cursor: pointer;
+            font-size: 1.02rem;
+        }
+        .msgp-search {
+            margin: 0 16px 12px;
+            background: #d8d8db;
+            border-radius: 24px;
+            height: 46px;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 0 14px;
+            color: #62666f;
+            font-weight: 600;
+            font-size: 1.04rem;
+        }
+        .msgp-search input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #3a3f46;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        .msgp-list {
+            padding: 2px 8px 12px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 1;
+        }
+        .msgp-item {
+            display: grid;
+            grid-template-columns: 56px 1fr auto;
+            align-items: center;
+            gap: 11px;
+            border: none;
+            text-align: left;
+            width: 100%;
+            border-radius: 999px;
+            background: transparent;
+            padding: 8px 12px;
+            cursor: default;
+        }
+        .msgp-item.is-active {
+            background: linear-gradient(90deg, #3f55dc, #3a77f3);
+        }
+        .msgp-avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 2px solid #e3e5e9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .msgp-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .msgp-text strong {
+            display: block;
+            font-size: 1.03rem;
+            line-height: 1.1;
+            color: #282d34;
+            font-weight: 700;
+        }
+        .msgp-text span {
+            display: block;
+            margin-top: 4px;
+            font-size: 0.86rem;
+            color: #636770;
+            font-weight: 600;
+            line-height: 1.25;
+        }
+        .msgp-item.is-active .msgp-text strong,
+        .msgp-item.is-active .msgp-text span {
+            color: #e9eeff;
+        }
+        .msgp-meta {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 6px;
+            min-width: 30px;
+        }
+        .msgp-time {
+            font-size: 0.75rem;
+            color: #818693;
+            font-weight: 700;
+        }
+        .msgp-item.is-active .msgp-time { color: #dce5ff; }
+        .msgp-unread {
+            min-width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #1570ff;
+            color: #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0 6px;
+        }
+        .msgp-empty {
+            color: #6c727c;
+            padding: 12px;
+            font-weight: 600;
+            text-align: center;
+        }
+        .msgp-thread {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+        }
+        .msgp-thread-top {
+            padding: 12px;
+            background: #f5f6f8;
+            border-bottom: 1px solid #dfe2e8;
+            display: grid;
+            grid-template-columns: 34px 42px 1fr 34px;
+            align-items: center;
+            gap: 8px;
+        }
+        .msgp-icon-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            border: 1px solid #c6cbd4;
+            background: #fff;
+            color: #454a52;
+            cursor: pointer;
+        }
+        .msgp-thread-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 1px solid #d0d5dc;
+        }
+        .msgp-thread-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .msgp-thread-user strong {
+            display: block;
+            font-size: 0.95rem;
+            color: #2e343c;
+        }
+        .msgp-thread-user span {
+            display: block;
+            font-size: 0.75rem;
+            color: #1b8f4f;
+            font-weight: 700;
+            margin-top: 2px;
+        }
+        .msgp-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: #f0f2f5;
+        }
+        .msgp-bubble {
+            max-width: 78%;
+            border-radius: 18px;
+            padding: 8px 12px;
+            font-size: 0.9rem;
+            line-height: 1.35;
+            position: relative;
+        }
+        .msgp-bubble.them {
+            align-self: flex-start;
+            background: #fff;
+            color: #20242b;
+        }
+        .msgp-bubble.me {
+            align-self: flex-end;
+            background: linear-gradient(140deg, #1a74ff, #0465f7);
+            color: #fff;
+        }
+        .msgp-bubble-time {
+            display: block;
+            margin-top: 3px;
+            font-size: 0.68rem;
+            opacity: 0.7;
+        }
+        .msgp-composer {
+            border-top: 1px solid #dfe2e8;
+            background: #f7f8fa;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px;
+        }
+        .msgp-composer input {
+            flex: 1;
+            height: 40px;
+            border: none;
+            border-radius: 20px;
+            padding: 0 14px;
+            background: #e6e8ec;
+            outline: none;
+            font-weight: 600;
+            color: #2f353d;
+        }
+        .msgp-send {
+            border: none;
+            background: #1170ff;
+            color: #fff;
+            font-weight: 700;
+            border-radius: 18px;
+            height: 36px;
+            padding: 0 14px;
+            cursor: pointer;
+        }
+        .msgp-typing {
+            color: #6e7480;
+            font-size: 0.78rem;
+            font-weight: 700;
+            padding: 0 12px 8px;
+            display: none;
+        }
+
+        /* Responsivitet för mindre skärmar */
+        @media (max-width: 1200px) {
+            .dashboard { grid-template-columns: 250px 1fr 250px; }
+        }
+        @media (max-width: 900px) {
+            body { overflow: auto; height: auto; }
+            .dashboard { grid-template-columns: 1fr; }
+            .panel { height: 400px; } /* Ger paneler en fast höjd på mobil */
+            .calendar-wrapper { height: auto; }
+            .chat-search-bar { grid-template-columns: 1fr 1fr; }
+            .chat-date-input { width: 100%; }
+            .messenger-popup {
+                right: 10px;
+                left: 10px;
+                bottom: 10px;
+                width: auto;
+                height: 78vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        
+        <!-- Vänster: Viktigt & Anteckningar -->
+        <div class="left-col">
+            <div class="panel messages">
+                <div class="panel-header">Viktiga Meddelanden</div>
+                <div class="panel-content">
+                    <div class="msg-item">🚨 Systemuppdatering inatt kl 02:00.</div>
+                    <div class="msg-item">📢 Deadline för Q3-rapporten är på fredag.</div>
+                </div>
+            </div>
+
+            <!-- Verktygspanelen flyttad hit -->
+            <div class="panel placeholders">
+                <div class="panel-header">Verktyg</div>
+                <div class="placeholder-grid">
+                    <div class="placeholder-icon" title="Facebook Marketing Academy">🎓</div>
+                    <div class="placeholder-icon" title="Idébank">💡</div>
+                    <div class="placeholder-icon" title="Messenger" onclick="toggleMessenger()">💬</div>
+                    <div class="placeholder-icon" title="Statistik">📊</div>
+                    <div class="placeholder-icon" title="Filer">📁</div>
+                    <div class="placeholder-icon" title="Inställningar">⚙️</div>
+                    <div class="placeholder-icon" id="adminSettingsIcon" title="Admin inställning" style="display:none;">🛡️</div>
+                    <div class="placeholder-icon" title="Mapp" onclick="openFolderModal()">
+                        <img src="folder.svg" alt="Mapp" class="tool-icon-svg">
+                    </div>
+                </div>
+            </div>
+            <div class="panel notes">
+                <div class="panel-header">Mina Anteckningar</div>
+                <div class="panel-content">
+                    <textarea id="notesArea" class="note-area" placeholder="Skriv dina tankar här... Spara sker automatiskt."></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mitten: Gruppchatt -->
+        <div class="panel chat-container">
+            <div class="panel-header chat-panel-title">
+                <span>Gruppchatt (Team Alpha)</span>
+                <span class="chat-presence" id="groupChatPresence">0 online</span>
+            </div>
+            <div class="chat-search-bar">
+                <input id="chatSearchText" type="text" class="chat-search-input" placeholder="Sök i chatten...">
+                <input id="chatFromDate" type="date" class="chat-date-input" aria-label="Från datum">
+                <input id="chatToDate" type="date" class="chat-date-input" aria-label="Till datum">
+                <button id="chatSearchBtn" class="chat-search-btn" type="button">Sök</button>
+            </div>
+            <div class="chat-feed" id="groupChatFeed"></div>
+            <div class="chat-input-area">
+                <button class="btn-icon" title="Bifoga fil">📎</button>
+                <input id="groupChatInput" type="text" placeholder="Skriv ett inlägg eller ladda upp fil...">
+                <button id="groupChatSendBtn" class="btn-icon" title="Skicka">✈️</button>
+            </div>
+        </div>
+
+        <!-- Höger: Kalender & Verktyg -->
+        <div class="right-col">
+            <div class="panel calendar-wrapper">
+                <div class="panel-header calendar-header">
+                    <button class="calendar-nav" id="prevMonthBtn" aria-label="Föregående månad">‹</button>
+                    <span class="calendar-title" id="calendarTitle">Kalender</span>
+                    <button class="calendar-nav" id="nextMonthBtn" aria-label="Nästa månad">›</button>
+                </div>
+                <div class="panel-content">
+                    <div class="calendar-grid" id="calendarGrid">
+                        <div class="cal-day-header">M</div><div class="cal-day-header">T</div><div class="cal-day-header">O</div><div class="cal-day-header">T</div><div class="cal-day-header">F</div><div class="cal-day-header">L</div><div class="cal-day-header">S</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel meetings">
+                <div class="panel-header">Dagens möten</div>
+                <div class="panel-content">
+                    <div class="meetings-admin-row" id="meetingsAdminRow">
+                        <button class="meetings-admin-btn" type="button" onclick="openEventEditorCreate()">+ Nytt möte</button>
+                    </div>
+                    <div class="meetings-list" id="meetingsList"></div>
+                    <div class="meetings-logout-wrap">
+                        <button class="auth-logout" type="button" onclick="logout()">Logga ut</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Messenger Popup -->
+    <div class="messenger-popup" id="msgPopup">
+        <div id="msgpListView" style="display:flex; flex-direction:column; height:100%;">
+            <div class="msgp-header">
+                <div class="msgp-title">Chats</div>
+                <div class="msgp-actions">
+                    <button class="msgp-action-btn" type="button" title="Video">📹</button>
+                    <button class="msgp-action-btn" type="button" title="Ny chatt">＋</button>
+                    <button class="msgp-action-btn" type="button" title="Stäng" onclick="toggleMessenger()">✕</button>
+                </div>
+            </div>
+            <label class="msgp-search">
+                <span>🔎</span>
+                <input id="msgpSearchInput" type="text" placeholder="Search messenger...">
+            </label>
+            <div class="msgp-list" id="msgpList"></div>
+        </div>
+        <div class="msgp-thread" id="msgpThreadView">
+            <div class="msgp-thread-top">
+                <button class="msgp-icon-btn" type="button" id="msgpBackBtn" aria-label="Tillbaka">‹</button>
+                <div class="msgp-thread-avatar"><img id="msgpThreadAvatar" src="" alt="Kontakt"></div>
+                <div class="msgp-thread-user">
+                    <strong id="msgpThreadName">Kontakt</strong>
+                    <span id="msgpThreadStatus">Active now</span>
+                </div>
+                <button class="msgp-icon-btn" type="button" aria-label="Stäng" onclick="toggleMessenger()">✕</button>
+            </div>
+            <div class="msgp-messages" id="msgpMessages"></div>
+            <div class="msgp-typing" id="msgpTyping">Typing...</div>
+            <div class="msgp-composer">
+                <input id="msgpMessageInput" type="text" placeholder="Aa">
+                <button class="msgp-send" id="msgpSendBtn" type="button">Skicka</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kalender Event Modal -->
+    <div class="modal-overlay" id="eventModal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">✖</button>
+            <h2 id="modalDate" style="margin-bottom: 10px;">Datum</h2>
+            <p><strong>Händelse:</strong> <span id="modalTitle">Titel</span></p>
+            <p style="color: var(--text-muted); font-size: 0.9em; margin-top: 10px;">Detta är ett online-möte.</p>
+            <a href="#" id="modalLink" target="_blank" class="zoom-btn">🎥 Anslut till mötet (Zoom)</a>
+            <button id="modalEditEventBtn" class="event-editor-btn" style="display:none; margin-top:10px;" type="button">Redigera möte</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="eventEditorModal">
+        <div class="event-editor-content">
+            <button class="modal-close" onclick="closeEventEditor()">✖</button>
+            <h3 id="eventEditorTitle">Nytt möte</h3>
+            <div class="event-editor-row">
+                <label for="eventEditorDate">Datum</label>
+                <input id="eventEditorDate" type="date">
+            </div>
+            <div class="event-editor-row">
+                <label for="eventEditorText">Titel (inkl. tid, t.ex. 10:00 - Veckomöte)</label>
+                <input id="eventEditorText" type="text" placeholder="10:00 - Veckomöte Team Alpha">
+            </div>
+            <div class="event-editor-row">
+                <label for="eventEditorLink">Möteslänk</label>
+                <input id="eventEditorLink" type="url" placeholder="https://zoom.us/j/...">
+            </div>
+            <div class="event-editor-actions">
+                <button class="event-editor-btn" type="button" onclick="closeEventEditor()">Avbryt</button>
+                <button class="event-editor-btn primary" type="button" id="eventEditorSaveBtn">Spara</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="folderModal">
+        <div class="folder-modal-content">
+            <div class="fs-toolbar">
+                <button class="fs-back-btn" type="button" onclick="fsGoBack()">⬅ Upp</button>
+                <div class="fs-address-bar" id="fsAddressBar">Denna dator > Dokument</div>
+                <button class="fs-close-btn" type="button" onclick="closeFolderModal()">✕</button>
+            </div>
+            <div class="fs-file-display" id="fsFileDisplay"></div>
+
+            <div class="fs-context-menu" id="fsContextMenu">
+                <div class="fs-menu-item" onclick="fsCreateNewItem('folder')">Ny mapp</div>
+                <div class="fs-menu-item" onclick="fsCreateNewItem('file')">Ny textfil (.txt)</div>
+            </div>
+
+            <div class="fs-editor-overlay" id="fsEditorOverlay">
+                <div class="fs-editor-container">
+                    <div class="fs-editor-header" id="fsEditorFilename">Filnamn.txt</div>
+                    <textarea class="fs-text-content" id="fsTextContent"></textarea>
+                    <div class="fs-btn-row">
+                        <button class="fs-btn" type="button" onclick="fsCloseEditor()">Avbryt</button>
+                        <button class="fs-btn fs-btn-primary" type="button" onclick="fsSaveFile()">Spara</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUserEmail = '';
+        let currentUserIsAdmin = false;
+        let activeModalEvent = null;
+        let eventEditorMode = 'create';
+        let editingEventId = null;
+
+        async function requireAuth() {
+            try {
+                const resp = await fetch('/api/me', { credentials: 'include' });
+                if (!resp.ok) {
+                    window.location.href = 'login.html';
+                    return false;
+                }
+                const data = await resp.json();
+                currentUserEmail = String(data.email || '');
+                currentUserIsAdmin = !!data.is_admin;
+                document.getElementById('adminSettingsIcon').style.display = currentUserIsAdmin ? 'flex' : 'none';
+                document.getElementById('meetingsAdminRow').style.display = currentUserIsAdmin ? 'flex' : 'none';
+                return true;
+            } catch (e) {
+                window.location.href = 'login.html';
+                return false;
+            }
+        }
+
+        async function logout() {
+            try {
+                await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+            } finally {
+                window.location.href = 'login.html';
+            }
+        }
+
+        const monthNames = [
+            'Januari', 'Februari', 'Mars', 'April', 'Maj', 'Juni',
+            'Juli', 'Augusti', 'September', 'Oktober', 'November', 'December'
+        ];
+        const shortMonthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Maj', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'];
+        const now = new Date();
+        const calendarState = { year: now.getFullYear(), month: now.getMonth() };
+        let eventsByDate = {};
+        let allChatMessages = [];
+        let notesSaveTimer = null;
+
+        async function apiGet(url) {
+            const resp = await fetch(url, { credentials: 'include' });
+            const data = await resp.json().catch(function() { return {}; });
+            if (!resp.ok) throw new Error(data.error || 'API-fel.');
+            return data;
+        }
+
+        async function apiSend(url, method, payload) {
+            const resp = await fetch(url, {
+                method: method,
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload || {})
+            });
+            const data = await resp.json().catch(function() { return {}; });
+            if (!resp.ok) throw new Error(data.error || 'API-fel.');
+            return data;
+        }
+
+        function formatDateKey(year, month, day) {
+            const mm = String(month + 1).padStart(2, '0');
+            const dd = String(day).padStart(2, '0');
+            return `${year}-${mm}-${dd}`;
+        }
+
+        async function loadMonthEvents() {
+            const month = calendarState.month + 1;
+            const data = await apiGet(`/api/events?year=${calendarState.year}&month=${month}`);
+            const grouped = {};
+            (data.events || []).forEach(function(evt) {
+                if (!grouped[evt.date_key]) grouped[evt.date_key] = [];
+                grouped[evt.date_key].push(evt);
+            });
+            eventsByDate = grouped;
+        }
+
+        function renderCalendar() {
+            const title = document.getElementById('calendarTitle');
+            const grid = document.getElementById('calendarGrid');
+            title.innerText = `Kalender - ${monthNames[calendarState.month]} ${calendarState.year}`;
+
+            grid.innerHTML = `
+                <div class="cal-day-header">M</div><div class="cal-day-header">T</div><div class="cal-day-header">O</div>
+                <div class="cal-day-header">T</div><div class="cal-day-header">F</div><div class="cal-day-header">L</div><div class="cal-day-header">S</div>
+            `;
+
+            const firstDay = new Date(calendarState.year, calendarState.month, 1);
+            const daysInMonth = new Date(calendarState.year, calendarState.month + 1, 0).getDate();
+            const startOffset = (firstDay.getDay() + 6) % 7; // Gör söndag=6, måndag=0
+
+            for (let i = 0; i < startOffset; i++) {
+                const emptyDay = document.createElement('div');
+                emptyDay.className = 'cal-day';
+                emptyDay.innerText = '';
+                grid.appendChild(emptyDay);
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateKey = formatDateKey(calendarState.year, calendarState.month, day);
+                const events = eventsByDate[dateKey] || [];
+                const event = events[0];
+                const dayElement = document.createElement('div');
+                dayElement.className = events.length ? 'cal-day has-event' : 'cal-day';
+                dayElement.innerText = day;
+
+                if (events.length) {
+                    dayElement.addEventListener('click', function() {
+                        openEventModal({
+                            dateLabel: `${day} ${shortMonthNames[calendarState.month]}`,
+                            dateKey: dateKey,
+                            event: event
+                        });
+                    });
+                }
+                grid.appendChild(dayElement);
+            }
+        }
+
+        async function changeMonth(delta) {
+            calendarState.month += delta;
+            if (calendarState.month < 0) {
+                calendarState.month = 11;
+                calendarState.year -= 1;
+            } else if (calendarState.month > 11) {
+                calendarState.month = 0;
+                calendarState.year += 1;
+            }
+            await loadMonthEvents();
+            renderCalendar();
+        }
+
+        function formatTimeFromUnix(ts) {
+            const d = new Date(ts * 1000);
+            return d.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function formatDateLabel(dateObj) {
+            return dateObj.toLocaleDateString('sv-SE', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long'
+            });
+        }
+
+        function renderChatFeed(messages) {
+            const feed = document.getElementById('groupChatFeed');
+            if (!messages.length) {
+                feed.innerHTML = '<div class=\"date-divider\"><span>Inga meddelanden</span></div>';
+                return;
+            }
+
+            let currentDateKey = '';
+            feed.innerHTML = '';
+            messages.forEach(function(msg) {
+                const dt = new Date(msg.created_at * 1000);
+                const dateKey = dt.toISOString().slice(0, 10);
+                if (dateKey !== currentDateKey) {
+                    currentDateKey = dateKey;
+                    const divider = document.createElement('div');
+                    divider.className = 'date-divider';
+                    divider.innerHTML = `<span>${formatDateLabel(dt)}</span>`;
+                    feed.appendChild(divider);
+                }
+
+                const post = document.createElement('div');
+                post.className = 'chat-post';
+                const seenBy = (msg.seen_by || []).filter(function(email) { return email !== msg.email; });
+                const seenText = msg.email === currentUserEmail && seenBy.length
+                    ? `<div class=\"chat-post-seen\">Sett av: ${escapeHtml(seenBy.join(', '))}</div>`
+                    : '';
+                post.innerHTML = `
+                    <div class=\"chat-post-header\">
+                        <strong>${escapeHtml(msg.email)}</strong>
+                        <span>${formatTimeFromUnix(msg.created_at)}</span>
+                    </div>
+                    <p>${escapeHtml(msg.message)}</p>
+                    ${seenText}
+                `;
+                feed.appendChild(post);
+            });
+            feed.scrollTop = feed.scrollHeight;
+        }
+
+        function applyChatFilters() {
+            const q = document.getElementById('chatSearchText').value.trim().toLowerCase();
+            const fromDate = document.getElementById('chatFromDate').value;
+            const toDate = document.getElementById('chatToDate').value;
+            const fromTs = fromDate ? new Date(`${fromDate}T00:00:00`).getTime() : null;
+            const toTs = toDate ? new Date(`${toDate}T23:59:59`).getTime() : null;
+
+            const filtered = allChatMessages.filter(function(msg) {
+                const msgMs = msg.created_at * 1000;
+                const textOk = !q || msg.message.toLowerCase().includes(q) || msg.email.toLowerCase().includes(q);
+                const fromOk = fromTs === null || msgMs >= fromTs;
+                const toOk = toTs === null || msgMs <= toTs;
+                return textOk && fromOk && toOk;
+            });
+            renderChatFeed(filtered);
+        }
+
+        async function loadChatMessages() {
+            const data = await apiGet('/api/chat/messages?limit=200');
+            allChatMessages = data.messages || [];
+            if (data.current_user_email) currentUserEmail = data.current_user_email;
+            applyChatFilters();
+        }
+
+        async function loadChatPresence() {
+            const data = await apiGet('/api/chat/presence');
+            const count = Number(data.online_count || 0);
+            document.getElementById('groupChatPresence').innerText = `${count} online`;
+        }
+
+        async function sendGroupChatMessage() {
+            const input = document.getElementById('groupChatInput');
+            const message = input.value.trim();
+            if (!message) return;
+            await apiSend('/api/chat/messages', 'POST', { message: message });
+            input.value = '';
+            await loadChatMessages();
+        }
+
+        async function loadNotes() {
+            const data = await apiGet('/api/notes/me');
+            document.getElementById('notesArea').value = data.content || '';
+        }
+
+        async function saveNotes() {
+            const content = document.getElementById('notesArea').value;
+            await apiSend('/api/notes/me', 'PUT', { content: content });
+        }
+
+        function initNotes() {
+            document.getElementById('notesArea').addEventListener('input', function() {
+                clearTimeout(notesSaveTimer);
+                notesSaveTimer = setTimeout(function() {
+                    saveNotes().catch(function() {});
+                }, 500);
+            });
+        }
+
+        async function loadTodayMeetings() {
+            const data = await apiGet('/api/meetings/today');
+            const meetings = data.meetings || [];
+            const list = document.getElementById('meetingsList');
+            if (!meetings.length) {
+                list.innerHTML = '<div class=\"meeting-item\"><span>Inga möten idag</span><span></span></div>';
+                return;
+            }
+            list.innerHTML = meetings.map(function(m) {
+                const link = m.link || '#';
+                const editBtn = currentUserIsAdmin
+                    ? `<button class=\"meeting-edit-btn\" type=\"button\" data-edit-event-id=\"${m.id}\" title=\"Redigera\">✏️</button>`
+                    : '';
+                return `
+                    <div class=\"meeting-item\">
+                        <span>${escapeHtml(m.title)}</span>
+                        <span class=\"meeting-actions\">
+                            <a class=\"meeting-link\" href=\"${link}\" target=\"_blank\" title=\"Anslut till mötet\">🎥</a>
+                            ${editBtn}
+                        </span>
+                    </div>
+                `;
+            }).join('');
+
+            if (currentUserIsAdmin) {
+                list.querySelectorAll('[data-edit-event-id]').forEach(function(btn) {
+                    btn.addEventListener('click', function() {
+                        const id = Number(btn.getAttribute('data-edit-event-id'));
+                        const match = meetings.find(function(x) { return x.id === id; });
+                        openEventEditorEdit(match);
+                    });
+                });
+            }
+        }
+
+        function initGroupChat() {
+            document.getElementById('groupChatSendBtn').addEventListener('click', function() {
+                sendGroupChatMessage().catch(function() {});
+            });
+            document.getElementById('groupChatInput').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') sendGroupChatMessage().catch(function() {});
+            });
+            document.getElementById('chatSearchBtn').addEventListener('click', applyChatFilters);
+            document.getElementById('chatSearchText').addEventListener('input', applyChatFilters);
+            document.getElementById('chatFromDate').addEventListener('change', applyChatFilters);
+            document.getElementById('chatToDate').addEventListener('change', applyChatFilters);
+        }
+
+        // JS för kalender modal
+        function openEventModal(payload) {
+            const event = payload.event;
+            activeModalEvent = {
+                id: event.id,
+                date_key: payload.dateKey,
+                title: event.title,
+                link: event.link || ''
+            };
+            document.getElementById('modalDate').innerText = payload.dateLabel;
+            document.getElementById('modalTitle').innerText = event.title;
+            document.getElementById('modalLink').href = event.link || '#';
+            document.getElementById('eventModal').style.display = 'flex';
+            const editBtn = document.getElementById('modalEditEventBtn');
+            editBtn.style.display = currentUserIsAdmin ? 'inline-block' : 'none';
+        }
+
+        function closeModal() {
+            document.getElementById('eventModal').style.display = 'none';
+        }
+
+        // Stäng modal om man klickar utanför rutan
+        document.getElementById('eventModal').addEventListener('click', function(e) {
+            if(e.target === this) closeModal();
+        });
+
+        function openEventEditorCreate() {
+            eventEditorMode = 'create';
+            editingEventId = null;
+            document.getElementById('eventEditorTitle').innerText = 'Nytt möte';
+            const today = new Date();
+            const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+            document.getElementById('eventEditorDate').value = todayKey;
+            document.getElementById('eventEditorText').value = '';
+            document.getElementById('eventEditorLink').value = '';
+            document.getElementById('eventEditorModal').style.display = 'flex';
+        }
+
+        function openEventEditorEdit(eventObj) {
+            if (!eventObj) return;
+            eventEditorMode = 'edit';
+            editingEventId = eventObj.id;
+            document.getElementById('eventEditorTitle').innerText = 'Redigera möte';
+            document.getElementById('eventEditorDate').value = eventObj.date_key;
+            document.getElementById('eventEditorText').value = eventObj.title || '';
+            document.getElementById('eventEditorLink').value = eventObj.link || '';
+            document.getElementById('eventEditorModal').style.display = 'flex';
+        }
+
+        function closeEventEditor() {
+            document.getElementById('eventEditorModal').style.display = 'none';
+        }
+
+        async function saveEventFromEditor() {
+            const dateKey = document.getElementById('eventEditorDate').value;
+            const title = document.getElementById('eventEditorText').value.trim();
+            const link = document.getElementById('eventEditorLink').value.trim();
+            if (!dateKey || !title) {
+                alert('Datum och titel krävs.');
+                return;
+            }
+
+            if (eventEditorMode === 'edit' && editingEventId) {
+                await apiSend(`/api/events/${editingEventId}`, 'PUT', {
+                    date_key: dateKey,
+                    title: title,
+                    link: link
+                });
+            } else {
+                await apiSend('/api/events', 'POST', {
+                    date_key: dateKey,
+                    title: title,
+                    link: link
+                });
+            }
+
+            closeEventEditor();
+            closeModal();
+            await Promise.all([loadMonthEvents(), loadTodayMeetings()]);
+            renderCalendar();
+        }
+
+        function openFolderModal() {
+            document.getElementById('folderModal').style.display = 'flex';
+            fsRender();
+        }
+
+        function closeFolderModal() {
+            document.getElementById('folderModal').style.display = 'none';
+            document.getElementById('fsContextMenu').style.display = 'none';
+            fsCloseEditor();
+        }
+
+        const fsModel = {
+            name: 'root',
+            type: 'folder',
+            children: {
+                'Gemensam mapp': {
+                    type: 'folder',
+                    children: {
+                        'Projektplan.pdf': { type: 'file', content: 'Projektplan version 1.2' },
+                        'Roadmap.txt': { type: 'file', content: 'Q1: Planering\nQ2: Leverans' }
+                    }
+                },
+                'Privat': {
+                    type: 'folder',
+                    children: {
+                        'Anteckningar.txt': { type: 'file', content: 'Mina privata anteckningar.' }
+                    }
+                }
+            }
+        };
+        let fsCurrentPath = [];
+        let fsOpenFileName = null;
+        const fsFileDisplay = document.getElementById('fsFileDisplay');
+        const fsContextMenu = document.getElementById('fsContextMenu');
+        const fsAddressBar = document.getElementById('fsAddressBar');
+        const fsEditorOverlay = document.getElementById('fsEditorOverlay');
+        const fsTextContent = document.getElementById('fsTextContent');
+        const fsEditorFilename = document.getElementById('fsEditorFilename');
+
+        function fsGetCurrentFolder() {
+            let folder = fsModel;
+            fsCurrentPath.forEach(function(part) {
+                folder = folder.children[part];
+            });
+            return folder;
+        }
+
+        function fsRender() {
+            const folder = fsGetCurrentFolder();
+            fsFileDisplay.innerHTML = '';
+            fsAddressBar.innerText = 'Denna dator > ' + (fsCurrentPath.join(' > ') || 'Dokument');
+
+            Object.keys(folder.children).forEach(function(name) {
+                const item = folder.children[name];
+                const icon = item.type === 'folder' ? '📁' : '📄';
+                const div = document.createElement('div');
+                div.className = 'fs-item';
+                div.innerHTML = `
+                    <div class="fs-item-icon">${icon}</div>
+                    <div class="fs-item-name">${name}</div>
+                `;
+                div.onclick = function() {
+                    if (item.type === 'folder') {
+                        fsCurrentPath.push(name);
+                        fsRender();
+                    } else {
+                        fsOpenFile(name);
+                    }
+                };
+                fsFileDisplay.appendChild(div);
+            });
+        }
+
+        function fsGoBack() {
+            if (fsCurrentPath.length > 0) {
+                fsCurrentPath.pop();
+                fsRender();
+            }
+        }
+
+        function fsCreateNewItem(type) {
+            const name = prompt(type === 'folder' ? 'Ange mappnamn:' : 'Ange filnamn:');
+            if (!name) return;
+
+            const folder = fsGetCurrentFolder();
+            if (folder.children[name]) {
+                alert('Namnet finns redan!');
+                return;
+            }
+
+            folder.children[name] = {
+                type: type,
+                content: type === 'file' ? '' : null,
+                children: type === 'folder' ? {} : null
+            };
+            fsContextMenu.style.display = 'none';
+            fsRender();
+        }
+
+        function fsOpenFile(name) {
+            const folder = fsGetCurrentFolder();
+            fsOpenFileName = name;
+            fsEditorFilename.innerText = name;
+            fsTextContent.value = folder.children[name].content || '';
+            fsEditorOverlay.style.display = 'flex';
+        }
+
+        function fsCloseEditor() {
+            fsEditorOverlay.style.display = 'none';
+            fsOpenFileName = null;
+        }
+
+        function fsSaveFile() {
+            const folder = fsGetCurrentFolder();
+            if (!fsOpenFileName || !folder.children[fsOpenFileName]) return;
+            folder.children[fsOpenFileName].content = fsTextContent.value;
+            fsCloseEditor();
+            alert('Filen sparades!');
+        }
+
+        document.getElementById('folderModal').addEventListener('click', function(e) {
+            if (e.target === this) closeFolderModal();
+        });
+        fsFileDisplay.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            fsContextMenu.style.display = 'block';
+            const bounds = document.querySelector('.folder-modal-content').getBoundingClientRect();
+            fsContextMenu.style.left = (e.clientX - bounds.left) + 'px';
+            fsContextMenu.style.top = (e.clientY - bounds.top) + 'px';
+        });
+        document.addEventListener('click', function(e) {
+            if (!fsContextMenu.contains(e.target)) {
+                fsContextMenu.style.display = 'none';
+            }
+        });
+
+        const messengerState = {
+            activeThreadId: null,
+            filter: ''
+        };
+        const messengerThreads = [
+            {
+                id: 'lilly',
+                name: 'Lilly Jr.',
+                avatar: 'https://api.dicebear.com/9.x/adventurer/svg?seed=Lilly%20Jr&backgroundType=gradientLinear',
+                online: true,
+                unread: 2,
+                updatedAt: Date.now() - 3 * 60 * 1000,
+                messages: [
+                    { from: 'them', text: 'Can you check the latest mockup?', at: Date.now() - 50 * 60 * 1000 },
+                    { from: 'me', text: 'Sure, I am reviewing it now.', at: Date.now() - 47 * 60 * 1000 },
+                    { from: 'them', text: 'Good idea! i like this.', at: Date.now() - 3 * 60 * 1000 }
+                ]
+            },
+            {
+                id: 'rihanna',
+                name: 'Rihanna Goldberg',
+                avatar: 'https://api.dicebear.com/9.x/adventurer/svg?seed=Rihanna%20Goldberg&backgroundType=gradientLinear',
+                online: true,
+                unread: 0,
+                updatedAt: Date.now() - 18 * 60 * 1000,
+                messages: [
+                    { from: 'me', text: 'I sent over the campaign files.', at: Date.now() - 25 * 60 * 1000 },
+                    { from: 'them', text: 'Great. Thanks!', at: Date.now() - 18 * 60 * 1000 }
+                ]
+            },
+            {
+                id: 'gregory',
+                name: 'Gregory Portman',
+                avatar: 'https://api.dicebear.com/9.x/adventurer/svg?seed=Gregory%20Portman&backgroundType=gradientLinear',
+                online: false,
+                unread: 1,
+                updatedAt: Date.now() - 61 * 60 * 1000,
+                messages: [
+                    { from: 'them', text: 'This is so good man. Will do Remix.', at: Date.now() - 61 * 60 * 1000 }
+                ]
+            },
+            {
+                id: 'marry',
+                name: 'Marry Adams',
+                avatar: 'https://api.dicebear.com/9.x/adventurer/svg?seed=Marry%20Adams&backgroundType=gradientLinear',
+                online: false,
+                unread: 0,
+                updatedAt: Date.now() - 130 * 60 * 1000,
+                messages: [
+                    { from: 'them', text: 'Cool. We can help Lilly.', at: Date.now() - 130 * 60 * 1000 }
+                ]
+            },
+            {
+                id: 'callie',
+                name: 'Callie Goodman',
+                avatar: 'https://api.dicebear.com/9.x/adventurer/svg?seed=Callie%20Goodman&backgroundType=gradientLinear',
+                online: true,
+                unread: 0,
+                updatedAt: Date.now() - 245 * 60 * 1000,
+                messages: [
+                    { from: 'me', text: 'Call me today. We have a new project.', at: Date.now() - 245 * 60 * 1000 }
+                ]
+            }
+        ];
+
+        function getThreadById(id) {
+            return messengerThreads.find(function(t) { return t.id === id; });
+        }
+
+        function formatMessengerTime(ts) {
+            const diffMinutes = Math.floor((Date.now() - ts) / 60000);
+            if (diffMinutes < 1) return 'now';
+            if (diffMinutes < 60) return diffMinutes + 'm';
+            if (diffMinutes < 1440) return Math.floor(diffMinutes / 60) + 'h';
+            return Math.floor(diffMinutes / 1440) + 'd';
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function renderMessengerList() {
+            const list = document.getElementById('msgpList');
+            const filter = messengerState.filter.trim().toLowerCase();
+            const threads = messengerThreads
+                .slice()
+                .sort(function(a, b) { return b.updatedAt - a.updatedAt; })
+                .filter(function(thread) {
+                    if (!filter) return true;
+                    const lastText = thread.messages[thread.messages.length - 1].text.toLowerCase();
+                    return thread.name.toLowerCase().includes(filter) || lastText.includes(filter);
+                });
+
+            if (!threads.length) {
+                list.innerHTML = '<div class="msgp-empty">Inga konversationer matchar sökningen.</div>';
+                return;
+            }
+
+            list.innerHTML = threads.map(function(thread) {
+                const lastMessage = thread.messages[thread.messages.length - 1];
+                const preview = (lastMessage.from === 'me' ? 'You: ' : '') + lastMessage.text;
+                const previewClipped = preview.length > 42 ? preview.slice(0, 42) + '...' : preview;
+                const activeClass = messengerState.activeThreadId === thread.id ? ' is-active' : '';
+                const unread = thread.unread > 0 ? '<span class="msgp-unread">' + thread.unread + '</span>' : '';
+                return `
+                    <button class="msgp-item${activeClass}" type="button" data-thread-id="${thread.id}">
+                        <div class="msgp-avatar"><img src="${thread.avatar}" alt="${escapeHtml(thread.name)}"></div>
+                        <div class="msgp-text">
+                            <strong>${escapeHtml(thread.name)}</strong>
+                            <span>${escapeHtml(previewClipped)}</span>
+                        </div>
+                        <div class="msgp-meta">
+                            <span class="msgp-time">${formatMessengerTime(thread.updatedAt)}</span>
+                            ${unread}
+                        </div>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function renderActiveThread() {
+            const thread = getThreadById(messengerState.activeThreadId);
+            if (!thread) return;
+            const msgList = document.getElementById('msgpMessages');
+            document.getElementById('msgpThreadName').innerText = thread.name;
+            document.getElementById('msgpThreadAvatar').src = thread.avatar;
+            document.getElementById('msgpThreadStatus').innerText = thread.online ? 'Active now' : 'Offline';
+
+            msgList.innerHTML = thread.messages.map(function(message) {
+                return `
+                    <div class="msgp-bubble ${message.from === 'me' ? 'me' : 'them'}">
+                        ${escapeHtml(message.text)}
+                        <span class="msgp-bubble-time">${formatMessengerTime(message.at)}</span>
+                    </div>
+                `;
+            }).join('');
+            msgList.scrollTop = msgList.scrollHeight;
+        }
+
+        function openMessengerThread(threadId) {
+            messengerState.activeThreadId = threadId;
+            const thread = getThreadById(threadId);
+            if (!thread) return;
+            thread.unread = 0;
+            renderMessengerList();
+            renderActiveThread();
+            document.getElementById('msgpListView').style.display = 'none';
+            document.getElementById('msgpThreadView').style.display = 'flex';
+            document.getElementById('msgpMessageInput').focus();
+        }
+
+        function openMessengerList() {
+            document.getElementById('msgpThreadView').style.display = 'none';
+            document.getElementById('msgpListView').style.display = 'flex';
+            renderMessengerList();
+        }
+
+        function simulateReply(thread) {
+            const typing = document.getElementById('msgpTyping');
+            typing.style.display = 'block';
+            setTimeout(function() {
+                const cannedReplies = [
+                    'Låter bra, jag återkommer strax.',
+                    'Perfekt, kör på det.',
+                    'Toppen, tack for snabb uppdatering.',
+                    'Jag kollar och svarar om en minut.'
+                ];
+                const text = cannedReplies[Math.floor(Math.random() * cannedReplies.length)];
+                thread.messages.push({ from: 'them', text: text, at: Date.now() });
+                thread.updatedAt = Date.now();
+                typing.style.display = 'none';
+
+                if (messengerState.activeThreadId === thread.id && document.getElementById('msgpThreadView').style.display === 'flex') {
+                    renderActiveThread();
+                } else {
+                    thread.unread += 1;
+                }
+                renderMessengerList();
+            }, 1200);
+        }
+
+        function sendMessengerMessage() {
+            const input = document.getElementById('msgpMessageInput');
+            const text = input.value.trim();
+            const thread = getThreadById(messengerState.activeThreadId);
+            if (!thread || !text) return;
+
+            thread.messages.push({ from: 'me', text: text, at: Date.now() });
+            thread.updatedAt = Date.now();
+            input.value = '';
+            renderActiveThread();
+            renderMessengerList();
+            simulateReply(thread);
+        }
+
+        function initMessenger() {
+            renderMessengerList();
+
+            document.getElementById('msgpSearchInput').addEventListener('input', function(e) {
+                messengerState.filter = e.target.value;
+                renderMessengerList();
+            });
+
+            document.getElementById('msgpList').addEventListener('click', function(e) {
+                const row = e.target.closest('[data-thread-id]');
+                if (!row) return;
+                openMessengerThread(row.getAttribute('data-thread-id'));
+            });
+
+            document.getElementById('msgpBackBtn').addEventListener('click', function() {
+                openMessengerList();
+            });
+
+            document.getElementById('msgpSendBtn').addEventListener('click', function() {
+                sendMessengerMessage();
+            });
+
+            document.getElementById('msgpMessageInput').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') sendMessengerMessage();
+            });
+        }
+
+        // JS för Messenger popup
+        function toggleMessenger() {
+            const popup = document.getElementById('msgPopup');
+            if(popup.style.display === 'flex') {
+                popup.style.display = 'none';
+            } else {
+                popup.style.display = 'flex';
+                openMessengerList();
+            }
+        }
+
+        document.getElementById('modalEditEventBtn').addEventListener('click', function() {
+            if (!activeModalEvent || !currentUserIsAdmin) return;
+            openEventEditorEdit(activeModalEvent);
+        });
+        document.getElementById('eventEditorSaveBtn').addEventListener('click', function() {
+            saveEventFromEditor().catch(function(err) {
+                alert(err.message || 'Kunde inte spara mötet.');
+            });
+        });
+        document.getElementById('eventEditorModal').addEventListener('click', function(e) {
+            if (e.target === this) closeEventEditor();
+        });
+
+        document.getElementById('prevMonthBtn').addEventListener('click', function() {
+            changeMonth(-1).catch(function() {});
+        });
+        document.getElementById('nextMonthBtn').addEventListener('click', function() {
+            changeMonth(1).catch(function() {});
+        });
+
+        (async function initApp() {
+            document.body.style.visibility = 'hidden';
+            const allowed = await requireAuth();
+            if (!allowed) return;
+            initGroupChat();
+            initNotes();
+            await Promise.allSettled([
+                loadMonthEvents(),
+                loadTodayMeetings(),
+                loadChatMessages(),
+                loadChatPresence(),
+                loadNotes()
+            ]);
+            renderCalendar();
+            initMessenger();
+            setInterval(function() { loadChatMessages().catch(function() {}); }, 5000);
+            setInterval(function() { loadChatPresence().catch(function() {}); }, 5000);
+            setInterval(function() { loadTodayMeetings().catch(function() {}); }, 60000);
+            document.body.style.visibility = 'visible';
+        })();
+    </script>
+</body>
+</html>
