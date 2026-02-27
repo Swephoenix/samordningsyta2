@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Messenger Login</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+      color: #0f172a;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+      box-sizing: border-box;
+    }
+    .card {
+      width: min(980px, 100%);
+      min-height: min(760px, calc(100vh - 40px));
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 20px;
+      box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
+      display: grid;
+      overflow: hidden;
+    }
+    .login, .app {
+      padding: 26px;
+      box-sizing: border-box;
+      height: 100%;
+    }
+    .login {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      align-content: center;
+    }
+    .panel {
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 16px;
+      background: #f8fafc;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    h1, h2 {
+      margin: 0;
+    }
+    h1 { font-size: 1.5rem; grid-column: 1 / -1; }
+    p { margin: 0; color: #475569; font-size: 0.92rem; }
+    input {
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 0.95rem;
+      width: 100%;
+      box-sizing: border-box;
+      background: #fff;
+    }
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 11px 14px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .primary { background: #2563eb; color: #fff; }
+    .secondary { background: #0f172a; color: #fff; }
+    .muted { background: #334155; color: #fff; }
+    .error { color: #b91c1c; font-size: 0.88rem; min-height: 1.2em; }
+    .hint { font-size: 0.85rem; color: #64748b; }
+    .hidden { display: none; }
+    .app {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 16px;
+    }
+    .app-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: #f8fafc;
+      gap: 8px;
+    }
+    .session {
+      font-weight: 700;
+      color: #0f172a;
+      font-size: 0.92rem;
+    }
+    #widget-root { display: none; }
+    @media (max-width: 900px) {
+      .login { grid-template-columns: 1fr; }
+      body { padding: 12px; padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+      .card { min-height: calc(100dvh - 24px); border-radius: 14px; }
+      .login, .app { padding: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <section id="login" class="login">
+      <h1>Messenger för organisation</h1>
+
+      <div class="panel">
+        <h2>Logga in</h2>
+        <p>Använd ditt konto.</p>
+        <input id="login-username" placeholder="Användarnamn" autocomplete="username">
+        <input id="login-password" type="password" placeholder="Lösenord" autocomplete="current-password">
+        <button id="login-btn" class="primary" type="button">Logga in</button>
+        <div class="hint">Demo-konton kan logga in utan lösenord.</div>
+      </div>
+
+      <div class="panel">
+        <h2>Skapa konto</h2>
+        <p>Minst 8 tecken i lösenord.</p>
+        <input id="register-name" placeholder="Visningsnamn" autocomplete="name">
+        <input id="register-username" placeholder="Användarnamn (a-z, 0-9, ., _, -)">
+        <input id="register-password" type="password" placeholder="Lösenord">
+        <button id="register-btn" class="secondary" type="button">Skapa konto</button>
+        <div class="hint">Snabbtest: <button id="demo1-btn" class="muted" type="button">demo1</button> <button id="demo2-btn" class="muted" type="button">demo2</button></div>
+      </div>
+
+      <div id="error" class="error"></div>
+    </section>
+
+    <section id="app" class="app hidden">
+      <div class="app-head">
+        <div id="session-user" class="session"></div>
+        <button id="logout-btn" class="secondary" type="button">Logga ut</button>
+      </div>
+      <div id="widget-root"></div>
+    </section>
+  </main>
+
+  <script src="/messenger-widget.js" data-auto-init="false"></script>
+  <script>
+    (function () {
+      var WIDGET_ID = 'demo';
+      var loginEl = document.getElementById('login');
+      var appEl = document.getElementById('app');
+      var sessionUserEl = document.getElementById('session-user');
+      var logoutBtn = document.getElementById('logout-btn');
+      var widgetRoot = document.getElementById('widget-root');
+      var errorEl = document.getElementById('error');
+      var instance = null;
+
+      function setError(message) {
+        errorEl.textContent = message || '';
+      }
+
+      function api(path, method, body) {
+        return fetch(path + '?widgetId=' + encodeURIComponent(WIDGET_ID), {
+          method: method || 'GET',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: body ? JSON.stringify(body) : undefined
+        }).then(function (res) {
+          return res.json().catch(function () { return {}; }).then(function (json) {
+            if (!res.ok) throw new Error(json.error || ('HTTP ' + res.status));
+            return json;
+          });
+        });
+      }
+
+      function mountWidget(user) {
+        if (instance) {
+          instance.destroy();
+          instance = null;
+        }
+        widgetRoot.innerHTML = '';
+
+        instance = window.MessengerWidget.init({
+          target: document.body,
+          fixed: true,
+          hideLauncher: false,
+          width: 380,
+          height: 620,
+          apiBase: '/api',
+          widgetId: WIDGET_ID,
+          title: 'Messenger (' + user.username + ')'
+        });
+      }
+
+      function showLoggedOut() {
+        if (instance) {
+          instance.destroy();
+          instance = null;
+        }
+        appEl.classList.add('hidden');
+        loginEl.classList.remove('hidden');
+      }
+
+      function showLoggedIn(user) {
+        sessionUserEl.textContent = 'Inloggad som: ' + user.username;
+        loginEl.classList.add('hidden');
+        appEl.classList.remove('hidden');
+        setError('');
+        mountWidget(user);
+      }
+
+      function login(username, password) {
+        return api('/api/auth/login', 'POST', {
+          username: username,
+          password: password || ''
+        }).then(function (payload) {
+          showLoggedIn(payload.user);
+        }).catch(function (error) {
+          setError(error.message || 'Kunde inte logga in');
+        });
+      }
+
+      function registerUser(name, username, password) {
+        return api('/api/auth/register', 'POST', {
+          name: name,
+          username: username,
+          password: password
+        }).then(function (payload) {
+          showLoggedIn(payload.user);
+        }).catch(function (error) {
+          setError(error.message || 'Kunde inte skapa konto');
+        });
+      }
+
+      function bootstrap() {
+        api('/api/auth/me', 'GET')
+          .then(function (payload) {
+            if (payload && payload.authenticated && payload.user) {
+              showLoggedIn(payload.user);
+            } else {
+              showLoggedOut();
+            }
+          })
+          .catch(function () {
+            showLoggedOut();
+          });
+      }
+
+      document.getElementById('login-btn').addEventListener('click', function () {
+        setError('');
+        login(
+          document.getElementById('login-username').value.trim(),
+          document.getElementById('login-password').value
+        );
+      });
+
+      document.getElementById('register-btn').addEventListener('click', function () {
+        setError('');
+        registerUser(
+          document.getElementById('register-name').value.trim(),
+          document.getElementById('register-username').value.trim(),
+          document.getElementById('register-password').value
+        );
+      });
+
+      document.getElementById('demo1-btn').addEventListener('click', function () {
+        setError('');
+        login('demo1', '');
+      });
+
+      document.getElementById('demo2-btn').addEventListener('click', function () {
+        setError('');
+        login('demo2', '');
+      });
+
+      logoutBtn.addEventListener('click', function () {
+        api('/api/auth/logout', 'POST')
+          .catch(function () {})
+          .finally(showLoggedOut);
+      });
+
+      bootstrap();
+    })();
+  </script>
+</body>
+</html>

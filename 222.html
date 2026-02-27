@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <!-- Följande meta-tagg är avgörande för en "app-känsla" på mobilen -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Minimal Dashboard</title>
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --panel-bg: #ffffff;
+            --text-main: #333333;
+            --text-muted: #777777;
+            --border-color: #e0e0e0;
+            --accent: #4A90E2;
+            --accent-hover: #357ABD;
+            --danger: #e74c3c;
+            --radius: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        /* Låser huvudfönstret från att scrolla */
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden; 
+            display: flex;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        /* Layout Grid */
+        .dashboard {
+            display: grid;
+            grid-template-columns: 300px 1fr 350px;
+            gap: 20px;
+            width: 100%;
+            height: 100%;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border-radius: var(--radius);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
+            background: #fafafa;
+        }
+
+        .panel-content {
+            padding: 20px;
+            overflow-y: auto; /* Intern scroll */
+            flex: 1;
+        }
+
+        /* Vänster kolumn */
+        .left-col { display: flex; flex-direction: column; gap: 20px; }
+        .messages { flex: 1; }
+        .notes { flex: 2; }
+        
+        textarea.note-area {
+            width: 100%;
+            height: 100%;
+            border: none;
+            resize: none;
+            outline: none;
+            color: var(--text-main);
+            line-height: 1.5;
+        }
+
+        .msg-item {
+            padding: 10px;
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        /* Mittenkolumn: Chatt */
+        .chat-container { display: flex; flex-direction: column; height: 100%; }
+        .chat-feed { flex: 1; overflow-y: auto; padding: 20px; }
+        
+        .date-divider {
+            text-align: center;
+            position: relative;
+            margin: 20px 0;
+        }
+        .date-divider span {
+            background: var(--bg-color);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            color: var(--text-muted);
+        }
+
+        .chat-post {
+            background: var(--bg-color);
+            padding: 15px;
+            border-radius: var(--radius);
+            margin-bottom: 15px;
+        }
+        .chat-post-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85em;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+        .chat-comments {
+            margin-top: 10px;
+            padding-left: 15px;
+            border-left: 2px solid var(--border-color);
+            font-size: 0.9em;
+        }
+        
+        .chat-input-area {
+            padding: 15px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 10px;
+            background: #fafafa;
+        }
+        .chat-input-area input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            outline: none;
+        }
+        .btn-icon {
+            background: none; border: none; font-size: 1.2em; cursor: pointer; color: var(--text-muted);
+        }
+
+        /* Höger kolumn: Kalender & Verktyg */
+        .right-col { display: flex; flex-direction: column; gap: 20px; }
+        .calendar-wrapper { flex: 2; }
+        .placeholders { flex: 1; }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            text-align: center;
+            margin-top: 10px;
+        }
+        .cal-day-header { font-size: 0.8em; color: var(--text-muted); font-weight: bold; }
+        .cal-day {
+            padding: 10px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            position: relative;
+            transition: background 0.2s;
+        }
+        .cal-day:hover { background: var(--bg-color); }
+        .cal-day.has-event { font-weight: bold; color: var(--accent); }
+        .cal-day.has-event::after {
+            content: '';
+            position: absolute;
+            bottom: 4px; left: 50%;
+            transform: translateX(-50%);
+            width: 6px; height: 6px;
+            background: var(--accent);
+            border-radius: 50%;
+        }
+
+        .placeholder-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            padding: 20px;
+        }
+        
+        .placeholder-icon {
+            background: var(--bg-color);
+            height: 60px;
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+        }
+        
+        .placeholder-icon:hover {
+            transform: scale(1.05);
+            background: #e9ecef;
+        }
+
+        /* Modals & Popups */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none; align-items: center; justify-content: center;
+            z-index: 100;
+        }
+        .modal-content {
+            background: var(--panel-bg);
+            padding: 30px;
+            border-radius: var(--radius);
+            width: 400px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .modal-close { float: right; cursor: pointer; border: none; background: none; font-size: 1.2em; }
+        
+        .zoom-btn {
+            display: block; width: 100%; padding: 10px; margin-top: 20px;
+            background: var(--accent); color: white; text-align: center;
+            text-decoration: none; border-radius: var(--radius); font-weight: bold;
+        }
+
+        .messenger-popup {
+            position: fixed; bottom: 30px; right: 30px;
+            width: 300px; height: 400px;
+            background: var(--panel-bg);
+            border-radius: var(--radius);
+            box-shadow: 0 5px 25px rgba(0,0,0,0.2);
+            border: 1px solid var(--border-color);
+            display: none;
+            flex-direction: column;
+            z-index: 99;
+        }
+
+        /* Responsivitet för mindre skärmar */
+        @media (max-width: 1200px) {
+            .dashboard { grid-template-columns: 250px 1fr 250px; }
+        }
+        @media (max-width: 900px) {
+            body { overflow: auto; height: auto; }
+            .dashboard { grid-template-columns: 1fr; }
+            .panel { height: 400px; } /* Ger paneler en fast höjd på mobil */
+            .calendar-wrapper { height: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard">
+        
+        <!-- Vänster: Viktigt & Anteckningar -->
+        <div class="left-col">
+            <div class="panel messages">
+                <div class="panel-header">Viktiga Meddelanden</div>
+                <div class="panel-content">
+                    <div class="msg-item">🚨 Systemuppdatering inatt kl 02:00.</div>
+                    <div class="msg-item">📢 Deadline för Q3-rapporten är på fredag.</div>
+                </div>
+            </div>
+            <div class="panel notes">
+                <div class="panel-header">Mina Anteckningar</div>
+                <div class="panel-content">
+                    <textarea class="note-area" placeholder="Skriv dina tankar här... Spara sker automatiskt."></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mitten: Gruppchatt -->
+        <div class="panel chat-container">
+            <div class="panel-header">Gruppchatt (Team Alpha)</div>
+            <div class="chat-feed">
+                
+                <div class="date-divider"><span>Onsdag, 23 Oktober</span></div>
+                
+                <div class="chat-post">
+                    <div class="chat-post-header">
+                        <strong>Anna Svensson</strong> <span>14:30</span>
+                    </div>
+                    <p>Här är de senaste designskisserna. Vad tycker ni? 📎 design_v2.pdf</p>
+                    <div class="chat-comments">
+                        <p><strong>Johan:</strong> Ser bra ut! Låg kognitiv belastning.</p>
+                    </div>
+                </div>
+
+                <div class="date-divider"><span>Idag, 24 Oktober</span></div>
+
+                <div class="chat-post">
+                    <div class="chat-post-header">
+                        <strong>Erik Johansson</strong> <span>09:15</span>
+                    </div>
+                    <p>God morgon! Glöm inte veckomötet kl 10:00.</p>
+                </div>
+
+                <div class="chat-post">
+                    <div class="chat-post-header">
+                        <strong>Du</strong> <span>09:20</span>
+                    </div>
+                    <p>Jag har förberett presentationen. Laddar upp den i drive-mappen.</p>
+                </div>
+                <!-- Oändlig historik simuleras här -->
+                
+            </div>
+            <div class="chat-input-area">
+                <button class="btn-icon" title="Bifoga fil">📎</button>
+                <input type="text" placeholder="Skriv ett inlägg eller ladda upp fil...">
+                <button class="btn-icon" title="Skicka">✈️</button>
+            </div>
+        </div>
+
+        <!-- Höger: Kalender & Verktyg -->
+        <div class="right-col">
+            <div class="panel calendar-wrapper">
+                <div class="panel-header">Kalender - Oktober</div>
+                <div class="panel-content">
+                    <div class="calendar-grid">
+                        <div class="cal-day-header">M</div><div class="cal-day-header">T</div><div class="cal-day-header">O</div><div class="cal-day-header">T</div><div class="cal-day-header">F</div><div class="cal-day-header">L</div><div class="cal-day-header">S</div>
+                        <!-- Fejkade dagar för UI -->
+                        <div class="cal-day">...</div><div class="cal-day">...</div><div class="cal-day">1</div><div class="cal-day">2</div><div class="cal-day">3</div><div class="cal-day">4</div><div class="cal-day">5</div>
+                        <div class="cal-day">6</div><div class="cal-day">7</div><div class="cal-day">8</div><div class="cal-day">9</div><div class="cal-day">10</div><div class="cal-day">11</div><div class="cal-day">12</div>
+                        <div class="cal-day">13</div><div class="cal-day">14</div><div class="cal-day">15</div><div class="cal-day">16</div><div class="cal-day">17</div><div class="cal-day">18</div><div class="cal-day">19</div>
+                        <div class="cal-day">20</div><div class="cal-day">21</div><div class="cal-day">22</div><div class="cal-day">23</div>
+                        <div class="cal-day has-event" onclick="openEventModal('24 Okt', 'Veckomöte Team Alpha', 'https://zoom.us/j/12345')">24</div>
+                        <div class="cal-day">25</div><div class="cal-day">26</div>
+                        <div class="cal-day">27</div><div class="cal-day">28</div><div class="cal-day">29</div><div class="cal-day">30</div><div class="cal-day has-event" onclick="openEventModal('31 Okt', 'Projektgenomgång', 'https://zoom.us/j/67890')">31</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nya Verktygspanelen (Ikonerna har flyttats hit) -->
+            <div class="panel placeholders">
+                <div class="panel-header">Verktyg</div>
+                <div class="placeholder-grid">
+                    <div class="placeholder-icon" title="Facebook Marketing Academy">🎓</div>
+                    <div class="placeholder-icon" title="Idébank">💡</div>
+                    <div class="placeholder-icon" title="Messenger" onclick="toggleMessenger()">💬</div>
+                    <div class="placeholder-icon" title="Statistik">📊</div>
+                    <div class="placeholder-icon" title="Filer">📁</div>
+                    <div class="placeholder-icon" title="Inställningar">⚙️</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Messenger Popup -->
+    <div class="messenger-popup" id="msgPopup">
+        <div class="panel-header">
+            Messenger
+            <button class="modal-close" style="float: right; font-size: 1em;" onclick="toggleMessenger()">✖</button>
+        </div>
+        <div class="panel-content" style="text-align:center; color:#777;">
+            Inga nya meddelanden.
+        </div>
+        <div class="chat-input-area">
+            <input type="text" placeholder="Sök kontakt...">
+        </div>
+    </div>
+
+    <!-- Kalender Event Modal -->
+    <div class="modal-overlay" id="eventModal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">✖</button>
+            <h2 id="modalDate" style="margin-bottom: 10px;">Datum</h2>
+            <p><strong>Händelse:</strong> <span id="modalTitle">Titel</span></p>
+            <p style="color: var(--text-muted); font-size: 0.9em; margin-top: 10px;">Detta är ett online-möte.</p>
+            <a href="#" id="modalLink" target="_blank" class="zoom-btn">🎥 Anslut till mötet (Zoom)</a>
+        </div>
+    </div>
+
+    <script>
+        // JS för kalender modal
+        function openEventModal(date, title, zoomLink) {
+            document.getElementById('modalDate').innerText = date;
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalLink').href = zoomLink;
+            document.getElementById('eventModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('eventModal').style.display = 'none';
+        }
+
+        // Stäng modal om man klickar utanför rutan
+        document.getElementById('eventModal').addEventListener('click', function(e) {
+            if(e.target === this) closeModal();
+        });
+
+        // JS för Messenger popup
+        function toggleMessenger() {
+            const popup = document.getElementById('msgPopup');
+            if(popup.style.display === 'flex') {
+                popup.style.display = 'none';
+            } else {
+                popup.style.display = 'flex';
+            }
+        }
+    </script>
+</body>
+</html>
