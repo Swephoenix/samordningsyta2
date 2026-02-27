@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Windows Simulator</title>
+    <style>
+        :root {
+            --win-blue: #0078d7;
+            --win-bg: #ffffff;
+            --win-hover: #e5f3ff;
+            --win-border: #d9d9d9;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+            user-select: none;
+        }
+
+        /* Huvudbehållare */
+        .explorer-window {
+            width: 90%;
+            max-width: 1000px;
+            height: 600px;
+            background: var(--win-bg);
+            border: 1px solid #999;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            margin: auto;
+        }
+
+        /* Adressfält och navigering */
+        .toolbar {
+            height: 40px;
+            border-bottom: 1px solid var(--win-border);
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            background: #fff;
+        }
+
+        .back-btn {
+            padding: 5px 10px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            margin-right: 10px;
+        }
+
+        .back-btn:hover {
+            background: var(--win-hover);
+            border-color: #cce8ff;
+        }
+
+        .address-bar {
+            flex-grow: 1;
+            border: 1px solid var(--win-border);
+            padding: 4px 10px;
+            font-size: 13px;
+            color: #555;
+            background: #fff;
+        }
+
+        /* Filvisningsområde */
+        #file-display {
+            flex-grow: 1;
+            padding: 10px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            grid-auto-rows: 100px;
+            gap: 10px;
+            overflow-y: auto;
+            align-content: start;
+        }
+
+        .item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            cursor: pointer;
+            border: 1px solid transparent;
+            padding: 5px;
+            border-radius: 3px;
+        }
+
+        .item:hover {
+            background: var(--win-hover);
+            border: 1px solid #cce8ff;
+        }
+
+        .item-icon {
+            font-size: 40px;
+            margin-bottom: 5px;
+        }
+
+        .item-name {
+            font-size: 12px;
+            word-break: break-all;
+            max-width: 90px;
+        }
+
+        /* Högermeny (Context Menu) */
+        #context-menu {
+            position: absolute;
+            background: #fff;
+            border: 1px solid #ccc;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+            padding: 5px 0;
+            display: none;
+            z-index: 1000;
+            min-width: 150px;
+        }
+
+        .menu-item {
+            padding: 8px 15px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .menu-item:hover {
+            background: var(--win-blue);
+            color: white;
+        }
+
+        /* Textredigerare (Modal) */
+        #editor-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.4);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .editor-container {
+            background: white;
+            width: 600px;
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .editor-header {
+            padding: 10px;
+            background: #eee;
+            border-bottom: 1px solid #ccc;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        #text-content {
+            flex-grow: 1;
+            padding: 10px;
+            border: none;
+            resize: none;
+            font-family: monospace;
+            font-size: 14px;
+        }
+
+        .btn-row {
+            padding: 10px;
+            text-align: right;
+            border-top: 1px solid #ccc;
+        }
+
+        button {
+            padding: 5px 15px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="explorer-window">
+        <div class="toolbar">
+            <div class="back-btn" onclick="goBack()">⬅ Upp</div>
+            <div class="address-bar" id="address-bar">Denna dator > Dokument</div>
+        </div>
+        <div id="file-display">
+            <!-- Filer och mappar renderas här via JS -->
+        </div>
+    </div>
+
+    <!-- Högermeny -->
+    <div id="context-menu">
+        <div class="menu-item" onclick="createNewItem('folder')">Ny mapp</div>
+        <div class="menu-item" onclick="createNewItem('file')">Ny textfil (.txt)</div>
+    </div>
+
+    <!-- Textredigerare -->
+    <div id="editor-overlay">
+        <div class="editor-container">
+            <div class="editor-header">
+                <span id="editor-filename">Filnamn.txt</span>
+            </div>
+            <textarea id="text-content"></textarea>
+            <div class="btn-row">
+                <button onclick="closeEditor()">Avbryt</button>
+                <button onclick="saveFile()" style="background: var(--win-blue); color: white; border: none;">Spara</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Virtuellt filsystem
+        let fileSystem = {
+            "name": "root",
+            "type": "folder",
+            "children": {
+                "Gemensamt": { "type": "folder", "children": {} },
+                "Privat": { "type": "folder", "children": {} }
+            }
+        };
+
+        let currentPath = []; // Array av strängar för att hålla koll på mappar
+        let openFileName = null; // Håller reda på vilken fil som redigeras
+
+        const fileDisplay = document.getElementById('file-display');
+        const contextMenu = document.getElementById('context-menu');
+        const addressBar = document.getElementById('address-bar');
+        const editorOverlay = document.getElementById('editor-overlay');
+        const textContent = document.getElementById('text-content');
+        const editorFilename = document.getElementById('editor-filename');
+
+        // Navigera till nuvarande mappobjekt
+        function getCurrentFolder() {
+            let folder = fileSystem;
+            for (let p of currentPath) {
+                folder = folder.children[p];
+            }
+            return folder;
+        }
+
+        // Rendera innehållet
+        function render() {
+            fileDisplay.innerHTML = '';
+            const folder = getCurrentFolder();
+            
+            addressBar.innerText = "Denna dator > " + (currentPath.join(' > ') || 'Dokument');
+
+            for (let name in folder.children) {
+                const item = folder.children[name];
+                const div = document.createElement('div');
+                div.className = 'item';
+                
+                const icon = item.type === 'folder' ? '📁' : '📄';
+                div.innerHTML = `
+                    <div class="item-icon">${icon}</div>
+                    <div class="item-name">${name}</div>
+                `;
+
+                div.onclick = () => {
+                    if (item.type === 'folder') {
+                        currentPath.push(name);
+                        render();
+                    } else {
+                        openFile(name);
+                    }
+                };
+                
+                fileDisplay.appendChild(div);
+            }
+        }
+
+        function goBack() {
+            if (currentPath.length > 0) {
+                currentPath.pop();
+                render();
+            }
+        }
+
+        // Högerklickshantering
+        window.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            contextMenu.style.display = 'block';
+            contextMenu.style.left = e.pageX + 'px';
+            contextMenu.style.top = e.pageY + 'px';
+        });
+
+        window.addEventListener('click', (e) => {
+            if (!contextMenu.contains(e.target)) {
+                contextMenu.style.display = 'none';
+            }
+        });
+
+        // Skapa nytt objekt
+        function createNewItem(type) {
+            const name = prompt(type === 'folder' ? "Ange mappnamn:" : "Ange filnamn:");
+            if (!name) return;
+
+            const folder = getCurrentFolder();
+            if (folder.children[name]) {
+                alert("Namnet finns redan!");
+                return;
+            }
+
+            folder.children[name] = {
+                type: type,
+                content: type === 'file' ? '' : null,
+                children: type === 'folder' ? {} : null
+            };
+            
+            contextMenu.style.display = 'none';
+            render();
+        }
+
+        // Filredigering
+        function openFile(name) {
+            const folder = getCurrentFolder();
+            openFileName = name;
+            editorFilename.innerText = name;
+            textContent.value = folder.children[name].content;
+            editorOverlay.style.display = 'flex';
+        }
+
+        function closeEditor() {
+            editorOverlay.style.display = 'none';
+            openFileName = null;
+        }
+
+        function saveFile() {
+            const folder = getCurrentFolder();
+            folder.children[openFileName].content = textContent.value;
+            closeEditor();
+            alert("Filen sparades!");
+        }
+
+        // Starta rendering
+        render();
+    </script>
+</body>
+</html>

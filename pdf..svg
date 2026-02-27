@@ -1,0 +1,14 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" aria-label="PDF-dokument" xmlns="http://www.w3.org/2000/svg">
+  <!-- Document sheet -->
+  <path d="M16 8H38L48 18V52C48 54.2 46.2 56 44 56H16C13.8 56 12 54.2 12 52V12C12 9.8 13.8 8 16 8Z" fill="#FFFFFF" stroke="#111111" stroke-width="2"/>
+  <!-- Folded corner -->
+  <path d="M38 8V18H48" fill="#F3F3F3" stroke="#111111" stroke-width="2" stroke-linejoin="round"/>
+
+  <!-- Simple PDF mark (stylized ribbon/curve) -->
+  <path d="M20 36C24 30 28 44 32 38C36 32 40 44 44 38" stroke="#C1121F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M20 40C24 34 28 48 32 42C36 36 40 48 44 42" stroke="#C1121F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- PDF tag -->
+  <rect x="18" y="44" width="28" height="10" rx="3" fill="#C1121F"/>
+  <text x="32" y="52" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="7" font-weight="700" fill="#FFFFFF">PDF</text>
+</svg>

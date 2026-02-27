@@ -94,6 +94,35 @@
 
         /* Mittenkolumn: Chatt */
         .chat-container { display: flex; flex-direction: column; height: 100%; }
+        .chat-search-bar {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border-color);
+            background: #fafafa;
+            display: grid;
+            grid-template-columns: 1fr auto auto auto;
+            gap: 8px;
+            align-items: center;
+        }
+        .chat-search-input,
+        .chat-date-input {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px 10px;
+            outline: none;
+            background: #fff;
+            color: var(--text-main);
+        }
+        .chat-search-input { min-width: 0; }
+        .chat-date-input { width: 145px; }
+        .chat-search-btn {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: #fff;
+            padding: 8px 12px;
+            cursor: pointer;
+            color: var(--text-main);
+        }
+        .chat-search-btn:hover { background: var(--bg-color); }
         .chat-feed { flex: 1; overflow-y: auto; padding: 20px; }
         
         .date-divider {
@@ -159,6 +188,24 @@
             text-align: center;
             margin-top: 10px;
         }
+        .calendar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .calendar-nav {
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            width: 32px;
+            height: 32px;
+            cursor: pointer;
+            font-size: 1.1em;
+            line-height: 1;
+        }
+        .calendar-nav:hover { background: #e9ecef; }
+        .calendar-title { font-weight: 600; }
         .cal-day-header { font-size: 0.8em; color: var(--text-muted); font-weight: bold; }
         .cal-day {
             padding: 10px 0;
@@ -204,6 +251,161 @@
             transform: scale(1.05);
             background: #e9ecef;
         }
+        .tool-icon-svg {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+            display: block;
+        }
+        .folder-modal-content {
+            width: min(92vw, 980px);
+            height: min(82vh, 620px);
+            background: #fff;
+            border: 1px solid #999;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+        .fs-toolbar {
+            height: 42px;
+            border-bottom: 1px solid #d9d9d9;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            gap: 10px;
+            background: #fff;
+        }
+        .fs-back-btn {
+            padding: 5px 10px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            background: #fff;
+        }
+        .fs-back-btn:hover {
+            background: #e5f3ff;
+            border-color: #cce8ff;
+        }
+        .fs-address-bar {
+            flex: 1;
+            border: 1px solid #d9d9d9;
+            padding: 4px 10px;
+            font-size: 13px;
+            color: #555;
+            background: #fff;
+        }
+        .fs-close-btn {
+            border: 1px solid #d9d9d9;
+            background: #fff;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+        }
+        .fs-close-btn:hover { background: #f3f3f3; }
+        .fs-file-display {
+            flex: 1;
+            padding: 10px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            grid-auto-rows: 100px;
+            gap: 10px;
+            overflow-y: auto;
+            align-content: start;
+            background: #fff;
+        }
+        .fs-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            cursor: pointer;
+            border: 1px solid transparent;
+            padding: 5px;
+            border-radius: 3px;
+        }
+        .fs-item:hover {
+            background: #e5f3ff;
+            border-color: #cce8ff;
+        }
+        .fs-item-icon {
+            font-size: 40px;
+            margin-bottom: 5px;
+        }
+        .fs-item-name {
+            font-size: 12px;
+            word-break: break-all;
+            max-width: 90px;
+        }
+        .fs-context-menu {
+            position: absolute;
+            background: #fff;
+            border: 1px solid #ccc;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.12);
+            padding: 5px 0;
+            display: none;
+            z-index: 3;
+            min-width: 170px;
+        }
+        .fs-menu-item {
+            padding: 8px 15px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .fs-menu-item:hover {
+            background: #0078d7;
+            color: #fff;
+        }
+        .fs-editor-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 4;
+        }
+        .fs-editor-container {
+            background: #fff;
+            width: min(92%, 620px);
+            height: min(78%, 420px);
+            display: flex;
+            flex-direction: column;
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid #cfcfcf;
+        }
+        .fs-editor-header {
+            padding: 10px;
+            background: #eee;
+            border-bottom: 1px solid #ccc;
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+        .fs-text-content {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            resize: none;
+            font-family: monospace;
+            font-size: 14px;
+            outline: none;
+        }
+        .fs-btn-row {
+            padding: 10px;
+            text-align: right;
+            border-top: 1px solid #ccc;
+        }
+        .fs-btn {
+            padding: 5px 15px;
+            cursor: pointer;
+        }
+        .fs-btn-primary {
+            background: #0078d7;
+            color: #fff;
+            border: none;
+        }
 
         /* Modals & Popups */
         .modal-overlay {
@@ -228,15 +430,270 @@
         }
 
         .messenger-popup {
-            position: fixed; bottom: 30px; right: 30px;
-            width: 300px; height: 400px;
-            background: var(--panel-bg);
-            border-radius: var(--radius);
-            box-shadow: 0 5px 25px rgba(0,0,0,0.2);
-            border: 1px solid var(--border-color);
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 348px;
+            height: 688px;
+            background: #efeff1;
+            border-radius: 18px;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.2);
+            border: 1px solid #dadde2;
             display: none;
             flex-direction: column;
-            z-index: 99;
+            overflow: hidden;
+            z-index: 110;
+        }
+        .msgp-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 16px 10px;
+        }
+        .msgp-title {
+            font-size: 2.7rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: #252a30;
+        }
+        .msgp-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .msgp-action-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 11px;
+            border: 1px solid #aeb4bd;
+            background: #f0f1f3;
+            color: #3f454e;
+            cursor: pointer;
+            font-size: 1.02rem;
+        }
+        .msgp-search {
+            margin: 0 16px 12px;
+            background: #d8d8db;
+            border-radius: 24px;
+            height: 46px;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 0 14px;
+            color: #62666f;
+            font-weight: 600;
+            font-size: 1.04rem;
+        }
+        .msgp-search input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #3a3f46;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        .msgp-list {
+            padding: 2px 8px 12px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 1;
+        }
+        .msgp-item {
+            display: grid;
+            grid-template-columns: 56px 1fr auto;
+            align-items: center;
+            gap: 11px;
+            border: none;
+            text-align: left;
+            width: 100%;
+            border-radius: 999px;
+            background: transparent;
+            padding: 8px 12px;
+            cursor: default;
+        }
+        .msgp-item.is-active {
+            background: linear-gradient(90deg, #3f55dc, #3a77f3);
+        }
+        .msgp-avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 2px solid #e3e5e9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .msgp-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .msgp-text strong {
+            display: block;
+            font-size: 1.03rem;
+            line-height: 1.1;
+            color: #282d34;
+            font-weight: 700;
+        }
+        .msgp-text span {
+            display: block;
+            margin-top: 4px;
+            font-size: 0.86rem;
+            color: #636770;
+            font-weight: 600;
+            line-height: 1.25;
+        }
+        .msgp-item.is-active .msgp-text strong,
+        .msgp-item.is-active .msgp-text span {
+            color: #e9eeff;
+        }
+        .msgp-meta {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 6px;
+            min-width: 30px;
+        }
+        .msgp-time {
+            font-size: 0.75rem;
+            color: #818693;
+            font-weight: 700;
+        }
+        .msgp-item.is-active .msgp-time { color: #dce5ff; }
+        .msgp-unread {
+            min-width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #1570ff;
+            color: #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0 6px;
+        }
+        .msgp-empty {
+            color: #6c727c;
+            padding: 12px;
+            font-weight: 600;
+            text-align: center;
+        }
+        .msgp-thread {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+        }
+        .msgp-thread-top {
+            padding: 12px;
+            background: #f5f6f8;
+            border-bottom: 1px solid #dfe2e8;
+            display: grid;
+            grid-template-columns: 34px 42px 1fr 34px;
+            align-items: center;
+            gap: 8px;
+        }
+        .msgp-icon-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            border: 1px solid #c6cbd4;
+            background: #fff;
+            color: #454a52;
+            cursor: pointer;
+        }
+        .msgp-thread-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 1px solid #d0d5dc;
+        }
+        .msgp-thread-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .msgp-thread-user strong {
+            display: block;
+            font-size: 0.95rem;
+            color: #2e343c;
+        }
+        .msgp-thread-user span {
+            display: block;
+            font-size: 0.75rem;
+            color: #1b8f4f;
+            font-weight: 700;
+            margin-top: 2px;
+        }
+        .msgp-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: #f0f2f5;
+        }
+        .msgp-bubble {
+            max-width: 78%;
+            border-radius: 18px;
+            padding: 8px 12px;
+            font-size: 0.9rem;
+            line-height: 1.35;
+            position: relative;
+        }
+        .msgp-bubble.them {
+            align-self: flex-start;
+            background: #fff;
+            color: #20242b;
+        }
+        .msgp-bubble.me {
+            align-self: flex-end;
+            background: linear-gradient(140deg, #1a74ff, #0465f7);
+            color: #fff;
+        }
+        .msgp-bubble-time {
+            display: block;
+            margin-top: 3px;
+            font-size: 0.68rem;
+            opacity: 0.7;
+        }
+        .msgp-composer {
+            border-top: 1px solid #dfe2e8;
+            background: #f7f8fa;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px;
+        }
+        .msgp-composer input {
+            flex: 1;
+            height: 40px;
+            border: none;
+            border-radius: 20px;
+            padding: 0 14px;
+            background: #e6e8ec;
+            outline: none;
+            font-weight: 600;
+            color: #2f353d;
+        }
+        .msgp-send {
+            border: none;
+            background: #1170ff;
+            color: #fff;
+            font-weight: 700;
+            border-radius: 18px;
+            height: 36px;
+            padding: 0 14px;
+            cursor: pointer;
+        }
+        .msgp-typing {
+            color: #6e7480;
+            font-size: 0.78rem;
+            font-weight: 700;
+            padding: 0 12px 8px;
+            display: none;
         }
 
         /* Responsivitet för mindre skärmar */
@@ -248,6 +705,15 @@
             .dashboard { grid-template-columns: 1fr; }
             .panel { height: 400px; } /* Ger paneler en fast höjd på mobil */
             .calendar-wrapper { height: auto; }
+            .chat-search-bar { grid-template-columns: 1fr 1fr; }
+            .chat-date-input { width: 100%; }
+            .messenger-popup {
+                right: 10px;
+                left: 10px;
+                bottom: 10px;
+                width: auto;
+                height: 78vh;
+            }
         }
     </style>
 </head>
@@ -275,6 +741,12 @@
         <!-- Mitten: Gruppchatt -->
         <div class="panel chat-container">
             <div class="panel-header">Gruppchatt (Team Alpha)</div>
+            <div class="chat-search-bar">
+                <input type="text" class="chat-search-input" placeholder="Sök i chatten...">
+                <input type="date" class="chat-date-input" aria-label="Från datum">
+                <input type="date" class="chat-date-input" aria-label="Till datum">
+                <button class="chat-search-btn" type="button">Sök</button>
+            </div>
             <div class="chat-feed">
                 
                 <div class="date-divider"><span>Onsdag, 23 Oktober</span></div>
@@ -317,18 +789,14 @@
         <!-- Höger: Kalender & Verktyg -->
         <div class="right-col">
             <div class="panel calendar-wrapper">
-                <div class="panel-header">Kalender - Oktober</div>
+                <div class="panel-header calendar-header">
+                    <button class="calendar-nav" id="prevMonthBtn" aria-label="Föregående månad">‹</button>
+                    <span class="calendar-title" id="calendarTitle">Kalender</span>
+                    <button class="calendar-nav" id="nextMonthBtn" aria-label="Nästa månad">›</button>
+                </div>
                 <div class="panel-content">
-                    <div class="calendar-grid">
+                    <div class="calendar-grid" id="calendarGrid">
                         <div class="cal-day-header">M</div><div class="cal-day-header">T</div><div class="cal-day-header">O</div><div class="cal-day-header">T</div><div class="cal-day-header">F</div><div class="cal-day-header">L</div><div class="cal-day-header">S</div>
-                        <!-- Fejkade dagar för UI -->
-                        <div class="cal-day">...</div><div class="cal-day">...</div><div class="cal-day">1</div><div class="cal-day">2</div><div class="cal-day">3</div><div class="cal-day">4</div><div class="cal-day">5</div>
-                        <div class="cal-day">6</div><div class="cal-day">7</div><div class="cal-day">8</div><div class="cal-day">9</div><div class="cal-day">10</div><div class="cal-day">11</div><div class="cal-day">12</div>
-                        <div class="cal-day">13</div><div class="cal-day">14</div><div class="cal-day">15</div><div class="cal-day">16</div><div class="cal-day">17</div><div class="cal-day">18</div><div class="cal-day">19</div>
-                        <div class="cal-day">20</div><div class="cal-day">21</div><div class="cal-day">22</div><div class="cal-day">23</div>
-                        <div class="cal-day has-event" onclick="openEventModal('24 Okt', 'Veckomöte Team Alpha', 'https://zoom.us/j/12345')">24</div>
-                        <div class="cal-day">25</div><div class="cal-day">26</div>
-                        <div class="cal-day">27</div><div class="cal-day">28</div><div class="cal-day">29</div><div class="cal-day">30</div><div class="cal-day has-event" onclick="openEventModal('31 Okt', 'Projektgenomgång', 'https://zoom.us/j/67890')">31</div>
                     </div>
                 </div>
             </div>
@@ -343,6 +811,9 @@
                     <div class="placeholder-icon" title="Statistik">📊</div>
                     <div class="placeholder-icon" title="Filer">📁</div>
                     <div class="placeholder-icon" title="Inställningar">⚙️</div>
+                    <div class="placeholder-icon" title="Mapp" onclick="openFolderModal()">
+                        <img src="mapp.svg" alt="Mapp" class="tool-icon-svg">
+                    </div>
                 </div>
             </div>
         </div>
@@ -351,15 +822,37 @@
 
     <!-- Messenger Popup -->
     <div class="messenger-popup" id="msgPopup">
-        <div class="panel-header">
-            Messenger
-            <button class="modal-close" style="float: right; font-size: 1em;" onclick="toggleMessenger()">✖</button>
+        <div id="msgpListView" style="display:flex; flex-direction:column; height:100%;">
+            <div class="msgp-header">
+                <div class="msgp-title">Chats</div>
+                <div class="msgp-actions">
+                    <button class="msgp-action-btn" type="button" title="Video">📹</button>
+                    <button class="msgp-action-btn" type="button" title="Ny chatt">＋</button>
+                    <button class="msgp-action-btn" type="button" title="Stäng" onclick="toggleMessenger()">✕</button>
+                </div>
+            </div>
+            <label class="msgp-search">
+                <span>🔎</span>
+                <input id="msgpSearchInput" type="text" placeholder="Search messenger...">
+            </label>
+            <div class="msgp-list" id="msgpList"></div>
         </div>
-        <div class="panel-content" style="text-align:center; color:#777;">
-            Inga nya meddelanden.
-        </div>
-        <div class="chat-input-area">
-            <input type="text" placeholder="Sök kontakt...">
+        <div class="msgp-thread" id="msgpThreadView">
+            <div class="msgp-thread-top">
+                <button class="msgp-icon-btn" type="button" id="msgpBackBtn" aria-label="Tillbaka">‹</button>
+                <div class="msgp-thread-avatar"><img id="msgpThreadAvatar" src="" alt="Kontakt"></div>
+                <div class="msgp-thread-user">
+                    <strong id="msgpThreadName">Kontakt</strong>
+                    <span id="msgpThreadStatus">Active now</span>
+                </div>
+                <button class="msgp-icon-btn" type="button" aria-label="Stäng" onclick="toggleMessenger()">✕</button>
+            </div>
+            <div class="msgp-messages" id="msgpMessages"></div>
+            <div class="msgp-typing" id="msgpTyping">Typing...</div>
+            <div class="msgp-composer">
+                <input id="msgpMessageInput" type="text" placeholder="Aa">
+                <button class="msgp-send" id="msgpSendBtn" type="button">Skicka</button>
+            </div>
         </div>
     </div>
 
@@ -374,7 +867,102 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="folderModal">
+        <div class="folder-modal-content">
+            <div class="fs-toolbar">
+                <button class="fs-back-btn" type="button" onclick="fsGoBack()">⬅ Upp</button>
+                <div class="fs-address-bar" id="fsAddressBar">Denna dator > Dokument</div>
+                <button class="fs-close-btn" type="button" onclick="closeFolderModal()">✕</button>
+            </div>
+            <div class="fs-file-display" id="fsFileDisplay"></div>
+
+            <div class="fs-context-menu" id="fsContextMenu">
+                <div class="fs-menu-item" onclick="fsCreateNewItem('folder')">Ny mapp</div>
+                <div class="fs-menu-item" onclick="fsCreateNewItem('file')">Ny textfil (.txt)</div>
+            </div>
+
+            <div class="fs-editor-overlay" id="fsEditorOverlay">
+                <div class="fs-editor-container">
+                    <div class="fs-editor-header" id="fsEditorFilename">Filnamn.txt</div>
+                    <textarea class="fs-text-content" id="fsTextContent"></textarea>
+                    <div class="fs-btn-row">
+                        <button class="fs-btn" type="button" onclick="fsCloseEditor()">Avbryt</button>
+                        <button class="fs-btn fs-btn-primary" type="button" onclick="fsSaveFile()">Spara</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
+        const monthNames = [
+            'Januari', 'Februari', 'Mars', 'April', 'Maj', 'Juni',
+            'Juli', 'Augusti', 'September', 'Oktober', 'November', 'December'
+        ];
+        const shortMonthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Maj', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'];
+
+        const eventsByDate = {
+            '2025-10-24': { title: 'Veckomöte Team Alpha', link: 'https://zoom.us/j/12345' },
+            '2025-10-31': { title: 'Projektgenomgång', link: 'https://zoom.us/j/67890' }
+        };
+
+        const calendarState = { year: 2025, month: 9 }; // Oktober (0-indexerad)
+
+        function formatDateKey(year, month, day) {
+            const mm = String(month + 1).padStart(2, '0');
+            const dd = String(day).padStart(2, '0');
+            return `${year}-${mm}-${dd}`;
+        }
+
+        function renderCalendar() {
+            const title = document.getElementById('calendarTitle');
+            const grid = document.getElementById('calendarGrid');
+            title.innerText = `Kalender - ${monthNames[calendarState.month]} ${calendarState.year}`;
+
+            grid.innerHTML = `
+                <div class="cal-day-header">M</div><div class="cal-day-header">T</div><div class="cal-day-header">O</div>
+                <div class="cal-day-header">T</div><div class="cal-day-header">F</div><div class="cal-day-header">L</div><div class="cal-day-header">S</div>
+            `;
+
+            const firstDay = new Date(calendarState.year, calendarState.month, 1);
+            const daysInMonth = new Date(calendarState.year, calendarState.month + 1, 0).getDate();
+            const startOffset = (firstDay.getDay() + 6) % 7; // Gör söndag=6, måndag=0
+
+            for (let i = 0; i < startOffset; i++) {
+                const emptyDay = document.createElement('div');
+                emptyDay.className = 'cal-day';
+                emptyDay.innerText = '';
+                grid.appendChild(emptyDay);
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateKey = formatDateKey(calendarState.year, calendarState.month, day);
+                const event = eventsByDate[dateKey];
+                const dayElement = document.createElement('div');
+                dayElement.className = event ? 'cal-day has-event' : 'cal-day';
+                dayElement.innerText = day;
+
+                if (event) {
+                    dayElement.addEventListener('click', function() {
+                        openEventModal(`${day} ${shortMonthNames[calendarState.month]}`, event.title, event.link);
+                    });
+                }
+                grid.appendChild(dayElement);
+            }
+        }
+
+        function changeMonth(delta) {
+            calendarState.month += delta;
+            if (calendarState.month < 0) {
+                calendarState.month = 11;
+                calendarState.year -= 1;
+            } else if (calendarState.month > 11) {
+                calendarState.month = 0;
+                calendarState.year += 1;
+            }
+            renderCalendar();
+        }
+
         // JS för kalender modal
         function openEventModal(date, title, zoomLink) {
             document.getElementById('modalDate').innerText = date;
@@ -392,6 +980,368 @@
             if(e.target === this) closeModal();
         });
 
+        function openFolderModal() {
+            document.getElementById('folderModal').style.display = 'flex';
+            fsRender();
+        }
+
+        function closeFolderModal() {
+            document.getElementById('folderModal').style.display = 'none';
+            document.getElementById('fsContextMenu').style.display = 'none';
+            fsCloseEditor();
+        }
+
+        const fsModel = {
+            name: 'root',
+            type: 'folder',
+            children: {
+                'Gemensam mapp': {
+                    type: 'folder',
+                    children: {
+                        'Projektplan.pdf': { type: 'file', content: 'Projektplan version 1.2' },
+                        'Roadmap.txt': { type: 'file', content: 'Q1: Planering\nQ2: Leverans' }
+                    }
+                },
+                'Privat': {
+                    type: 'folder',
+                    children: {
+                        'Anteckningar.txt': { type: 'file', content: 'Mina privata anteckningar.' }
+                    }
+                }
+            }
+        };
+        let fsCurrentPath = [];
+        let fsOpenFileName = null;
+        const fsFileDisplay = document.getElementById('fsFileDisplay');
+        const fsContextMenu = document.getElementById('fsContextMenu');
+        const fsAddressBar = document.getElementById('fsAddressBar');
+        const fsEditorOverlay = document.getElementById('fsEditorOverlay');
+        const fsTextContent = document.getElementById('fsTextContent');
+        const fsEditorFilename = document.getElementById('fsEditorFilename');
+
+        function fsGetCurrentFolder() {
+            let folder = fsModel;
+            fsCurrentPath.forEach(function(part) {
+                folder = folder.children[part];
+            });
+            return folder;
+        }
+
+        function fsRender() {
+            const folder = fsGetCurrentFolder();
+            fsFileDisplay.innerHTML = '';
+            fsAddressBar.innerText = 'Denna dator > ' + (fsCurrentPath.join(' > ') || 'Dokument');
+
+            Object.keys(folder.children).forEach(function(name) {
+                const item = folder.children[name];
+                const icon = item.type === 'folder' ? '📁' : '📄';
+                const div = document.createElement('div');
+                div.className = 'fs-item';
+                div.innerHTML = `
+                    <div class="fs-item-icon">${icon}</div>
+                    <div class="fs-item-name">${name}</div>
+                `;
+                div.onclick = function() {
+                    if (item.type === 'folder') {
+                        fsCurrentPath.push(name);
+                        fsRender();
+                    } else {
+                        fsOpenFile(name);
+                    }
+                };
+                fsFileDisplay.appendChild(div);
+            });
+        }
+
+        function fsGoBack() {
+            if (fsCurrentPath.length > 0) {
+                fsCurrentPath.pop();
+                fsRender();
+            }
+        }
+
+        function fsCreateNewItem(type) {
+            const name = prompt(type === 'folder' ? 'Ange mappnamn:' : 'Ange filnamn:');
+            if (!name) return;
+
+            const folder = fsGetCurrentFolder();
+            if (folder.children[name]) {
+                alert('Namnet finns redan!');
+                return;
+            }
+
+            folder.children[name] = {
+                type: type,
+                content: type === 'file' ? '' : null,
+                children: type === 'folder' ? {} : null
+            };
+            fsContextMenu.style.display = 'none';
+            fsRender();
+        }
+
+        function fsOpenFile(name) {
+            const folder = fsGetCurrentFolder();
+            fsOpenFileName = name;
+            fsEditorFilename.innerText = name;
+            fsTextContent.value = folder.children[name].content || '';
+            fsEditorOverlay.style.display = 'flex';
+        }
+
+        function fsCloseEditor() {
+            fsEditorOverlay.style.display = 'none';
+            fsOpenFileName = null;
+        }
+
+        function fsSaveFile() {
+            const folder = fsGetCurrentFolder();
+            if (!fsOpenFileName || !folder.children[fsOpenFileName]) return;
+            folder.children[fsOpenFileName].content = fsTextContent.value;
+            fsCloseEditor();
+            alert('Filen sparades!');
+        }
+
+        document.getElementById('folderModal').addEventListener('click', function(e) {
+            if (e.target === this) closeFolderModal();
+        });
+        fsFileDisplay.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            fsContextMenu.style.display = 'block';
+            const bounds = document.querySelector('.folder-modal-content').getBoundingClientRect();
+            fsContextMenu.style.left = (e.clientX - bounds.left) + 'px';
+            fsContextMenu.style.top = (e.clientY - bounds.top) + 'px';
+        });
+        document.addEventListener('click', function(e) {
+            if (!fsContextMenu.contains(e.target)) {
+                fsContextMenu.style.display = 'none';
+            }
+        });
+
+        const messengerState = {
+            activeThreadId: null,
+            filter: ''
+        };
+        const messengerThreads = [
+            {
+                id: 'lilly',
+                name: 'Lilly Jr.',
+                avatar: 'https://api.dicebear.com/9.x/adventurer/svg?seed=Lilly%20Jr&backgroundType=gradientLinear',
+                online: true,
+                unread: 2,
+                updatedAt: Date.now() - 3 * 60 * 1000,
+                messages: [
+                    { from: 'them', text: 'Can you check the latest mockup?', at: Date.now() - 50 * 60 * 1000 },
+                    { from: 'me', text: 'Sure, I am reviewing it now.', at: Date.now() - 47 * 60 * 1000 },
+                    { from: 'them', text: 'Good idea! i like this.', at: Date.now() - 3 * 60 * 1000 }
+                ]
+            },
+            {
+                id: 'rihanna',
+                name: 'Rihanna Goldberg',
+                avatar: 'https://api.dicebear.com/9.x/adventurer/svg?seed=Rihanna%20Goldberg&backgroundType=gradientLinear',
+                online: true,
+                unread: 0,
+                updatedAt: Date.now() - 18 * 60 * 1000,
+                messages: [
+                    { from: 'me', text: 'I sent over the campaign files.', at: Date.now() - 25 * 60 * 1000 },
+                    { from: 'them', text: 'Great. Thanks!', at: Date.now() - 18 * 60 * 1000 }
+                ]
+            },
+            {
+                id: 'gregory',
+                name: 'Gregory Portman',
+                avatar: 'https://api.dicebear.com/9.x/adventurer/svg?seed=Gregory%20Portman&backgroundType=gradientLinear',
+                online: false,
+                unread: 1,
+                updatedAt: Date.now() - 61 * 60 * 1000,
+                messages: [
+                    { from: 'them', text: 'This is so good man. Will do Remix.', at: Date.now() - 61 * 60 * 1000 }
+                ]
+            },
+            {
+                id: 'marry',
+                name: 'Marry Adams',
+                avatar: 'https://api.dicebear.com/9.x/adventurer/svg?seed=Marry%20Adams&backgroundType=gradientLinear',
+                online: false,
+                unread: 0,
+                updatedAt: Date.now() - 130 * 60 * 1000,
+                messages: [
+                    { from: 'them', text: 'Cool. We can help Lilly.', at: Date.now() - 130 * 60 * 1000 }
+                ]
+            },
+            {
+                id: 'callie',
+                name: 'Callie Goodman',
+                avatar: 'https://api.dicebear.com/9.x/adventurer/svg?seed=Callie%20Goodman&backgroundType=gradientLinear',
+                online: true,
+                unread: 0,
+                updatedAt: Date.now() - 245 * 60 * 1000,
+                messages: [
+                    { from: 'me', text: 'Call me today. We have a new project.', at: Date.now() - 245 * 60 * 1000 }
+                ]
+            }
+        ];
+
+        function getThreadById(id) {
+            return messengerThreads.find(function(t) { return t.id === id; });
+        }
+
+        function formatMessengerTime(ts) {
+            const diffMinutes = Math.floor((Date.now() - ts) / 60000);
+            if (diffMinutes < 1) return 'now';
+            if (diffMinutes < 60) return diffMinutes + 'm';
+            if (diffMinutes < 1440) return Math.floor(diffMinutes / 60) + 'h';
+            return Math.floor(diffMinutes / 1440) + 'd';
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function renderMessengerList() {
+            const list = document.getElementById('msgpList');
+            const filter = messengerState.filter.trim().toLowerCase();
+            const threads = messengerThreads
+                .slice()
+                .sort(function(a, b) { return b.updatedAt - a.updatedAt; })
+                .filter(function(thread) {
+                    if (!filter) return true;
+                    const lastText = thread.messages[thread.messages.length - 1].text.toLowerCase();
+                    return thread.name.toLowerCase().includes(filter) || lastText.includes(filter);
+                });
+
+            if (!threads.length) {
+                list.innerHTML = '<div class="msgp-empty">Inga konversationer matchar sökningen.</div>';
+                return;
+            }
+
+            list.innerHTML = threads.map(function(thread) {
+                const lastMessage = thread.messages[thread.messages.length - 1];
+                const preview = (lastMessage.from === 'me' ? 'You: ' : '') + lastMessage.text;
+                const previewClipped = preview.length > 42 ? preview.slice(0, 42) + '...' : preview;
+                const activeClass = messengerState.activeThreadId === thread.id ? ' is-active' : '';
+                const unread = thread.unread > 0 ? '<span class="msgp-unread">' + thread.unread + '</span>' : '';
+                return `
+                    <button class="msgp-item${activeClass}" type="button" data-thread-id="${thread.id}">
+                        <div class="msgp-avatar"><img src="${thread.avatar}" alt="${escapeHtml(thread.name)}"></div>
+                        <div class="msgp-text">
+                            <strong>${escapeHtml(thread.name)}</strong>
+                            <span>${escapeHtml(previewClipped)}</span>
+                        </div>
+                        <div class="msgp-meta">
+                            <span class="msgp-time">${formatMessengerTime(thread.updatedAt)}</span>
+                            ${unread}
+                        </div>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function renderActiveThread() {
+            const thread = getThreadById(messengerState.activeThreadId);
+            if (!thread) return;
+            const msgList = document.getElementById('msgpMessages');
+            document.getElementById('msgpThreadName').innerText = thread.name;
+            document.getElementById('msgpThreadAvatar').src = thread.avatar;
+            document.getElementById('msgpThreadStatus').innerText = thread.online ? 'Active now' : 'Offline';
+
+            msgList.innerHTML = thread.messages.map(function(message) {
+                return `
+                    <div class="msgp-bubble ${message.from === 'me' ? 'me' : 'them'}">
+                        ${escapeHtml(message.text)}
+                        <span class="msgp-bubble-time">${formatMessengerTime(message.at)}</span>
+                    </div>
+                `;
+            }).join('');
+            msgList.scrollTop = msgList.scrollHeight;
+        }
+
+        function openMessengerThread(threadId) {
+            messengerState.activeThreadId = threadId;
+            const thread = getThreadById(threadId);
+            if (!thread) return;
+            thread.unread = 0;
+            renderMessengerList();
+            renderActiveThread();
+            document.getElementById('msgpListView').style.display = 'none';
+            document.getElementById('msgpThreadView').style.display = 'flex';
+            document.getElementById('msgpMessageInput').focus();
+        }
+
+        function openMessengerList() {
+            document.getElementById('msgpThreadView').style.display = 'none';
+            document.getElementById('msgpListView').style.display = 'flex';
+            renderMessengerList();
+        }
+
+        function simulateReply(thread) {
+            const typing = document.getElementById('msgpTyping');
+            typing.style.display = 'block';
+            setTimeout(function() {
+                const cannedReplies = [
+                    'Låter bra, jag återkommer strax.',
+                    'Perfekt, kör på det.',
+                    'Toppen, tack for snabb uppdatering.',
+                    'Jag kollar och svarar om en minut.'
+                ];
+                const text = cannedReplies[Math.floor(Math.random() * cannedReplies.length)];
+                thread.messages.push({ from: 'them', text: text, at: Date.now() });
+                thread.updatedAt = Date.now();
+                typing.style.display = 'none';
+
+                if (messengerState.activeThreadId === thread.id && document.getElementById('msgpThreadView').style.display === 'flex') {
+                    renderActiveThread();
+                } else {
+                    thread.unread += 1;
+                }
+                renderMessengerList();
+            }, 1200);
+        }
+
+        function sendMessengerMessage() {
+            const input = document.getElementById('msgpMessageInput');
+            const text = input.value.trim();
+            const thread = getThreadById(messengerState.activeThreadId);
+            if (!thread || !text) return;
+
+            thread.messages.push({ from: 'me', text: text, at: Date.now() });
+            thread.updatedAt = Date.now();
+            input.value = '';
+            renderActiveThread();
+            renderMessengerList();
+            simulateReply(thread);
+        }
+
+        function initMessenger() {
+            renderMessengerList();
+
+            document.getElementById('msgpSearchInput').addEventListener('input', function(e) {
+                messengerState.filter = e.target.value;
+                renderMessengerList();
+            });
+
+            document.getElementById('msgpList').addEventListener('click', function(e) {
+                const row = e.target.closest('[data-thread-id]');
+                if (!row) return;
+                openMessengerThread(row.getAttribute('data-thread-id'));
+            });
+
+            document.getElementById('msgpBackBtn').addEventListener('click', function() {
+                openMessengerList();
+            });
+
+            document.getElementById('msgpSendBtn').addEventListener('click', function() {
+                sendMessengerMessage();
+            });
+
+            document.getElementById('msgpMessageInput').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') sendMessengerMessage();
+            });
+        }
+
         // JS för Messenger popup
         function toggleMessenger() {
             const popup = document.getElementById('msgPopup');
@@ -399,8 +1349,19 @@
                 popup.style.display = 'none';
             } else {
                 popup.style.display = 'flex';
+                openMessengerList();
             }
         }
+
+        document.getElementById('prevMonthBtn').addEventListener('click', function() {
+            changeMonth(-1);
+        });
+        document.getElementById('nextMonthBtn').addEventListener('click', function() {
+            changeMonth(1);
+        });
+
+        renderCalendar();
+        initMessenger();
     </script>
 </body>
 </html>
