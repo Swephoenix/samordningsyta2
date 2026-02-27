@@ -189,110 +189,633 @@
         }
 
         /* Mittenkolumn: Chatt */
-        .chat-container { display: flex; flex-direction: column; height: 100%; }
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            background: #1f2329;
+            border-color: #2b313a;
+        }
         .chat-panel-title {
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 10px;
+            padding: 12px 16px;
+            border-bottom: 1px solid #2b313a;
+            background: #242a33;
         }
-        .chat-presence {
-            font-size: 0.78rem;
-            color: var(--text-muted);
-            font-weight: 600;
+        .chat-title-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
         }
+        .chat-title-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #3a77f3;
+            color: #fff;
+            font-size: 1.05rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .chat-title-text {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .chat-title-main {
+            font-size: 0.95rem;
+            color: #f2f5fb;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .chat-header-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .chat-auth-badge {
+            font-size: 0.72rem;
+            color: #b8c6df;
+            background: #2f3743;
+            border: 1px solid #3b4453;
+            border-radius: 999px;
+            padding: 5px 9px;
+            max-width: 220px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .chat-header-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            background: #2f3743;
+            color: #9fc2ff;
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+        .chat-header-btn:hover { background: #384355; }
         .chat-search-bar {
-            padding: 12px 15px;
-            border-bottom: 1px solid var(--border-color);
-            background: #fafafa;
-            display: grid;
+            padding: 0;
+            border: 0;
+            background: transparent;
+            display: none;
             grid-template-columns: 1fr auto auto auto;
             gap: 8px;
             align-items: center;
         }
+        .chat-presence {
+            font-size: 0.78rem;
+            color: #95a0b3;
+            font-weight: 600;
+        }
+        .chat-notify-badge {
+            display: none;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 999px;
+            background: #3a77f3;
+            color: #fff;
+            font-size: 0.7rem;
+            font-weight: 700;
+            align-items: center;
+            justify-content: center;
+            padding: 0 5px;
+            margin-left: 8px;
+        }
         .chat-search-input,
         .chat-date-input {
-            border: 1px solid var(--border-color);
+            border: 1px solid #3a4353;
             border-radius: 8px;
             padding: 8px 10px;
             outline: none;
-            background: #fff;
-            color: var(--text-main);
+            background: #222a36;
+            color: #d8e2f0;
         }
         .chat-search-input { min-width: 0; }
         .chat-date-input { width: 145px; }
         .chat-search-btn {
-            border: 1px solid var(--border-color);
+            border: 1px solid #3a4353;
             border-radius: 8px;
-            background: #fff;
+            background: #222a36;
             padding: 8px 12px;
             cursor: pointer;
-            color: var(--text-main);
+            color: #d8e2f0;
         }
-        .chat-search-btn:hover { background: var(--bg-color); }
-        .chat-feed { flex: 1; overflow-y: auto; padding: 20px; }
+        .chat-search-btn:hover { background: #2a3342; }
+        .chat-main-shell {
+            flex: 1;
+            min-height: 0;
+            display: grid;
+            grid-template-columns: 260px 1fr;
+        }
+        .chat-main-pane {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-feed {
+            flex: 1;
+            overflow-y: auto;
+            padding: 18px 16px;
+            background: #1f2329;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
         
         .date-divider {
             text-align: center;
             position: relative;
-            margin: 20px 0;
+            margin: 8px 0 10px;
         }
         .date-divider span {
-            background: var(--bg-color);
-            padding: 5px 15px;
+            background: #2a303b;
+            color: #98a2b3;
+            padding: 4px 10px;
             border-radius: 20px;
             font-size: 0.8em;
-            color: var(--text-muted);
         }
 
         .chat-post {
-            background: var(--bg-color);
-            padding: 15px;
-            border-radius: var(--radius);
-            margin-bottom: 15px;
+            max-width: 76%;
+            border-radius: 18px;
+            padding: 10px 12px;
+            margin-bottom: 2px;
+            line-height: 1.35;
+            font-size: 0.92rem;
+            position: relative;
+        }
+        .chat-post.mine {
+            align-self: flex-end;
+            background: #7b2cff;
+            color: #fff;
+            border-bottom-right-radius: 5px;
+        }
+        .chat-post.theirs {
+            align-self: flex-start;
+            background: #2f3743;
+            color: #e9eef7;
+            border-bottom-left-radius: 5px;
+            margin-right: 30px;
         }
         .chat-post-seen {
-            margin-top: 6px;
-            font-size: 0.75rem;
-            color: var(--text-muted);
+            margin-top: 5px;
+            font-size: 0.68rem;
+            color: #b7c2d8;
             text-align: right;
+            opacity: 0.9;
         }
         .chat-post-header {
             display: flex;
             justify-content: space-between;
-            font-size: 0.85em;
-            color: var(--text-muted);
+            font-size: 0.72rem;
+            color: #a8b0c1;
             margin-bottom: 5px;
+            gap: 12px;
         }
-        .chat-comments {
-            margin-top: 10px;
-            padding-left: 15px;
-            border-left: 2px solid var(--border-color);
-            font-size: 0.9em;
+        .chat-post-meta {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .chat-reply-btn {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255,255,255,0.12);
+            color: #dce6fb;
+            cursor: pointer;
+            font-size: 0.72rem;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+        .chat-reply-btn:hover { background: rgba(255,255,255,0.22); }
+        .chat-post.theirs .chat-reply-btn { background: rgba(74,163,255,0.18); color: #cfe2ff; }
+        .chat-post.theirs .chat-reply-btn:hover { background: rgba(74,163,255,0.28); }
+        .chat-post.theirs .chat-reply-btn {
+            position: absolute;
+            right: -26px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .chat-post-header strong {
+            font-weight: 700;
+            color: inherit;
         }
         
         .chat-input-area {
-            padding: 15px;
-            border-top: 1px solid var(--border-color);
+            padding: 12px 14px;
+            border-top: 1px solid #2b313a;
             display: flex;
+            align-items: center;
             gap: 10px;
-            background: #fafafa;
+            background: #242a33;
+        }
+        .chat-reply-bar {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 8px 12px;
+            border-top: 1px solid #303848;
+            background: #2a3140;
+            color: #dce6fb;
+            font-size: 0.78rem;
+        }
+        .chat-reply-text {
+            min-width: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .chat-reply-cancel {
+            border: none;
+            background: transparent;
+            color: #9fc2ff;
+            cursor: pointer;
+            font-weight: 700;
+        }
+        .chat-reply-preview {
+            margin-bottom: 6px;
+            padding: 6px 8px;
+            border-left: 3px solid rgba(255,255,255,0.45);
+            background: rgba(255,255,255,0.08);
+            border-radius: 6px;
+            font-size: 0.72rem;
+            line-height: 1.3;
+        }
+        .chat-post.theirs .chat-reply-preview {
+            border-left-color: rgba(120,160,255,0.75);
+            background: rgba(58,119,243,0.12);
         }
         .chat-input-area input {
             flex: 1;
-            padding: 10px 15px;
-            border: 1px solid var(--border-color);
+            padding: 10px 14px;
+            border: 1px solid #3a4353;
             border-radius: 20px;
             outline: none;
+            background: #1f2329;
+            color: #e8edf7;
+        }
+        .chat-input-area input::placeholder { color: #97a2b5; }
+        .chat-input-tools {
+            display: inline-flex;
+            gap: 4px;
         }
         .btn-icon {
-            background: none; border: none; font-size: 1.2em; cursor: pointer; color: var(--text-muted);
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            font-size: 1rem;
+            cursor: pointer;
+            color: #4aa3ff;
+        }
+        .btn-icon:hover { background: #303848; }
+        .chat-send-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: none;
+            background: #3a77f3;
+            color: #fff;
+            font-size: 0.95rem;
+            cursor: pointer;
+        }
+        .chat-send-btn:hover { background: #2d66d9; }
+        .chat-input-area .btn-icon[title="Bifoga fil"] {
+            width: 34px;
+            height: 34px;
+            background: #303848;
+        }
+        .chat-thread-sidebar {
+            min-width: 0;
+            background: #222831;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #2b313a;
+        }
+        .chat-thread-sidebar-header {
+            padding: 12px 12px 10px;
+            border-bottom: 1px solid #2b313a;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .chat-thread-search-wrap {
+            padding: 8px 10px;
+            border-bottom: 1px solid #2b313a;
+            background: #222831;
+        }
+        .chat-thread-search {
+            width: 100%;
+            border: 1px solid #3a4353;
+            border-radius: 999px;
+            background: #1f2630;
+            color: #dce6fb;
+            font-size: 0.82rem;
+            padding: 8px 12px;
+            outline: none;
+        }
+        .chat-thread-search::placeholder { color: #8f9db5; }
+        .chat-thread-sidebar-header span {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #dce5f8;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .chat-new-group-btn {
+            border: 1px solid #3a4353;
+            border-radius: 8px;
+            background: #2a3342;
+            color: #dbe6ff;
+            font-size: 0.74rem;
+            font-weight: 700;
+            padding: 5px 8px;
+            cursor: pointer;
+        }
+        .chat-new-group-btn:hover { background: #334058; }
+        .chat-compose-top {
+            display: none;
+            position: relative;
+            padding: 10px 12px;
+            border-bottom: 1px solid #2f3743;
+            background: #20262f;
+        }
+        .chat-compose-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        .chat-compose-label {
+            color: #c7d4ea;
+            font-size: 0.9rem;
+            padding-top: 4px;
+        }
+        .chat-compose-recipients {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+        }
+        .chat-compose-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #234a7f;
+            color: #cde4ff;
+            border: 1px solid #2e5f9f;
+            border-radius: 8px;
+            padding: 4px 8px;
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+        .chat-compose-chip button {
+            border: none;
+            background: transparent;
+            color: #9ec7ff;
+            cursor: pointer;
+            font-size: 0.82rem;
+            line-height: 1;
+            padding: 0;
+        }
+        .chat-compose-input {
+            flex: 1 1 180px;
+            min-width: 160px;
+            border: none;
+            background: transparent;
+            color: #e7efff;
+            font-size: 0.9rem;
+            padding: 4px 0;
+            outline: none;
+        }
+        .chat-compose-suggestions {
+            position: absolute;
+            left: 44px;
+            right: 12px;
+            top: calc(100% - 2px);
+            background: #242d39;
+            border: 1px solid #374357;
+            border-radius: 8px;
+            max-height: 190px;
+            overflow-y: auto;
+            z-index: 40;
+            display: none;
+        }
+        .chat-compose-suggestion {
+            width: 100%;
+            border: none;
+            background: transparent;
+            color: #d7e4fa;
+            text-align: left;
+            padding: 8px 10px;
+            cursor: pointer;
+            font-size: 0.84rem;
+        }
+        .chat-compose-suggestion:hover { background: #2d394d; }
+        .chat-compose-hint {
+            margin-top: 8px;
+            font-size: 0.74rem;
+            color: #9fb0c9;
+            line-height: 1.35;
+        }
+        .group-create-content {
+            background: #242a33;
+            border: 1px solid #364052;
+            width: min(92vw, 440px);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 16px 34px rgba(0,0,0,0.45);
+        }
+        .group-create-content .modal-close {
+            color: #c6d3ea;
+            font-size: 1rem;
+        }
+        .group-create-content h3 {
+            margin-bottom: 10px;
+            font-size: 1.05rem;
+            color: #eef3fc;
+        }
+        .group-create-row { margin-bottom: 10px; }
+        .group-create-row label {
+            display: block;
+            font-size: 0.82rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: #c8d5ea;
+        }
+        .group-create-row input {
+            width: 100%;
+            border: 1px solid #3c4658;
+            border-radius: 8px;
+            padding: 8px 10px;
+            outline: none;
+            background: #1f2530;
+            color: #edf3ff;
+        }
+        .group-create-row input::placeholder {
+            color: #90a0bb;
+        }
+        .group-create-list {
+            max-height: 220px;
+            overflow-y: auto;
+            border: 1px solid #3a4353;
+            border-radius: 8px;
+            padding: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            background: #1f2530;
+        }
+        .group-create-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            padding: 6px;
+            border-radius: 6px;
+            color: #dce6fb;
+        }
+        .group-create-item:hover { background: #2d3645; }
+        .group-create-item input[type="checkbox"] {
+            accent-color: #3a77f3;
+        }
+        .group-create-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .group-create-btn {
+            border: 1px solid #3b4558;
+            border-radius: 8px;
+            background: #2b3342;
+            color: #dce6fb;
+            padding: 7px 10px;
+            cursor: pointer;
+        }
+        .group-create-btn:hover { background: #354155; }
+        .group-create-btn.primary {
+            background: #3a77f3;
+            border-color: #3a77f3;
+            color: #fff;
+            font-weight: 700;
+        }
+        .chat-thread-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .chat-thread-row {
+            border: none;
+            background: transparent;
+            color: inherit;
+            text-align: left;
+            width: 100%;
+            cursor: pointer;
+            border-radius: 10px;
+            padding: 9px 10px;
+            display: grid;
+            grid-template-columns: 34px 1fr auto;
+            gap: 8px;
+            align-items: center;
+        }
+        .chat-thread-row:hover { background: #2d3440; }
+        .chat-thread-row.active { background: #2f3d53; }
+        .chat-thread-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            overflow: visible;
+            background: #3a4353;
+            position: relative;
+        }
+        .chat-thread-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 50%; }
+        .chat-thread-status-dot {
+            position: absolute;
+            right: -1px;
+            bottom: -1px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            border: 2px solid #222831;
+            background: #6f7b90;
+        }
+        .chat-thread-status-dot.online { background: #31a24c; }
+        .chat-thread-text strong {
+            display: block;
+            color: #edf2fc;
+            font-size: 0.82rem;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .chat-thread-text span {
+            display: block;
+            margin-top: 2px;
+            color: #a6b2c8;
+            font-size: 0.74rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .chat-thread-meta {
+            min-width: 24px;
+            display: flex;
+            justify-content: flex-end;
+        }
+        .chat-thread-unread {
+            min-width: 18px;
+            height: 18px;
+            border-radius: 999px;
+            background: #46a3ff;
+            color: #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 0 5px;
+        }
+        .chat-thread-empty {
+            color: #98a2b3;
+            font-size: 0.8rem;
+            padding: 10px;
         }
 
         /* Höger kolumn: Kalender & Verktyg */
         .right-col { display: flex; flex-direction: column; gap: 20px; }
         .calendar-wrapper { flex: 0 0 auto; }
         .placeholders { flex: 1; }
+        .right-col .placeholders {
+            flex: 0 0 290px;
+            min-height: 290px;
+        }
         .calendar-wrapper .panel-content { flex: 0 0 auto; padding-bottom: 14px; }
 
         .calendar-grid {
@@ -346,6 +869,10 @@
             gap: 10px;
             padding: 12px;
         }
+        .right-col .placeholders .placeholder-grid {
+            margin-top: auto;
+            padding-bottom: 16px;
+        }
         
         .placeholder-icon {
             background: var(--bg-color);
@@ -361,6 +888,26 @@
             cursor: pointer;
             transition: transform 0.2s, background 0.2s;
             overflow: visible;
+        }
+        .messenger-tool-icon { position: relative; }
+        .tool-unread-badge {
+            position: absolute;
+            top: -7px;
+            right: -7px;
+            min-width: 20px;
+            height: 20px;
+            padding: 0 6px;
+            border-radius: 999px;
+            background: #0084ff;
+            color: #fff;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.72rem;
+            font-weight: 700;
+            line-height: 1;
+            border: 2px solid #fff;
+            pointer-events: none;
         }
         
         .placeholder-icon:hover {
@@ -596,12 +1143,13 @@
             position: fixed;
             bottom: 24px;
             right: 24px;
-            width: 348px;
-            height: 688px;
-            background: #efeff1;
-            border-radius: 18px;
-            box-shadow: 0 12px 32px rgba(0,0,0,0.2);
-            border: 1px solid #dadde2;
+            width: 380px;
+            height: 600px;
+            max-height: calc(100vh - 120px);
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            border: none;
             display: none;
             flex-direction: column;
             overflow: hidden;
@@ -611,80 +1159,85 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 18px 16px 10px;
+            padding: 12px 16px;
+            border-bottom: 1px solid #e4e6eb;
+            flex-shrink: 0;
         }
         .msgp-title {
-            font-size: 2.7rem;
-            font-weight: 800;
-            letter-spacing: -0.02em;
-            color: #252a30;
+            font-size: 1.2rem;
+            font-weight: 700;
+            letter-spacing: 0;
+            color: #050505;
         }
         .msgp-actions {
             display: flex;
-            gap: 10px;
+            gap: 6px;
         }
         .msgp-action-btn {
-            width: 36px;
-            height: 36px;
-            border-radius: 11px;
-            border: 1px solid #aeb4bd;
-            background: #f0f1f3;
-            color: #3f454e;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            color: #0084ff;
             cursor: pointer;
-            font-size: 1.02rem;
+            font-size: 1rem;
         }
+        .msgp-action-btn:hover { background: #f0f2f5; }
         .msgp-search {
-            margin: 0 16px 12px;
-            background: #d8d8db;
-            border-radius: 24px;
-            height: 46px;
+            margin: 8px 16px;
+            background: #f0f2f5;
+            border-radius: 20px;
+            height: 40px;
             display: flex;
             align-items: center;
-            gap: 9px;
-            padding: 0 14px;
-            color: #62666f;
-            font-weight: 600;
-            font-size: 1.04rem;
+            gap: 8px;
+            padding: 0 12px;
+            color: #65676b;
+            font-weight: 500;
+            font-size: 0.95rem;
+            flex-shrink: 0;
         }
         .msgp-search input {
             width: 100%;
             background: transparent;
             border: none;
             outline: none;
-            color: #3a3f46;
-            font-size: 1rem;
-            font-weight: 600;
+            color: #050505;
+            font-size: 0.95rem;
+            font-weight: 500;
         }
         .msgp-list {
-            padding: 2px 8px 12px;
+            padding: 0 0 8px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 6px;
             flex: 1;
         }
         .msgp-item {
             display: grid;
-            grid-template-columns: 56px 1fr auto;
+            grid-template-columns: 48px 1fr auto;
             align-items: center;
-            gap: 11px;
+            gap: 12px;
             border: none;
             text-align: left;
             width: 100%;
-            border-radius: 999px;
+            border-radius: 0;
             background: transparent;
-            padding: 8px 12px;
-            cursor: default;
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: background 0.2s;
         }
+        .msgp-item:hover { background: #f0f2f5; }
         .msgp-item.is-active {
-            background: linear-gradient(90deg, #3f55dc, #3a77f3);
+            background: #f0f2f5;
         }
         .msgp-avatar {
-            width: 56px;
-            height: 56px;
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
             overflow: hidden;
-            border: 2px solid #e3e5e9;
+            border: none;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -692,41 +1245,41 @@
         .msgp-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
         .msgp-text strong {
             display: block;
-            font-size: 1.03rem;
-            line-height: 1.1;
-            color: #282d34;
-            font-weight: 700;
+            font-size: 0.95rem;
+            line-height: 1.2;
+            color: #050505;
+            font-weight: 600;
         }
         .msgp-text span {
             display: block;
-            margin-top: 4px;
-            font-size: 0.86rem;
-            color: #636770;
-            font-weight: 600;
-            line-height: 1.25;
+            margin-top: 2px;
+            font-size: 0.85rem;
+            color: #65676b;
+            font-weight: 500;
+            line-height: 1.3;
         }
         .msgp-item.is-active .msgp-text strong,
         .msgp-item.is-active .msgp-text span {
-            color: #e9eeff;
+            color: inherit;
         }
         .msgp-meta {
             display: flex;
             flex-direction: column;
             align-items: flex-end;
-            gap: 6px;
+            gap: 4px;
             min-width: 30px;
         }
         .msgp-time {
             font-size: 0.75rem;
-            color: #818693;
-            font-weight: 700;
+            color: #65676b;
+            font-weight: 500;
         }
-        .msgp-item.is-active .msgp-time { color: #dce5ff; }
+        .msgp-item.is-active .msgp-time { color: #65676b; }
         .msgp-unread {
             min-width: 20px;
             height: 20px;
             border-radius: 50%;
-            background: #1570ff;
+            background: #0084ff;
             color: #fff;
             display: inline-flex;
             align-items: center;
@@ -736,9 +1289,9 @@
             padding: 0 6px;
         }
         .msgp-empty {
-            color: #6c727c;
-            padding: 12px;
-            font-weight: 600;
+            color: #65676b;
+            padding: 20px;
+            font-weight: 500;
             text-align: center;
         }
         .msgp-thread {
@@ -748,28 +1301,31 @@
         }
         .msgp-thread-top {
             padding: 12px;
-            background: #f5f6f8;
-            border-bottom: 1px solid #dfe2e8;
+            background: #fff;
+            border-bottom: 1px solid #e4e6eb;
             display: grid;
             grid-template-columns: 34px 42px 1fr 34px;
             align-items: center;
             gap: 8px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            z-index: 2;
         }
         .msgp-icon-btn {
             width: 34px;
             height: 34px;
-            border-radius: 10px;
-            border: 1px solid #c6cbd4;
-            background: #fff;
-            color: #454a52;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            color: #0084ff;
             cursor: pointer;
         }
+        .msgp-icon-btn:hover { background: #f0f2f5; }
         .msgp-thread-avatar {
             width: 42px;
             height: 42px;
             border-radius: 50%;
             overflow: hidden;
-            border: 1px solid #d0d5dc;
+            border: none;
         }
         .msgp-thread-avatar img {
             width: 100%;
@@ -780,82 +1336,90 @@
         .msgp-thread-user strong {
             display: block;
             font-size: 0.95rem;
-            color: #2e343c;
+            color: #050505;
         }
         .msgp-thread-user span {
             display: block;
             font-size: 0.75rem;
-            color: #1b8f4f;
-            font-weight: 700;
+            color: #65676b;
+            font-weight: 500;
             margin-top: 2px;
         }
         .msgp-messages {
             flex: 1;
             overflow-y: auto;
-            padding: 12px;
+            padding: 16px;
             display: flex;
             flex-direction: column;
             gap: 8px;
-            background: #f0f2f5;
+            background: #fff;
         }
         .msgp-bubble {
-            max-width: 78%;
+            max-width: 75%;
             border-radius: 18px;
-            padding: 8px 12px;
-            font-size: 0.9rem;
-            line-height: 1.35;
+            padding: 10px 14px;
+            font-size: 0.95rem;
+            line-height: 1.4;
             position: relative;
         }
         .msgp-bubble.them {
             align-self: flex-start;
-            background: #fff;
-            color: #20242b;
+            background: #e4e6eb;
+            color: #050505;
+            border-bottom-left-radius: 4px;
         }
         .msgp-bubble.me {
             align-self: flex-end;
-            background: linear-gradient(140deg, #1a74ff, #0465f7);
+            background: #0084ff;
             color: #fff;
+            border-bottom-right-radius: 4px;
         }
         .msgp-bubble-time {
             display: block;
-            margin-top: 3px;
+            margin-top: 4px;
+            font-size: 0.7rem;
+            opacity: 0.8;
+        }
+        .msgp-sender {
             font-size: 0.68rem;
-            opacity: 0.7;
+            font-weight: 700;
+            margin-bottom: 3px;
+            opacity: 0.85;
         }
         .msgp-composer {
-            border-top: 1px solid #dfe2e8;
-            background: #f7f8fa;
+            border-top: 1px solid #e4e6eb;
+            background: #fff;
             display: flex;
             align-items: center;
             gap: 8px;
-            padding: 10px;
+            padding: 12px;
         }
         .msgp-composer input {
             flex: 1;
-            height: 40px;
+            height: 38px;
             border: none;
             border-radius: 20px;
             padding: 0 14px;
-            background: #e6e8ec;
+            background: #f0f2f5;
             outline: none;
-            font-weight: 600;
-            color: #2f353d;
+            font-weight: 500;
+            color: #050505;
         }
         .msgp-send {
             border: none;
-            background: #1170ff;
+            background: #0084ff;
             color: #fff;
-            font-weight: 700;
+            font-weight: 600;
             border-radius: 18px;
-            height: 36px;
-            padding: 0 14px;
+            height: 34px;
+            padding: 0 12px;
             cursor: pointer;
         }
         .msgp-typing {
-            color: #6e7480;
-            font-size: 0.78rem;
-            font-weight: 700;
-            padding: 0 12px 8px;
+            color: #65676b;
+            font-size: 0.75rem;
+            font-weight: 500;
+            padding: 0 16px 8px;
             display: none;
         }
 
@@ -870,12 +1434,16 @@
             .calendar-wrapper { height: auto; }
             .chat-search-bar { grid-template-columns: 1fr 1fr; }
             .chat-date-input { width: 100%; }
+            .chat-main-shell { grid-template-columns: 1fr; }
+            .chat-thread-sidebar { display: none; }
             .messenger-popup {
-                right: 10px;
-                left: 10px;
-                bottom: 10px;
-                width: auto;
-                height: 78vh;
+                bottom: 0;
+                right: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                max-height: 100vh;
+                border-radius: 0;
             }
         }
     </style>
@@ -883,29 +1451,31 @@
 <body>
     <div class="dashboard">
         
-        <!-- Vänster: Viktigt & Anteckningar -->
+        <!-- Vänster: Kalender, Möten & Anteckningar -->
         <div class="left-col">
-            <div class="panel messages">
-                <div class="panel-header">Viktiga Meddelanden</div>
+            <div class="panel calendar-wrapper">
+                <div class="panel-header calendar-header">
+                    <button class="calendar-nav" id="prevMonthBtn" aria-label="Föregående månad">‹</button>
+                    <span class="calendar-title" id="calendarTitle">Kalender</span>
+                    <button class="calendar-nav" id="nextMonthBtn" aria-label="Nästa månad">›</button>
+                </div>
                 <div class="panel-content">
-                    <div class="msg-item">🚨 Systemuppdatering inatt kl 02:00.</div>
-                    <div class="msg-item">📢 Deadline för Q3-rapporten är på fredag.</div>
+                    <div class="calendar-grid" id="calendarGrid">
+                        <div class="cal-day-header">M</div><div class="cal-day-header">T</div><div class="cal-day-header">O</div><div class="cal-day-header">T</div><div class="cal-day-header">F</div><div class="cal-day-header">L</div><div class="cal-day-header">S</div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Verktygspanelen flyttad hit -->
-            <div class="panel placeholders">
-                <div class="panel-header">Verktyg</div>
-                <div class="placeholder-grid">
-                    <div class="placeholder-icon" title="Facebook Marketing Academy">🎓</div>
-                    <div class="placeholder-icon" title="Idébank">💡</div>
-                    <div class="placeholder-icon" title="Messenger" onclick="toggleMessenger()">💬</div>
-                    <div class="placeholder-icon" title="Statistik">📊</div>
-                    <div class="placeholder-icon" title="Filer">📁</div>
-                    <div class="placeholder-icon" title="Inställningar">⚙️</div>
-                    <div class="placeholder-icon" id="adminSettingsIcon" title="Admin inställning" style="display:none;">🛡️</div>
-                    <div class="placeholder-icon" title="Mapp" onclick="openFolderModal()">
-                        <img src="folder.svg" alt="Mapp" class="tool-icon-svg">
+            <!-- Mötespanelen -->
+            <div class="panel meetings">
+                <div class="panel-header">Dagens möten</div>
+                <div class="panel-content">
+                    <div class="meetings-admin-row" id="meetingsAdminRow">
+                        <button class="meetings-admin-btn" type="button" onclick="openEventEditorCreate()">+ Nytt möte</button>
+                    </div>
+                    <div class="meetings-list" id="meetingsList"></div>
+                    <div class="meetings-logout-wrap">
+                        <button class="auth-logout" type="button" onclick="logout()">Logga ut</button>
                     </div>
                 </div>
             </div>
@@ -920,8 +1490,20 @@
         <!-- Mitten: Gruppchatt -->
         <div class="panel chat-container">
             <div class="panel-header chat-panel-title">
-                <span>Gruppchatt (Team Alpha)</span>
-                <span class="chat-presence" id="groupChatPresence">0 online</span>
+                <div class="chat-title-wrap">
+                    <div class="chat-title-avatar">TA</div>
+                    <div class="chat-title-text">
+                        <span class="chat-title-main"></span>
+                        <span class="chat-presence" id="groupChatPresence">0 online</span>
+                    </div>
+                    <span class="chat-notify-badge" id="mainChatUnreadBadge">0</span>
+                </div>
+                <div class="chat-header-actions">
+                    <span class="chat-auth-badge" id="chatCurrentUserBadge">Inloggad som: -</span>
+                    <button class="chat-header-btn" type="button" title="Samtal">📞</button>
+                    <button class="chat-header-btn" type="button" title="Video">🎥</button>
+                    <button class="chat-header-btn" type="button" title="Info">ℹ</button>
+                </div>
             </div>
             <div class="chat-search-bar">
                 <input id="chatSearchText" type="text" class="chat-search-input" placeholder="Sök i chatten...">
@@ -929,79 +1511,72 @@
                 <input id="chatToDate" type="date" class="chat-date-input" aria-label="Till datum">
                 <button id="chatSearchBtn" class="chat-search-btn" type="button">Sök</button>
             </div>
-            <div class="chat-feed" id="groupChatFeed"></div>
-            <div class="chat-input-area">
-                <button class="btn-icon" title="Bifoga fil">📎</button>
-                <input id="groupChatInput" type="text" placeholder="Skriv ett inlägg eller ladda upp fil...">
-                <button id="groupChatSendBtn" class="btn-icon" title="Skicka">✈️</button>
+            <div class="chat-main-shell">
+                <aside class="chat-thread-sidebar">
+                    <div class="chat-thread-sidebar-header">
+                        <span>Chattar</span>
+                        <button class="chat-new-group-btn" type="button" id="newComposeBtn" title="Ny chatt">✎</button>
+                    </div>
+                    <div class="chat-thread-search-wrap">
+                        <input id="mainChatThreadSearch" class="chat-thread-search" type="text" placeholder="Sök chattar och användare...">
+                    </div>
+                    <div class="chat-thread-list" id="mainChatThreadList"></div>
+                </aside>
+                <div class="chat-main-pane">
+                    <div class="chat-compose-top" id="chatComposeTop">
+                    <div class="chat-compose-row">
+                        <span class="chat-compose-label">To:</span>
+                        <div class="chat-compose-recipients" id="chatComposeRecipients"></div>
+                    </div>
+                    <div class="chat-compose-hint" id="chatComposeHint">
+                        Tips: skriv ett namn och tryck mellanslag för att lägga till mottagare. Tryck Enter eller blå pil nedan för att skicka.
+                    </div>
+                    <div class="chat-compose-suggestions" id="chatComposeSuggestions"></div>
+                </div>
+                    <div class="chat-feed" id="groupChatFeed"></div>
+                    <div class="chat-reply-bar" id="chatReplyBar">
+                        <span class="chat-reply-text" id="chatReplyText"></span>
+                        <button class="chat-reply-cancel" id="chatReplyCancelBtn" type="button">Avbryt</button>
+                    </div>
+                    <div class="chat-input-area">
+                        <button class="btn-icon" title="Bifoga fil">📎</button>
+                        <div class="chat-input-tools">
+                            <button class="btn-icon" title="Emoji">🙂</button>
+                            <button class="btn-icon" title="Bild">🖼️</button>
+                        </div>
+                        <input id="groupChatInput" type="text" placeholder="Skriv ett inlägg eller ladda upp fil...">
+                        <button id="groupChatSendBtn" class="chat-send-btn" title="Skicka">➤</button>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Höger: Kalender & Verktyg -->
+        <!-- Höger: Viktiga meddelanden & Verktyg -->
         <div class="right-col">
-            <div class="panel calendar-wrapper">
-                <div class="panel-header calendar-header">
-                    <button class="calendar-nav" id="prevMonthBtn" aria-label="Föregående månad">‹</button>
-                    <span class="calendar-title" id="calendarTitle">Kalender</span>
-                    <button class="calendar-nav" id="nextMonthBtn" aria-label="Nästa månad">›</button>
-                </div>
+            <div class="panel messages">
+                <div class="panel-header">Viktiga Meddelanden</div>
                 <div class="panel-content">
-                    <div class="calendar-grid" id="calendarGrid">
-                        <div class="cal-day-header">M</div><div class="cal-day-header">T</div><div class="cal-day-header">O</div><div class="cal-day-header">T</div><div class="cal-day-header">F</div><div class="cal-day-header">L</div><div class="cal-day-header">S</div>
-                    </div>
+                    <div class="msg-item">🚨 Systemuppdatering inatt kl 02:00.</div>
+                    <div class="msg-item">📢 Deadline för Q3-rapporten är på fredag.</div>
                 </div>
             </div>
 
-            <div class="panel meetings">
-                <div class="panel-header">Dagens möten</div>
-                <div class="panel-content">
-                    <div class="meetings-admin-row" id="meetingsAdminRow">
-                        <button class="meetings-admin-btn" type="button" onclick="openEventEditorCreate()">+ Nytt möte</button>
-                    </div>
-                    <div class="meetings-list" id="meetingsList"></div>
-                    <div class="meetings-logout-wrap">
-                        <button class="auth-logout" type="button" onclick="logout()">Logga ut</button>
+            <div class="panel placeholders">
+                <div class="panel-header">Verktyg</div>
+                <div class="placeholder-grid">
+                    <div class="placeholder-icon" title="Facebook Marketing Academy">🎓</div>
+                    <div class="placeholder-icon" title="Idébank">💡</div>
+                    <div class="placeholder-icon" title="Statistik">📊</div>
+                    <div class="placeholder-icon" title="Filer">📁</div>
+                    <div class="placeholder-icon" title="Inställningar">⚙️</div>
+                    <div class="placeholder-icon" id="adminSettingsIcon" title="Admin inställning" style="display:none;">🛡️</div>
+                    <div class="placeholder-icon" title="Mapp" onclick="openFolderModal()">
+                        <img src="folder.svg" alt="Mapp" class="tool-icon-svg">
                     </div>
                 </div>
             </div>
         </div>
 
-    </div>
-
-    <!-- Messenger Popup -->
-    <div class="messenger-popup" id="msgPopup">
-        <div id="msgpListView" style="display:flex; flex-direction:column; height:100%;">
-            <div class="msgp-header">
-                <div class="msgp-title">Chats</div>
-                <div class="msgp-actions">
-                    <button class="msgp-action-btn" type="button" title="Video">📹</button>
-                    <button class="msgp-action-btn" type="button" title="Ny chatt">＋</button>
-                    <button class="msgp-action-btn" type="button" title="Stäng" onclick="toggleMessenger()">✕</button>
-                </div>
-            </div>
-            <label class="msgp-search">
-                <span>🔎</span>
-                <input id="msgpSearchInput" type="text" placeholder="Search messenger...">
-            </label>
-            <div class="msgp-list" id="msgpList"></div>
-        </div>
-        <div class="msgp-thread" id="msgpThreadView">
-            <div class="msgp-thread-top">
-                <button class="msgp-icon-btn" type="button" id="msgpBackBtn" aria-label="Tillbaka">‹</button>
-                <div class="msgp-thread-avatar"><img id="msgpThreadAvatar" src="" alt="Kontakt"></div>
-                <div class="msgp-thread-user">
-                    <strong id="msgpThreadName">Kontakt</strong>
-                    <span id="msgpThreadStatus">Active now</span>
-                </div>
-                <button class="msgp-icon-btn" type="button" aria-label="Stäng" onclick="toggleMessenger()">✕</button>
-            </div>
-            <div class="msgp-messages" id="msgpMessages"></div>
-            <div class="msgp-typing" id="msgpTyping">Typing...</div>
-            <div class="msgp-composer">
-                <input id="msgpMessageInput" type="text" placeholder="Aa">
-                <button class="msgp-send" id="msgpSendBtn" type="button">Skicka</button>
-            </div>
-        </div>
     </div>
 
     <!-- Kalender Event Modal -->
@@ -1039,7 +1614,7 @@
         </div>
     </div>
 
-    <div class="modal-overlay" id="folderModal">
+        <div class="modal-overlay" id="folderModal">
         <div class="folder-modal-content">
             <div class="fs-toolbar">
                 <button class="fs-back-btn" type="button" onclick="fsGoBack()">⬅ Upp</button>
@@ -1066,6 +1641,25 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="groupCreateModal">
+        <div class="group-create-content">
+            <button class="modal-close" type="button" onclick="closeGroupCreateModal()">✖</button>
+            <h3>Skapa gruppchatt</h3>
+            <div class="group-create-row">
+                <label for="groupCreateName">Gruppnamn</label>
+                <input id="groupCreateName" type="text" placeholder="T.ex. Projekt X">
+            </div>
+            <div class="group-create-row">
+                <label>Bjud in användare</label>
+                <div class="group-create-list" id="groupCreateUserList"></div>
+            </div>
+            <div class="group-create-actions">
+                <button class="group-create-btn" type="button" onclick="closeGroupCreateModal()">Avbryt</button>
+                <button class="group-create-btn primary" type="button" id="groupCreateSaveBtn">Skapa & bjud in</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let currentUserEmail = '';
         let currentUserIsAdmin = false;
@@ -1083,6 +1677,8 @@
                 const data = await resp.json();
                 currentUserEmail = String(data.email || '');
                 currentUserIsAdmin = !!data.is_admin;
+                const userBadge = document.getElementById('chatCurrentUserBadge');
+                if (userBadge) userBadge.innerText = `Inloggad som: ${currentUserEmail || '-'}`;
                 document.getElementById('adminSettingsIcon').style.display = currentUserIsAdmin ? 'flex' : 'none';
                 document.getElementById('meetingsAdminRow').style.display = currentUserIsAdmin ? 'flex' : 'none';
                 return true;
@@ -1236,25 +1832,120 @@
                 }
 
                 const post = document.createElement('div');
-                post.className = 'chat-post';
+                const isMine = msg.email === currentUserEmail;
+                post.className = 'chat-post ' + (isMine ? 'mine' : 'theirs');
+                const parsed = parseReplyPayload(msg.message);
                 const seenBy = (msg.seen_by || []).filter(function(email) { return email !== msg.email; });
-                const seenText = msg.email === currentUserEmail && seenBy.length
+                const seenText = isMine && seenBy.length
                     ? `<div class=\"chat-post-seen\">Sett av: ${escapeHtml(seenBy.join(', '))}</div>`
+                    : '';
+                const replyPreview = parsed.replyTo
+                    ? `<div class=\"chat-reply-preview\">Svar på ${escapeHtml(parsed.replyTo.author || 'okänd')}: ${escapeHtml(parsed.replyTo.snippet || '')}</div>`
+                    : '';
+                const replyBtn = !isMine
+                    ? `<button class=\"chat-reply-btn\" type=\"button\" title=\"Svara\">↩</button>`
                     : '';
                 post.innerHTML = `
                     <div class=\"chat-post-header\">
                         <strong>${escapeHtml(msg.email)}</strong>
-                        <span>${formatTimeFromUnix(msg.created_at)}</span>
+                        <span class=\"chat-post-meta\">
+                            <span>${formatTimeFromUnix(msg.created_at)}</span>
+                        </span>
                     </div>
-                    <p>${escapeHtml(msg.message)}</p>
+                    ${replyPreview}
+                    <p>${escapeHtml(parsed.body)}</p>
+                    ${replyBtn}
                     ${seenText}
                 `;
+                const replyBtnEl = post.querySelector('.chat-reply-btn');
+                if (replyBtnEl) {
+                    replyBtnEl.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        setActiveReply({
+                            author: msg.email,
+                            snippet: String(parsed.body || '').slice(0, 80)
+                        });
+                    });
+                }
                 feed.appendChild(post);
             });
             feed.scrollTop = feed.scrollHeight;
         }
 
+        function renderActiveThreadInMainChat() {
+            if (composeState.active) {
+                const titleEl = document.querySelector('.chat-title-main');
+                const presenceEl = document.getElementById('groupChatPresence');
+                const avatarEl = document.querySelector('.chat-title-avatar');
+                const inputEl = document.getElementById('groupChatInput');
+                const selected = composeState.selectedIds.map(function(id) { return getThreadById(id); }).filter(Boolean);
+                if (titleEl) titleEl.innerText = 'Ny chatt';
+                if (presenceEl) presenceEl.innerText = 'Välj mottagare';
+                if (avatarEl) avatarEl.innerText = '✎';
+                if (inputEl) inputEl.placeholder = 'Skriv ett meddelande...';
+                if (selected.length === 0) {
+                    document.getElementById('groupChatFeed').innerHTML = '<div class=\"date-divider\"><span>Välj en eller flera mottagare i To:</span></div>';
+                } else if (selected.length === 1 && !hasExistingConversation(selected[0])) {
+                    document.getElementById('groupChatFeed').innerHTML = `<div class=\"date-divider\"><span>Ingen chatt med ${escapeHtml(selected[0].name)} ännu. Skriv nedan och skicka för att skapa en ny chatt.</span></div>`;
+                } else if (selected.length > 1) {
+                    document.getElementById('groupChatFeed').innerHTML = '<div class=\"date-divider\"><span>Skicka första meddelandet för att skapa gruppchatten.</span></div>';
+                } else {
+                    document.getElementById('groupChatFeed').innerHTML = `<div class=\"date-divider\"><span>Befintlig chatt med ${escapeHtml(selected[0].name)} hittad. Skriv nedan och skicka.</span></div>`;
+                }
+                setActiveReply(null);
+                renderComposeBar();
+                return;
+            }
+            const thread = getThreadById(messengerState.activeThreadId || MESSENGER_GROUP_THREAD_ID);
+            if (!thread) return;
+            const titleEl = document.querySelector('.chat-title-main');
+            const presenceEl = document.getElementById('groupChatPresence');
+            const avatarEl = document.querySelector('.chat-title-avatar');
+            const inputEl = document.getElementById('groupChatInput');
+            const userBadge = document.getElementById('chatCurrentUserBadge');
+
+            if (titleEl) titleEl.innerText = thread.name;
+            if (presenceEl) {
+                presenceEl.innerText = thread.id === MESSENGER_GROUP_THREAD_ID
+                    ? `${Number((window.__presenceCount || 0))} online`
+                    : (thread.isGroup ? (thread.statusText || 'Grupp') : (thread.online ? 'Aktiv nu' : 'Offline'));
+            }
+            if (avatarEl) {
+                avatarEl.innerText = thread.id === MESSENGER_GROUP_THREAD_ID
+                    ? 'TA'
+                    : String(thread.name || '?').slice(0, 2).toUpperCase();
+            }
+            if (inputEl) {
+                inputEl.placeholder = thread.id === MESSENGER_GROUP_THREAD_ID
+                    ? 'Skriv i gruppchatten...'
+                    : `Skriv till ${thread.name}...`;
+            }
+            if (userBadge) {
+                userBadge.innerText = `Inloggad som: ${currentUserEmail || '-'}`;
+            }
+            setActiveReply(null);
+            renderComposeBar();
+
+            if (thread.id === MESSENGER_GROUP_THREAD_ID) {
+                applyChatFilters();
+                return;
+            }
+
+            const mapped = (thread.messages || []).map(function(m) {
+                return {
+                    created_at: Math.floor(Number(m.at || 0) / 1000),
+                    email: m.from === 'me' ? (currentUserEmail || 'Du') : (m.sender || thread.email || thread.name || 'Okänd'),
+                    message: m.text || '',
+                    seen_by: []
+                };
+            });
+            renderChatFeed(mapped);
+        }
+
         function applyChatFilters() {
+            if ((messengerState.activeThreadId || MESSENGER_GROUP_THREAD_ID) !== MESSENGER_GROUP_THREAD_ID) {
+                return;
+            }
             const q = document.getElementById('chatSearchText').value.trim().toLowerCase();
             const fromDate = document.getElementById('chatFromDate').value;
             const toDate = document.getElementById('chatToDate').value;
@@ -1275,22 +1966,98 @@
             const data = await apiGet('/api/chat/messages?limit=200');
             allChatMessages = data.messages || [];
             if (data.current_user_email) currentUserEmail = data.current_user_email;
-            applyChatFilters();
+            if (messengerState.activeThreadId === MESSENGER_GROUP_THREAD_ID) {
+                markGroupChatRead();
+            }
+            syncPinnedGroupThreadFromChatMessages();
+            if ((messengerState.activeThreadId || MESSENGER_GROUP_THREAD_ID) === MESSENGER_GROUP_THREAD_ID) {
+                applyChatFilters();
+            }
+            renderMessengerList();
+            renderActiveThreadInMainChat();
         }
 
         async function loadChatPresence() {
             const data = await apiGet('/api/chat/presence');
             const count = Number(data.online_count || 0);
-            document.getElementById('groupChatPresence').innerText = `${count} online`;
+            window.__presenceCount = count;
+            if ((messengerState.activeThreadId || MESSENGER_GROUP_THREAD_ID) === MESSENGER_GROUP_THREAD_ID) {
+                document.getElementById('groupChatPresence').innerText = `${count} online`;
+            }
         }
 
         async function sendGroupChatMessage() {
             const input = document.getElementById('groupChatInput');
             const message = input.value.trim();
             if (!message) return;
-            await apiSend('/api/chat/messages', 'POST', { message: message });
+            if (composeState.active) {
+                const ids = composeState.selectedIds
+                    .filter(function(id) { return !!getThreadById(String(id)); });
+                if (!ids.length && String(composeState.query || '').trim()) {
+                    const q = String(composeState.query || '').trim().toLowerCase();
+                    const match = getComposeCandidates().find(function(t) {
+                        const n = String(t.name || '').toLowerCase();
+                        const e = String(t.email || '').toLowerCase();
+                        return n === q || e === q || n.startsWith(q) || e.startsWith(q);
+                    });
+                    if (match) {
+                        ids.push(String(match.id));
+                    }
+                }
+                if (!ids.length) {
+                    alert('Välj minst en giltig mottagare i To:');
+                    return;
+                }
+                if (ids.length === 1) {
+                    await apiSend('/api/messenger/messages', 'POST', {
+                        recipient_id: Number(ids[0]),
+                        message: message
+                    });
+                    closeComposeMode();
+                    messengerState.activeThreadId = String(ids[0]);
+                    await loadMessengerUsers();
+                    await loadActiveMessengerThreadMessages();
+                    renderActiveThreadInMainChat();
+                } else {
+                    const response = await apiSend('/api/messenger/groups', 'POST', {
+                        name: `Ny chatt (${ids.length + 1})`,
+                        invitee_ids: ids.map(function(id) { return Number(id); })
+                    });
+                    const gid = String(response.group_id || '');
+                    await apiSend(`/api/messenger/groups/${gid}/messages`, 'POST', { message: message });
+                    closeComposeMode();
+                    messengerState.activeThreadId = gid;
+                    await loadMessengerUsers();
+                    await loadActiveMessengerThreadMessages();
+                    renderActiveThreadInMainChat();
+                }
+                input.value = '';
+                return;
+            }
+            const activeId = messengerState.activeThreadId || MESSENGER_GROUP_THREAD_ID;
+            const thread = getThreadById(activeId);
+            if (!thread) return;
+            const payloadMessage = buildReplyPayload(message, activeReply);
+
+            if (activeId === MESSENGER_GROUP_THREAD_ID) {
+                await apiSend('/api/chat/messages', 'POST', { message: payloadMessage });
+            } else if (thread.isGroup) {
+                await apiSend(`/api/messenger/groups/${thread.id}/messages`, 'POST', { message: payloadMessage });
+            } else {
+                await apiSend('/api/messenger/messages', 'POST', {
+                    recipient_id: Number(thread.id),
+                    message: payloadMessage
+                });
+            }
             input.value = '';
-            await loadChatMessages();
+            setActiveReply(null);
+            if (activeId === MESSENGER_GROUP_THREAD_ID) {
+                await loadChatMessages();
+            } else {
+                await loadActiveMessengerThreadMessages();
+                renderActiveThreadInMainChat();
+            }
+            await loadMessengerUsers();
         }
 
         async function loadNotes() {
@@ -1352,7 +2119,12 @@
                 sendGroupChatMessage().catch(function() {});
             });
             document.getElementById('groupChatInput').addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') sendGroupChatMessage().catch(function() {});
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    const text = String(e.target.value || '').trim();
+                    if (!text) return;
+                    sendGroupChatMessage().catch(function() {});
+                }
             });
             document.getElementById('chatSearchBtn').addEventListener('click', applyChatFilters);
             document.getElementById('chatSearchText').addEventListener('input', applyChatFilters);
@@ -1582,72 +2354,420 @@
             activeThreadId: null,
             filter: ''
         };
-        const messengerThreads = [
-            {
-                id: 'lilly',
-                name: 'Lilly Jr.',
-                avatar: 'https://api.dicebear.com/9.x/adventurer/svg?seed=Lilly%20Jr&backgroundType=gradientLinear',
-                online: true,
-                unread: 2,
-                updatedAt: Date.now() - 3 * 60 * 1000,
-                messages: [
-                    { from: 'them', text: 'Can you check the latest mockup?', at: Date.now() - 50 * 60 * 1000 },
-                    { from: 'me', text: 'Sure, I am reviewing it now.', at: Date.now() - 47 * 60 * 1000 },
-                    { from: 'them', text: 'Good idea! i like this.', at: Date.now() - 3 * 60 * 1000 }
-                ]
-            },
-            {
-                id: 'rihanna',
-                name: 'Rihanna Goldberg',
-                avatar: 'https://api.dicebear.com/9.x/adventurer/svg?seed=Rihanna%20Goldberg&backgroundType=gradientLinear',
-                online: true,
-                unread: 0,
-                updatedAt: Date.now() - 18 * 60 * 1000,
-                messages: [
-                    { from: 'me', text: 'I sent over the campaign files.', at: Date.now() - 25 * 60 * 1000 },
-                    { from: 'them', text: 'Great. Thanks!', at: Date.now() - 18 * 60 * 1000 }
-                ]
-            },
-            {
-                id: 'gregory',
-                name: 'Gregory Portman',
-                avatar: 'https://api.dicebear.com/9.x/adventurer/svg?seed=Gregory%20Portman&backgroundType=gradientLinear',
-                online: false,
-                unread: 1,
-                updatedAt: Date.now() - 61 * 60 * 1000,
-                messages: [
-                    { from: 'them', text: 'This is so good man. Will do Remix.', at: Date.now() - 61 * 60 * 1000 }
-                ]
-            },
-            {
-                id: 'marry',
-                name: 'Marry Adams',
-                avatar: 'https://api.dicebear.com/9.x/adventurer/svg?seed=Marry%20Adams&backgroundType=gradientLinear',
-                online: false,
-                unread: 0,
-                updatedAt: Date.now() - 130 * 60 * 1000,
-                messages: [
-                    { from: 'them', text: 'Cool. We can help Lilly.', at: Date.now() - 130 * 60 * 1000 }
-                ]
-            },
-            {
-                id: 'callie',
-                name: 'Callie Goodman',
-                avatar: 'https://api.dicebear.com/9.x/adventurer/svg?seed=Callie%20Goodman&backgroundType=gradientLinear',
-                online: true,
-                unread: 0,
-                updatedAt: Date.now() - 245 * 60 * 1000,
-                messages: [
-                    { from: 'me', text: 'Call me today. We have a new project.', at: Date.now() - 245 * 60 * 1000 }
-                ]
+        const MESSENGER_GROUP_THREAD_ID = 'group-all';
+        let groupChatLastReadId = Number(localStorage.getItem('group_chat_last_read_id') || 0);
+        let messengerThreads = [];
+        let activeReply = null;
+        let threadLoadSeq = 0;
+        const composeState = {
+            active: false,
+            selectedIds: [],
+            query: ''
+        };
+
+        function messengerDisplayName(email) {
+            const local = String(email || '').split('@')[0] || String(email || '');
+            return local
+                .replace(/[._-]+/g, ' ')
+                .trim()
+                .replace(/\b\w/g, function(ch) { return ch.toUpperCase(); }) || String(email || '');
+        }
+
+        function messengerAvatarUrl(email) {
+            return `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(email)}`;
+        }
+
+        function getLatestGroupChatMessageId() {
+            if (!allChatMessages.length) return 0;
+            return Number(allChatMessages[allChatMessages.length - 1].id || 0);
+        }
+
+        function parseReplyPayload(text) {
+            const raw = String(text || '');
+            const match = raw.match(/^\[reply\|([^\]|]*)\|([^\]]*)\]\n?([\s\S]*)$/);
+            if (!match) return { body: raw, replyTo: null };
+            return {
+                body: match[3] || '',
+                replyTo: {
+                    author: match[1] || '',
+                    snippet: match[2] || ''
+                }
+            };
+        }
+
+        function buildReplyPayload(body, replyMeta) {
+            const cleanBody = String(body || '').trim();
+            if (!replyMeta) return cleanBody;
+            const author = String(replyMeta.author || '').replace(/\|/g, '/');
+            const snippet = String(replyMeta.snippet || '').replace(/\|/g, '/');
+            return `[reply|${author}|${snippet}]\n${cleanBody}`;
+        }
+
+        function setActiveReply(replyMeta) {
+            activeReply = replyMeta || null;
+            const bar = document.getElementById('chatReplyBar');
+            const text = document.getElementById('chatReplyText');
+            if (!bar || !text) return;
+            if (!activeReply) {
+                bar.style.display = 'none';
+                text.innerText = '';
+                return;
             }
-        ];
+            bar.style.display = 'flex';
+            text.innerText = `Svarar på ${activeReply.author}: ${activeReply.snippet}`;
+        }
+
+        function getComposeCandidates() {
+            return messengerThreads.filter(function(t) {
+                return !t.isGroup && t.id !== MESSENGER_GROUP_THREAD_ID;
+            });
+        }
+
+        function openComposeMode() {
+            composeState.active = true;
+            composeState.selectedIds = [];
+            composeState.query = '';
+            messengerState.activeThreadId = null;
+            renderComposeBar();
+            renderMainChatThreadList();
+            renderActiveThreadInMainChat();
+        }
+
+        function closeComposeMode() {
+            composeState.active = false;
+            composeState.selectedIds = [];
+            composeState.query = '';
+            hideComposeSuggestions();
+            renderComposeBar();
+        }
+
+        function renderComposeBar() {
+            const top = document.getElementById('chatComposeTop');
+            const recipients = document.getElementById('chatComposeRecipients');
+            if (!top || !recipients) return;
+
+            if (!composeState.active) {
+                top.style.display = 'none';
+                recipients.innerHTML = '';
+                return;
+            }
+            top.style.display = 'block';
+            const candidates = getComposeCandidates();
+            const selected = candidates.filter(function(t) { return composeState.selectedIds.includes(String(t.id)); });
+            const chips = selected.map(function(t) {
+                return `<span class="chat-compose-chip">${escapeHtml(t.name)}<button type="button" data-remove-compose-id="${t.id}" title="Ta bort">×</button></span>`;
+            }).join('');
+            recipients.innerHTML = chips + `<input id="chatComposeInput" class="chat-compose-input" type="text" placeholder="Skriv ett namn..." value="${escapeHtml(composeState.query)}">`;
+
+            recipients.querySelectorAll('[data-remove-compose-id]').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const id = String(btn.getAttribute('data-remove-compose-id'));
+                    composeState.selectedIds = composeState.selectedIds.filter(function(x) { return x !== id; });
+                    renderComposeBar();
+                    renderComposeSuggestions();
+                });
+            });
+
+            const input = document.getElementById('chatComposeInput');
+            if (!input) return;
+            input.addEventListener('input', function() {
+                composeState.query = input.value;
+                renderComposeSuggestions();
+            });
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Backspace' && !composeState.query && composeState.selectedIds.length) {
+                    composeState.selectedIds.pop();
+                    renderComposeBar();
+                    renderComposeSuggestions();
+                }
+                if (e.key === ' ') {
+                    const exact = findExactComposeCandidate(composeState.query);
+                    if (exact) {
+                        e.preventDefault();
+                        addComposeRecipient(String(exact.id));
+                    }
+                }
+                if (e.key === 'Enter' || e.key === 'Tab' || e.key === ',') {
+                    e.preventDefault();
+                    const exact = findExactComposeCandidate(composeState.query);
+                    if (exact) {
+                        addComposeRecipient(String(exact.id));
+                        return;
+                    }
+                    const filtered = filterComposeCandidates();
+                    if (filtered.length) {
+                        addComposeRecipient(String(filtered[0].id));
+                    }
+                }
+            });
+            input.focus();
+            renderComposeSuggestions();
+        }
+
+        function filterComposeCandidates() {
+            const q = String(composeState.query || '').trim().toLowerCase();
+            return getComposeCandidates().filter(function(t) {
+                if (composeState.selectedIds.includes(String(t.id))) return false;
+                if (!q) return true;
+                const hay = `${t.name} ${t.email}`.toLowerCase();
+                return hay.includes(q);
+            });
+        }
+
+        function findExactComposeCandidate(query) {
+            const q = String(query || '').trim().toLowerCase();
+            if (!q) return null;
+            return getComposeCandidates().find(function(t) {
+                if (composeState.selectedIds.includes(String(t.id))) return false;
+                const name = String(t.name || '').toLowerCase();
+                const email = String(t.email || '').toLowerCase();
+                const local = String(t.email || '').split('@')[0].toLowerCase();
+                return name === q || email === q || local === q;
+            }) || null;
+        }
+
+        function hasExistingConversation(thread) {
+            if (!thread || thread.isGroup) return false;
+            if ((thread.messages || []).length > 0) return true;
+            if (Number(thread.updatedAt || 0) > 0) return true;
+            const preview = String(thread.lastPreview || '').trim().toLowerCase();
+            return !!preview && preview !== 'inga meddelanden än.';
+        }
+
+        function addComposeRecipient(id) {
+            if (!composeState.selectedIds.includes(id)) {
+                composeState.selectedIds.push(id);
+            }
+            composeState.query = '';
+            renderComposeBar();
+        }
+
+        function hideComposeSuggestions() {
+            const box = document.getElementById('chatComposeSuggestions');
+            if (box) box.style.display = 'none';
+        }
+
+        function renderComposeSuggestions() {
+            const box = document.getElementById('chatComposeSuggestions');
+            if (!box || !composeState.active) return;
+            const filtered = filterComposeCandidates();
+            if (!composeState.query.trim() || !filtered.length) {
+                box.style.display = 'none';
+                box.innerHTML = '';
+                return;
+            }
+            box.innerHTML = filtered.slice(0, 8).map(function(t) {
+                return `<button class="chat-compose-suggestion" type="button" data-compose-id="${t.id}">${escapeHtml(t.name)} (${escapeHtml(t.email)})</button>`;
+            }).join('');
+            box.style.display = 'block';
+            box.querySelectorAll('[data-compose-id]').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    addComposeRecipient(String(btn.getAttribute('data-compose-id')));
+                });
+            });
+        }
+
+        function getGroupUnreadCount() {
+            return allChatMessages.filter(function(msg) {
+                const id = Number(msg.id || 0);
+                return id > groupChatLastReadId && msg.email !== currentUserEmail;
+            }).length;
+        }
+
+        function markGroupChatRead() {
+            groupChatLastReadId = getLatestGroupChatMessageId();
+            localStorage.setItem('group_chat_last_read_id', String(groupChatLastReadId));
+        }
+
+        function syncPinnedGroupThreadFromChatMessages() {
+            const thread = getThreadById(MESSENGER_GROUP_THREAD_ID);
+            if (!thread) return;
+            const sourceMessages = (allChatMessages || []).map(function(msg) {
+                const isMine = msg.email === currentUserEmail;
+                return {
+                    from: isMine ? 'me' : 'them',
+                    sender: msg.email,
+                    text: msg.message,
+                    at: Number(msg.created_at || 0) * 1000
+                };
+            });
+            thread.messages = sourceMessages;
+            const last = sourceMessages[sourceMessages.length - 1];
+            thread.updatedAt = last ? Number(last.at) : 0;
+            thread.lastPreview = last
+                ? ((last.from === 'me' ? 'Du: ' : '') + String(last.text || ''))
+                : 'Inga meddelanden än.';
+            thread.unread = getGroupUnreadCount();
+        }
+
+        function buildPinnedGroupThread(existingGroup) {
+            const sourceMessages = (allChatMessages || []).map(function(msg) {
+                const isMine = msg.email === currentUserEmail;
+                return {
+                    from: isMine ? 'me' : 'them',
+                    sender: msg.email,
+                    text: msg.message,
+                    at: Number(msg.created_at || 0) * 1000
+                };
+            });
+            const last = sourceMessages[sourceMessages.length - 1];
+            const members = (messengerThreads.filter(function(t) { return !t.isGroup; }).length) + 1;
+            return {
+                id: MESSENGER_GROUP_THREAD_ID,
+                email: '',
+                name: 'Gruppchatt (Alla)',
+                avatar: 'https://api.dicebear.com/9.x/initials/svg?seed=Gruppchatt',
+                online: true,
+                unread: getGroupUnreadCount(),
+                pinned: true,
+                isGroup: true,
+                statusText: members + ' medlemmar',
+                updatedAt: last ? Number(last.at) : (existingGroup ? existingGroup.updatedAt : 0),
+                lastPreview: last
+                    ? ((last.from === 'me' ? 'Du: ' : '') + String(last.text || ''))
+                    : 'Inga meddelanden än.',
+                messages: sourceMessages
+            };
+        }
+
+        async function loadMessengerUsers() {
+            const data = await apiGet('/api/messenger/threads');
+            const prevGroup = getThreadById(MESSENGER_GROUP_THREAD_ID);
+            const prevById = {};
+            messengerThreads.forEach(function(thread) {
+                prevById[String(thread.id)] = thread;
+            });
+
+            const apiThreads = (data.threads || []).map(function(threadData) {
+                const id = String(threadData.id);
+                const prev = prevById[id];
+                const isGroup = threadData.kind === 'group';
+                const email = String(threadData.email || '');
+                const displayName = isGroup ? String(threadData.name || 'Grupp') : messengerDisplayName(email);
+                const statusText = isGroup
+                    ? `${Number(threadData.member_count || 0)} medlemmar`
+                    : (threadData.online ? 'Aktiv nu' : 'Offline');
+                const parsedLast = parseReplyPayload(threadData.last_message_text || '');
+                const cleanLastText = String(parsedLast.body || '');
+                return {
+                    id: id,
+                    kind: String(threadData.kind || 'direct'),
+                    email: email,
+                    name: displayName,
+                    avatar: isGroup
+                        ? ('https://api.dicebear.com/9.x/initials/svg?seed=' + encodeURIComponent(displayName))
+                        : messengerAvatarUrl(email),
+                    online: !!threadData.online,
+                    unread: Number(threadData.unread_count || 0),
+                    isGroup: isGroup,
+                    statusText: statusText,
+                    updatedAt: threadData.last_message_at ? Number(threadData.last_message_at) * 1000 : (prev ? prev.updatedAt : 0),
+                    lastPreview: cleanLastText
+                        ? ((threadData.last_message_from_me ? 'Du: ' : '') + cleanLastText)
+                        : 'Inga meddelanden än.',
+                    messages: prev ? prev.messages : []
+                };
+            });
+
+            messengerThreads = [buildPinnedGroupThread(prevGroup)].concat(apiThreads);
+            if (!messengerState.activeThreadId && !composeState.active) {
+                messengerState.activeThreadId = MESSENGER_GROUP_THREAD_ID;
+            }
+
+            if (messengerState.activeThreadId && !getThreadById(messengerState.activeThreadId)) {
+                messengerState.activeThreadId = null;
+                renderMainChatThreadList();
+                return;
+            }
+
+            renderMessengerList();
+            const threadView = document.getElementById('msgpThreadView');
+            if (threadView && threadView.style.display === 'flex' && messengerState.activeThreadId) {
+                loadActiveMessengerThreadMessages().catch(function() {});
+            }
+        }
+
+        async function loadActiveMessengerThreadMessages() {
+            const loadSeq = ++threadLoadSeq;
+            const activeThreadId = messengerState.activeThreadId;
+            const thread = getThreadById(activeThreadId);
+            if (!thread) return;
+            if (thread.id === MESSENGER_GROUP_THREAD_ID) {
+                thread.messages = (allChatMessages || []).map(function(msg) {
+                    const isMine = msg.email === currentUserEmail;
+                    return {
+                        from: isMine ? 'me' : 'them',
+                        sender: msg.email,
+                        text: msg.message,
+                        at: Number(msg.created_at || 0) * 1000
+                    };
+                });
+                thread.unread = 0;
+                if (thread.messages.length > 0) {
+                    const last = thread.messages[thread.messages.length - 1];
+                    thread.updatedAt = Number(last.at || thread.updatedAt || Date.now());
+                    thread.lastPreview = (last.from === 'me' ? 'Du: ' : '') + String(last.text || '');
+                } else {
+                    thread.lastPreview = 'Inga meddelanden än.';
+                }
+                markGroupChatRead();
+                thread.unread = 0;
+                if (loadSeq !== threadLoadSeq || messengerState.activeThreadId !== activeThreadId) return;
+                updateMessengerUnreadBadge();
+                renderMainChatThreadList();
+                renderActiveThreadInMainChat();
+                return;
+            }
+            if (thread.isGroup) {
+                const groupData = await apiGet(`/api/messenger/groups/${thread.id}/messages`);
+                if (loadSeq !== threadLoadSeq || messengerState.activeThreadId !== activeThreadId) return;
+                thread.messages = (groupData.messages || []).map(function(message) {
+                    return {
+                        from: message.from_me ? 'me' : 'them',
+                        sender: message.sender_email || '',
+                        text: message.text,
+                        at: Number(message.created_at || 0) * 1000
+                    };
+                });
+                thread.unread = 0;
+                if (thread.messages.length > 0) {
+                    const last = thread.messages[thread.messages.length - 1];
+                    thread.updatedAt = Number(last.at || thread.updatedAt || Date.now());
+                    thread.lastPreview = (last.from === 'me' ? 'Du: ' : '') + String(last.text || '');
+                } else {
+                    thread.lastPreview = 'Inga meddelanden än.';
+                }
+                updateMessengerUnreadBadge();
+                renderMainChatThreadList();
+                renderActiveThreadInMainChat();
+                return;
+            }
+            const data = await apiGet(`/api/messenger/messages/${thread.id}`);
+            if (loadSeq !== threadLoadSeq || messengerState.activeThreadId !== activeThreadId) return;
+            thread.messages = (data.messages || []).map(function(message) {
+                return {
+                    from: message.from_me ? 'me' : 'them',
+                    text: message.text,
+                    at: Number(message.created_at || 0) * 1000
+                };
+            });
+            thread.unread = 0;
+            if (thread.messages.length > 0) {
+                const last = thread.messages[thread.messages.length - 1];
+                thread.updatedAt = Number(last.at || thread.updatedAt || Date.now());
+                thread.lastPreview = (last.from === 'me' ? 'Du: ' : '') + String(last.text || '');
+            }
+            updateMessengerUnreadBadge();
+            renderMainChatThreadList();
+            renderActiveThreadInMainChat();
+        }
 
         function getThreadById(id) {
             return messengerThreads.find(function(t) { return t.id === id; });
         }
 
         function formatMessengerTime(ts) {
+            if (!ts) return '';
             const diffMinutes = Math.floor((Date.now() - ts) / 60000);
             if (diffMinutes < 1) return 'now';
             if (diffMinutes < 60) return diffMinutes + 'm';
@@ -1665,24 +2785,37 @@
 
         function renderMessengerList() {
             const list = document.getElementById('msgpList');
+            if (!list) {
+                updateMessengerUnreadBadge();
+                renderMainChatThreadList();
+                return;
+            }
             const filter = messengerState.filter.trim().toLowerCase();
             const threads = messengerThreads
                 .slice()
-                .sort(function(a, b) { return b.updatedAt - a.updatedAt; })
+                .sort(function(a, b) {
+                    if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
+                    return b.updatedAt - a.updatedAt;
+                })
                 .filter(function(thread) {
                     if (!filter) return true;
-                    const lastText = thread.messages[thread.messages.length - 1].text.toLowerCase();
-                    return thread.name.toLowerCase().includes(filter) || lastText.includes(filter);
+                    const lastMessage = thread.messages[thread.messages.length - 1];
+                    const lastText = lastMessage ? String(lastMessage.text || '').toLowerCase() : '';
+                    const previewText = String(thread.lastPreview || lastText || '').toLowerCase();
+                    return thread.name.toLowerCase().includes(filter) || previewText.includes(filter);
                 });
 
             if (!threads.length) {
-                list.innerHTML = '<div class="msgp-empty">Inga konversationer matchar sökningen.</div>';
+                if (list) {
+                    list.innerHTML = '<div class="msgp-empty">Inga konversationer matchar sökningen.</div>';
+                }
+                updateMessengerUnreadBadge();
+                renderMainChatThreadList();
                 return;
             }
 
-            list.innerHTML = threads.map(function(thread) {
-                const lastMessage = thread.messages[thread.messages.length - 1];
-                const preview = (lastMessage.from === 'me' ? 'You: ' : '') + lastMessage.text;
+            const listHtml = threads.map(function(thread) {
+                const preview = getThreadPreview(thread);
                 const previewClipped = preview.length > 42 ? preview.slice(0, 42) + '...' : preview;
                 const activeClass = messengerState.activeThreadId === thread.id ? ' is-active' : '';
                 const unread = thread.unread > 0 ? '<span class="msgp-unread">' + thread.unread + '</span>' : '';
@@ -1694,25 +2827,129 @@
                             <span>${escapeHtml(previewClipped)}</span>
                         </div>
                         <div class="msgp-meta">
-                            <span class="msgp-time">${formatMessengerTime(thread.updatedAt)}</span>
+                            <span class="msgp-time">${thread.updatedAt ? formatMessengerTime(thread.updatedAt) : ''}</span>
                             ${unread}
                         </div>
                     </button>
                 `;
             }).join('');
+            if (list) {
+                list.innerHTML = listHtml;
+            }
+            updateMessengerUnreadBadge();
+            renderMainChatThreadList();
+        }
+
+        function renderMainChatThreadList() {
+            const list = document.getElementById('mainChatThreadList');
+            if (!list) return;
+            const searchInput = document.getElementById('mainChatThreadSearch');
+            const filter = String(searchInput ? searchInput.value : '').trim().toLowerCase();
+            const threads = messengerThreads
+                .slice()
+                .sort(function(a, b) {
+                    if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
+                    return b.updatedAt - a.updatedAt;
+                })
+                .filter(function(thread) {
+                    if (!filter) return true;
+                    const haystack = [
+                        String(thread.name || ''),
+                        String(thread.email || ''),
+                        String(thread.lastPreview || '')
+                    ].join(' ').toLowerCase();
+                    return haystack.includes(filter);
+                });
+
+            if (!threads.length) {
+                list.innerHTML = '<div class="chat-thread-empty">Inga chattar ännu.</div>';
+                return;
+            }
+
+            list.innerHTML = threads.map(function(thread) {
+                const active = messengerState.activeThreadId === thread.id ? ' active' : '';
+                const preview = getThreadPreview(thread);
+                const unread = thread.unread > 0
+                    ? '<span class="chat-thread-unread">' + (thread.unread > 99 ? '99+' : String(thread.unread)) + '</span>'
+                    : '';
+                const statusDot = !thread.isGroup && thread.id !== MESSENGER_GROUP_THREAD_ID
+                    ? `<span class="chat-thread-status-dot${thread.online ? ' online' : ''}" title="${thread.online ? 'Online' : 'Offline'}"></span>`
+                    : '';
+                return `
+                    <button class="chat-thread-row${active}" type="button" data-main-thread-id="${thread.id}">
+                        <div class="chat-thread-avatar">
+                            <img src="${thread.avatar}" alt="${escapeHtml(thread.name)}">
+                            ${statusDot}
+                        </div>
+                        <div class="chat-thread-text">
+                            <strong>${escapeHtml(thread.name)}</strong>
+                            <span>${escapeHtml(preview)}</span>
+                        </div>
+                        <div class="chat-thread-meta">${unread}</div>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function getThreadPreview(thread) {
+            const lastMessage = (thread.messages || [])[thread.messages.length - 1];
+            if (lastMessage && Number(lastMessage.at || 0) > 0) {
+                return (lastMessage.from === 'me' ? 'Du: ' : '') + String(lastMessage.text || '');
+            }
+            return String(thread.lastPreview || 'Inga meddelanden än.');
+        }
+
+        function updateMessengerUnreadBadge() {
+            const badge = document.getElementById('messengerUnreadBadge');
+            const unreadTotal = messengerThreads.reduce(function(sum, thread) {
+                return sum + Number(thread.unread || 0);
+            }, 0);
+            if (badge) {
+                if (unreadTotal <= 0) {
+                    badge.style.display = 'none';
+                    badge.innerText = '0';
+                } else {
+                    badge.style.display = 'inline-flex';
+                    badge.innerText = unreadTotal > 99 ? '99+' : String(unreadTotal);
+                }
+            }
+            const mainBadge = document.getElementById('mainChatUnreadBadge');
+            if (!mainBadge) return;
+            if (unreadTotal <= 0) {
+                mainBadge.style.display = 'none';
+                mainBadge.innerText = '0';
+                return;
+            }
+            mainBadge.style.display = 'inline-flex';
+            mainBadge.innerText = unreadTotal > 99 ? '99+' : String(unreadTotal);
         }
 
         function renderActiveThread() {
             const thread = getThreadById(messengerState.activeThreadId);
             if (!thread) return;
             const msgList = document.getElementById('msgpMessages');
-            document.getElementById('msgpThreadName').innerText = thread.name;
-            document.getElementById('msgpThreadAvatar').src = thread.avatar;
-            document.getElementById('msgpThreadStatus').innerText = thread.online ? 'Active now' : 'Offline';
+            const nameEl = document.getElementById('msgpThreadName');
+            const avatarEl = document.getElementById('msgpThreadAvatar');
+            const statusEl = document.getElementById('msgpThreadStatus');
+            if (!msgList || !nameEl || !avatarEl || !statusEl) return;
+            nameEl.innerText = thread.name;
+            avatarEl.src = thread.avatar;
+            statusEl.innerText = thread.isGroup
+                ? thread.statusText
+                : (thread.online ? 'Aktiv nu' : 'Offline');
+
+            if (!thread.messages.length) {
+                msgList.innerHTML = '<div class="msgp-empty">Inga meddelanden än.</div>';
+                return;
+            }
 
             msgList.innerHTML = thread.messages.map(function(message) {
+                const sender = thread.isGroup && message.from !== 'me'
+                    ? `<div class="msgp-sender">${escapeHtml(messengerDisplayName(message.sender || 'Okänd'))}</div>`
+                    : '';
                 return `
                     <div class="msgp-bubble ${message.from === 'me' ? 'me' : 'them'}">
+                        ${sender}
                         ${escapeHtml(message.text)}
                         <span class="msgp-bubble-time">${formatMessengerTime(message.at)}</span>
                     </div>
@@ -1722,96 +2959,258 @@
         }
 
         function openMessengerThread(threadId) {
+            const listView = document.getElementById('msgpListView');
+            const threadView = document.getElementById('msgpThreadView');
+            const input = document.getElementById('msgpMessageInput');
+            if (!listView || !threadView || !input) return;
             messengerState.activeThreadId = threadId;
             const thread = getThreadById(threadId);
             if (!thread) return;
-            thread.unread = 0;
-            renderMessengerList();
-            renderActiveThread();
-            document.getElementById('msgpListView').style.display = 'none';
-            document.getElementById('msgpThreadView').style.display = 'flex';
-            document.getElementById('msgpMessageInput').focus();
+            listView.style.display = 'none';
+            threadView.style.display = 'flex';
+            input.focus();
+            loadActiveMessengerThreadMessages().catch(function() {});
         }
 
         function openMessengerList() {
-            document.getElementById('msgpThreadView').style.display = 'none';
-            document.getElementById('msgpListView').style.display = 'flex';
+            const threadView = document.getElementById('msgpThreadView');
+            const listView = document.getElementById('msgpListView');
+            if (!threadView || !listView) return;
+            threadView.style.display = 'none';
+            listView.style.display = 'flex';
             renderMessengerList();
         }
 
-        function simulateReply(thread) {
-            const typing = document.getElementById('msgpTyping');
-            typing.style.display = 'block';
-            setTimeout(function() {
-                const cannedReplies = [
-                    'Låter bra, jag återkommer strax.',
-                    'Perfekt, kör på det.',
-                    'Toppen, tack for snabb uppdatering.',
-                    'Jag kollar och svarar om en minut.'
-                ];
-                const text = cannedReplies[Math.floor(Math.random() * cannedReplies.length)];
-                thread.messages.push({ from: 'them', text: text, at: Date.now() });
-                thread.updatedAt = Date.now();
-                typing.style.display = 'none';
-
-                if (messengerState.activeThreadId === thread.id && document.getElementById('msgpThreadView').style.display === 'flex') {
-                    renderActiveThread();
-                } else {
-                    thread.unread += 1;
-                }
-                renderMessengerList();
-            }, 1200);
+        function openThreadFromMainSidebar(threadId) {
+            closeComposeMode();
+            messengerState.activeThreadId = threadId;
+            if (threadId === MESSENGER_GROUP_THREAD_ID) {
+                markGroupChatRead();
+                const groupThread = getThreadById(threadId);
+                if (groupThread) groupThread.unread = 0;
+            } else {
+                loadActiveMessengerThreadMessages().catch(function() {});
+            }
+            renderMainChatThreadList();
+            document.getElementById('groupChatInput').focus();
+            renderActiveThreadInMainChat();
         }
 
-        function sendMessengerMessage() {
+        function openGroupCreateModal() {
+            const modal = document.getElementById('groupCreateModal');
+            const list = document.getElementById('groupCreateUserList');
+            const nameInput = document.getElementById('groupCreateName');
+            if (!modal || !list || !nameInput) return;
+
+            const users = messengerThreads.filter(function(t) {
+                return !t.isGroup;
+            });
+            if (!users.length) {
+                alert('Det finns inga användare att bjuda in.');
+                return;
+            }
+
+            list.innerHTML = users.map(function(thread) {
+                return `
+                    <label class="group-create-item">
+                        <input type="checkbox" value="${thread.id}">
+                        <span>${escapeHtml(thread.name)} (${escapeHtml(thread.email)})</span>
+                    </label>
+                `;
+            }).join('');
+            nameInput.value = '';
+            modal.style.display = 'flex';
+            nameInput.focus();
+        }
+
+        function closeGroupCreateModal() {
+            const modal = document.getElementById('groupCreateModal');
+            if (!modal) return;
+            modal.style.display = 'none';
+        }
+
+        async function createGroupAndInvite() {
+            const nameInput = document.getElementById('groupCreateName');
+            const userList = document.getElementById('groupCreateUserList');
+            if (!nameInput || !userList) return;
+
+            const name = nameInput.value.trim();
+            const selectedIds = Array.from(userList.querySelectorAll('input[type="checkbox"]:checked'))
+                .map(function(el) { return String(el.value); });
+
+            if (!name) {
+                alert('Ange ett gruppnamn.');
+                return;
+            }
+            if (!selectedIds.length) {
+                alert('Välj minst en användare att bjuda in.');
+                return;
+            }
+
+            const response = await apiSend('/api/messenger/groups', 'POST', {
+                name: name,
+                invitee_ids: selectedIds.map(function(id) { return Number(id); })
+            });
+
+            closeGroupCreateModal();
+            await loadMessengerUsers();
+            messengerState.activeThreadId = String(response.group_id || '');
+            renderMainChatThreadList();
+        }
+
+        async function sendMessengerMessage() {
             const input = document.getElementById('msgpMessageInput');
+            if (!input) return;
             const text = input.value.trim();
             const thread = getThreadById(messengerState.activeThreadId);
             if (!thread || !text) return;
 
-            thread.messages.push({ from: 'me', text: text, at: Date.now() });
-            thread.updatedAt = Date.now();
+            if (thread.id === MESSENGER_GROUP_THREAD_ID) {
+                await apiSend('/api/chat/messages', 'POST', { message: text });
+                await loadChatMessages();
+            } else {
+                await apiSend('/api/messenger/messages', 'POST', {
+                    recipient_id: Number(thread.id),
+                    message: text
+                });
+            }
             input.value = '';
-            renderActiveThread();
-            renderMessengerList();
-            simulateReply(thread);
+            await loadActiveMessengerThreadMessages();
+            await loadMessengerUsers();
         }
 
         function initMessenger() {
-            renderMessengerList();
+            loadMessengerUsers().then(function() {
+                renderActiveThreadInMainChat();
+            }).catch(function() {});
 
-            document.getElementById('msgpSearchInput').addEventListener('input', function(e) {
-                messengerState.filter = e.target.value;
-                renderMessengerList();
+            window.addEventListener('focus', function() {
+                loadMessengerUsers().catch(function() {});
+            });
+            document.addEventListener('visibilitychange', function() {
+                if (!document.hidden) loadMessengerUsers().catch(function() {});
             });
 
-            document.getElementById('msgpList').addEventListener('click', function(e) {
-                const row = e.target.closest('[data-thread-id]');
-                if (!row) return;
-                openMessengerThread(row.getAttribute('data-thread-id'));
-            });
+            const searchInput = document.getElementById('msgpSearchInput');
+            if (searchInput) {
+                searchInput.addEventListener('input', function(e) {
+                    messengerState.filter = e.target.value;
+                    renderMessengerList();
+                });
+            }
 
-            document.getElementById('msgpBackBtn').addEventListener('click', function() {
-                openMessengerList();
-            });
+            const popupList = document.getElementById('msgpList');
+            if (popupList) {
+                popupList.addEventListener('click', function(e) {
+                    const row = e.target.closest('[data-thread-id]');
+                    if (!row) return;
+                    openMessengerThread(row.getAttribute('data-thread-id'));
+                });
+            }
 
-            document.getElementById('msgpSendBtn').addEventListener('click', function() {
-                sendMessengerMessage();
-            });
+            const backBtn = document.getElementById('msgpBackBtn');
+            if (backBtn) {
+                backBtn.addEventListener('click', function() {
+                    openMessengerList();
+                });
+            }
 
-            document.getElementById('msgpMessageInput').addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') sendMessengerMessage();
-            });
+            const sendBtn = document.getElementById('msgpSendBtn');
+            if (sendBtn) {
+                sendBtn.addEventListener('click', function() {
+                    sendMessengerMessage().catch(function() {});
+                });
+            }
+
+            const msgInput = document.getElementById('msgpMessageInput');
+            if (msgInput) {
+                msgInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') sendMessengerMessage().catch(function() {});
+                });
+            }
+
+            const mainThreadList = document.getElementById('mainChatThreadList');
+            if (mainThreadList) {
+                mainThreadList.addEventListener('click', function(e) {
+                    const row = e.target.closest('[data-main-thread-id]');
+                    if (!row) return;
+                    openThreadFromMainSidebar(row.getAttribute('data-main-thread-id'));
+                });
+            }
+
+            const threadSearch = document.getElementById('mainChatThreadSearch');
+            if (threadSearch) {
+                threadSearch.addEventListener('input', function() {
+                    renderMainChatThreadList();
+                });
+            }
+
+            const newGroupBtn = document.getElementById('newGroupBtn');
+            const newComposeBtn = document.getElementById('newComposeBtn');
+            if (newComposeBtn) {
+                newComposeBtn.addEventListener('click', function() {
+                    openComposeMode();
+                });
+            }
+
+            const saveGroupBtn = document.getElementById('groupCreateSaveBtn');
+            if (saveGroupBtn) {
+                saveGroupBtn.addEventListener('click', function() {
+                    createGroupAndInvite().catch(function(err) {
+                        alert(err.message || 'Kunde inte skapa gruppen.');
+                    });
+                });
+            }
+
+            const groupModal = document.getElementById('groupCreateModal');
+            if (groupModal) {
+                groupModal.addEventListener('click', function(e) {
+                    if (e.target === groupModal) closeGroupCreateModal();
+                });
+            }
+
+            const replyCancelBtn = document.getElementById('chatReplyCancelBtn');
+            if (replyCancelBtn) {
+                replyCancelBtn.addEventListener('click', function() {
+                    setActiveReply(null);
+                });
+            }
         }
 
         // JS för Messenger popup
         function toggleMessenger() {
             const popup = document.getElementById('msgPopup');
+            if (!popup) return;
             if(popup.style.display === 'flex') {
                 popup.style.display = 'none';
             } else {
                 popup.style.display = 'flex';
                 openMessengerList();
+            }
+        }
+
+        async function handleGroupInviteFromUrl() {
+            const pathMatch = window.location.pathname.match(/^\/group-invite\/([^/]+)$/);
+            if (!pathMatch) return;
+            const groupId = decodeURIComponent(pathMatch[1]);
+            const token = new URLSearchParams(window.location.search).get('token') || '';
+            if (!groupId || !token) {
+                history.replaceState({}, '', '/');
+                return;
+            }
+            try {
+                await apiSend('/api/messenger/invites/accept', 'POST', {
+                    group_id: groupId,
+                    token: token
+                });
+                history.replaceState({}, '', '/');
+                await loadMessengerUsers();
+                messengerState.activeThreadId = groupId;
+                renderMainChatThreadList();
+                alert('Inbjudan accepterad. Du har gått med i gruppen.');
+            } catch (err) {
+                history.replaceState({}, '', '/');
+                alert(err.message || 'Kunde inte acceptera inbjudan.');
             }
         }
 
@@ -1839,6 +3238,7 @@
             document.body.style.visibility = 'hidden';
             const allowed = await requireAuth();
             if (!allowed) return;
+            await handleGroupInviteFromUrl();
             initGroupChat();
             initNotes();
             await Promise.allSettled([
@@ -1853,6 +3253,7 @@
             setInterval(function() { loadChatMessages().catch(function() {}); }, 5000);
             setInterval(function() { loadChatPresence().catch(function() {}); }, 5000);
             setInterval(function() { loadTodayMeetings().catch(function() {}); }, 60000);
+            setInterval(function() { loadMessengerUsers().catch(function() {}); }, 3000);
             document.body.style.visibility = 'visible';
         })();
     </script>
