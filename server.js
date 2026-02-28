@@ -479,6 +479,58 @@ function ensureRegistrationSetting() {
   }
 }
 
+function inferAcademyLinkType(url) {
+  const lower = String(url || "").toLowerCase();
+  if (!lower) return null;
+  if (/\.pdf(?:[?#].*)?$/.test(lower)) return "pdf";
+  if (
+    /(?:youtube\.com|youtu\.be|vimeo\.com)/.test(lower) ||
+    /\.(?:mp4|webm|ogg|mov|m4v)(?:[?#].*)?$/.test(lower)
+  ) {
+    return "video";
+  }
+  return null;
+}
+
+function normalizeAcademyLink(row) {
+  if (!row || typeof row !== "object") return null;
+  const id = String(row.id || "").trim();
+  const title = String(row.title || "").trim();
+  const url = String(row.url || "").trim();
+  const typeRaw = String(row.type || "").trim().toLowerCase();
+  const inferredType = inferAcademyLinkType(url);
+  const type = typeRaw === "video" || typeRaw === "pdf" ? typeRaw : inferredType;
+  if (!id) return null;
+  if (!title && !url) return null;
+  if (url && !type) return null;
+  if (!url && type) return null;
+  return {
+    id: id,
+    title: title.slice(0, 140),
+    url: url ? url.slice(0, 2000) : "",
+    type: type || "",
+    created_at: Number(row.created_at || 0) || nowTs(),
+    updated_at: Number(row.updated_at || 0) || nowTs(),
+    created_by: Number(row.created_by || 0) || null
+  };
+}
+
+function getFacebookAcademyLinks() {
+  const value = getAppDataJson("facebook_academy_links_v1");
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((row) => normalizeAcademyLink(row))
+    .filter(Boolean)
+    .sort((a, b) => Number(b.updated_at || 0) - Number(a.updated_at || 0));
+}
+
+function setFacebookAcademyLinks(links) {
+  const safe = Array.isArray(links)
+    ? links.map((row) => normalizeAcademyLink(row)).filter(Boolean)
+    : [];
+  setAppDataJson("facebook_academy_links_v1", safe);
+}
+
 ensureColumn("sessions", "last_seen_at", "last_seen_at INTEGER NOT NULL DEFAULT 0");
 ensureColumn("users", "contact_email", "contact_email TEXT");
 ensureColumn("users", "city", "city TEXT");
@@ -2037,6 +2089,173 @@ app.delete("/api/important-messages/:id", (req, res) => {
     return res.status(404).json({ error: "Meddelandet hittades inte." });
   }
   return res.json({ ok: true });
+});
+
+app.get("/api/facebook-academy/links", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+  return res.json({ links: getFacebookAcademyLinks() });
+});
+
+app.post("/api/facebook-academy/links", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+  if (!isAdmin(user)) {
+    return res.status(403).json({ error: "Endast admin kan lägga till länkar." });
+  }
+
+  const title = String(req.body?.title || "").trim();
+  const url = String(req.body?.url || "").trim();
+  const typeRaw = String(req.body?.type || "").trim().toLowerCase();
+
+  if (!title && !url) {
+    return res.status(400).json({ error: "Ange text, länk eller båda." });
+  }
+  if (url && !/^https?:\/\//i.test(url)) {
+    return res.status(400).json({ error: "Länken måste börja med http:// eller https://." });
+  }
+
+  let type = "";
+  if (url) {
+    type = typeRaw === "video" || typeRaw === "pdf" ? typeRaw : inferAcademyLinkType(url);
+  }
+  if (url && !type) {
+    return res.status(400).json({ error: "Kunde inte avgöra länktyp. Välj video eller pdf." });
+  }
+
+  const now = nowTs();
+  const links = getFacebookAcademyLinks();
+  const item = normalizeAcademyLink({
+    id: "aca_" + crypto.randomBytes(8).toString("hex"),
+    title: title,
+    url: url,
+    type: type,
+    created_at: now,
+    updated_at: now,
+    created_by: user.id
+  });
+  if (!item) return res.status(400).json({ error: "Ogiltig länk." });
+  links.unshift(item);
+  setFacebookAcademyLinks(links);
+  return res.status(201).json({ ok: true, item: item });
+});
+
+app.put("/api/facebook-academy/links/:id", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+  if (!isAdmin(user)) {
+    return res.status(403).json({ error: "Endast admin kan redigera länkar." });
+  }
+
+  const id = String(req.params.id || "").trim();
+  if (!id) return res.status(400).json({ error: "Ogiltigt id." });
+
+  const title = String(req.body?.title || "").trim();
+  const url = String(req.body?.url || "").trim();
+  const typeRaw = String(req.body?.type || "").trim().toLowerCase();
+  if (!title && !url) {
+    return res.status(400).json({ error: "Ange text, länk eller båda." });
+  }
+  if (url && !/^https?:\/\//i.test(url)) {
+    return res.status(400).json({ error: "Länken måste börja med http:// eller https://." });
+  }
+  let type = "";
+  if (url) {
+    type = typeRaw === "video" || typeRaw === "pdf" ? typeRaw : inferAcademyLinkType(url);
+  }
+  if (url && !type) {
+    return res.status(400).json({ error: "Kunde inte avgöra länktyp. Välj video eller pdf." });
+  }
+
+  const links = getFacebookAcademyLinks();
+  const idx = links.findIndex((x) => String(x.id) === id);
+  if (idx < 0) return res.status(404).json({ error: "Länken hittades inte." });
+
+  const current = links[idx];
+  const updated = normalizeAcademyLink({
+    id: current.id,
+    title: title,
+    url: url,
+    type: type,
+    created_at: current.created_at,
+    updated_at: nowTs(),
+    created_by: current.created_by || user.id
+  });
+  if (!updated) return res.status(400).json({ error: "Ogiltig länk." });
+  links[idx] = updated;
+  setFacebookAcademyLinks(links);
+  return res.json({ ok: true, item: updated });
+});
+
+app.delete("/api/facebook-academy/links/:id", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+  if (!isAdmin(user)) {
+    return res.status(403).json({ error: "Endast admin kan ta bort länkar." });
+  }
+
+  const id = String(req.params.id || "").trim();
+  if (!id) return res.status(400).json({ error: "Ogiltigt id." });
+
+  const links = getFacebookAcademyLinks();
+  const next = links.filter((x) => String(x.id) !== id);
+  if (next.length === links.length) {
+    return res.status(404).json({ error: "Länken hittades inte." });
+  }
+  setFacebookAcademyLinks(next);
+  return res.json({ ok: true });
+});
+
+app.post("/api/facebook-academy/upload-pdf", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+  if (!isAdmin(user)) {
+    return res.status(403).json({ error: "Endast admin kan ladda upp PDF." });
+  }
+
+  const nameRaw = String(req.body?.name || "").trim();
+  const mimeRaw = String(req.body?.mime || "").trim().toLowerCase();
+  const dataBase64 = String(req.body?.data_base64 || "").trim();
+
+  if (!nameRaw || !dataBase64) {
+    return res.status(400).json({ error: "Filnamn och filinnehåll krävs." });
+  }
+  if (mimeRaw && mimeRaw !== "application/pdf") {
+    return res.status(400).json({ error: "Endast PDF-filer är tillåtna." });
+  }
+
+  let buffer;
+  try {
+    buffer = Buffer.from(dataBase64, "base64");
+  } catch (_) {
+    return res.status(400).json({ error: "Ogiltig fildata." });
+  }
+  if (!buffer || !buffer.length) {
+    return res.status(400).json({ error: "Tom fil." });
+  }
+  if (buffer.length > MAX_UPLOAD_BYTES) {
+    return res.status(400).json({ error: "Filen är för stor (max 10 MB)." });
+  }
+
+  const hasPdfExt = /\.pdf$/i.test(nameRaw);
+  const normalizedName = hasPdfExt ? nameRaw : `${nameRaw}.pdf`;
+  const safeName = normalizedName.replace(/[^a-zA-Z0-9._-]+/g, "_").slice(0, 120) || "academy.pdf";
+  const ext = ".pdf";
+  const base = path.basename(safeName, path.extname(safeName)) || "academy";
+  const fileName = `${Date.now()}_${crypto.randomBytes(6).toString("hex")}_${base}${ext}`;
+  const targetPath = path.join(UPLOAD_DIR, fileName);
+  fs.writeFileSync(targetPath, buffer);
+
+  const publicUrl = `/uploads/chat/${fileName}`;
+  return res.status(201).json({
+    ok: true,
+    file: {
+      name: normalizedName,
+      mime: "application/pdf",
+      size: buffer.length,
+      url: publicUrl
+    }
+  });
 });
 
 app.get("/", (req, res) => {

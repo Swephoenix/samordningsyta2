@@ -1682,6 +1682,156 @@
             color: #fff;
             font-weight: 700;
         }
+        .academy-modal-content {
+            background: #242a33;
+            border: 1px solid #364052;
+            width: min(94vw, 900px);
+            max-height: min(90vh, 760px);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 16px 34px rgba(0,0,0,0.45);
+            color: #eaf1fc;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .academy-modal-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+        .academy-modal-head h3 {
+            font-size: 1.08rem;
+            margin: 0;
+        }
+        .academy-list {
+            min-height: 160px;
+            max-height: 580px;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-auto-rows: 280px;
+            gap: 10px;
+            padding: 4px 2px;
+        }
+        .academy-card {
+            border: 1px solid #3a4558;
+            border-radius: 10px;
+            background: #1f2530;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-height: 0;
+        }
+        .academy-card-title {
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: #edf3ff;
+            line-height: 1.35;
+        }
+        .academy-card-meta {
+            font-size: 0.75rem;
+            color: #b7c6de;
+        }
+        .academy-preview {
+            border: 1px solid #3a4558;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #0f141d;
+            min-height: 140px;
+            display: flex;
+            align-items: stretch;
+            justify-content: stretch;
+        }
+        .academy-preview iframe,
+        .academy-preview video {
+            width: 100%;
+            height: 160px;
+            border: none;
+            background: #000;
+        }
+        .academy-card-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            margin-top: auto;
+        }
+        .academy-open-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            color: #a8c9ff;
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .academy-open-link:hover { text-decoration: underline; }
+        .academy-admin-panel {
+            border-top: 1px solid #364052;
+            padding-top: 10px;
+            display: none;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .academy-admin-panel input,
+        .academy-admin-panel select {
+            border: 1px solid #3c4658;
+            border-radius: 8px;
+            padding: 8px 10px;
+            outline: none;
+            background: #1f2530;
+            color: #edf3ff;
+            min-height: 38px;
+        }
+        .academy-title-input { flex: 1 1 220px; }
+        .academy-url-input { flex: 2 1 340px; }
+        .academy-type-input { width: 120px; }
+        .academy-btn {
+            border: 1px solid #4a5b74;
+            border-radius: 8px;
+            background: #2c3646;
+            color: #dbe7fb;
+            padding: 7px 10px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+        .academy-btn.primary {
+            background: #3a77f3;
+            border-color: #3a77f3;
+            color: #fff;
+        }
+        .academy-btn.is-active {
+            background: #3a77f3;
+            border-color: #3a77f3;
+            color: #fff;
+        }
+        .academy-btn.delete {
+            border-color: rgba(231, 76, 60, 0.5);
+            color: #ffd5d0;
+            background: rgba(231, 76, 60, 0.15);
+        }
+        .academy-admin-hint {
+            width: 100%;
+            font-size: 0.78rem;
+            color: #b7c6de;
+        }
+        @media (max-width: 1100px) {
+            .academy-list {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+        @media (max-width: 720px) {
+            .academy-list {
+                grid-template-columns: 1fr;
+                grid-auto-rows: auto;
+                max-height: 60vh;
+            }
+        }
 
         /* Modals & Popups */
         .modal-overlay {
@@ -2136,7 +2286,7 @@
             <div class="panel placeholders">
                 <div class="panel-header">Verktyg</div>
                 <div class="placeholder-grid">
-                    <div class="placeholder-icon" title="Facebook Marketing Academy">
+                    <div class="placeholder-icon" id="facebookAcademyBtn" title="Facebook Marketing Academy">
                         <img src="fbacademy.png" alt="Facebook Academy" class="tool-icon-svg">
                     </div>
                     <div class="placeholder-icon" title="Idébank">💡</div>
@@ -2306,6 +2456,28 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="facebookAcademyModal">
+        <div class="academy-modal-content">
+            <div class="academy-modal-head">
+                <h3>Facebook Academy</h3>
+                <button class="modal-close" type="button" onclick="closeFacebookAcademyModal()">✖</button>
+            </div>
+            <div class="academy-list" id="academyLinksList">
+                <div class="academy-card"><div class="academy-card-title">Laddar länkar...</div></div>
+            </div>
+            <div class="academy-admin-panel" id="academyAdminPanel">
+                <input id="academyTitleInput" class="academy-title-input" type="text" maxlength="140" placeholder="Titel">
+                <input id="academyUrlInput" class="academy-url-input" type="url" maxlength="2000" placeholder="https://...">
+                <button id="academyAddVideoBtn" class="academy-btn" type="button">Lägg till video</button>
+                <button id="academyUploadPdfBtn" class="academy-btn" type="button">Ladda upp PDF</button>
+                <input id="academyPdfInput" type="file" accept="application/pdf" style="display:none;">
+                <button id="academySaveBtn" class="academy-btn primary" type="button">Spara</button>
+                <button id="academyCancelEditBtn" class="academy-btn" type="button">Avbryt redigering</button>
+                <div class="academy-admin-hint" id="academyAdminHint">Kort kan vara text, video/pdf eller text + video/pdf.</div>
+            </div>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="memberManageModal">
         <div class="member-manage-content">
             <button class="modal-close" type="button" onclick="closeMemberManageModal()">✖</button>
@@ -2380,6 +2552,11 @@
         let importantEditingId = null;
         let importantApiAvailable = false;
         let importantMessagesLoadError = '';
+        let academyLinks = [];
+        let academyApiAvailable = false;
+        let academyLinksLoadError = '';
+        let academyEditingId = null;
+        let academySelectedType = '';
         let memberManageUsers = [];
         let memberManageCities = [];
         let memberManageSelectedId = 0;
@@ -3205,6 +3382,238 @@
                     saveNotes().catch(function() {});
                 }, 500);
             });
+        }
+
+        function academyInferType(url) {
+            const lower = String(url || '').trim().toLowerCase();
+            if (!lower) return '';
+            if (/\.pdf(?:[?#].*)?$/.test(lower)) return 'pdf';
+            if (/(youtube\.com|youtu\.be|vimeo\.com)/.test(lower) || /\.(mp4|webm|ogg|mov|m4v)(?:[?#].*)?$/.test(lower)) {
+                return 'video';
+            }
+            return '';
+        }
+
+        function academyYouTubeEmbedUrl(url) {
+            try {
+                const parsed = new URL(url);
+                const host = parsed.hostname.toLowerCase();
+                if (host.includes('youtu.be')) {
+                    const id = parsed.pathname.replace(/^\/+/, '').split('/')[0];
+                    return id ? `https://www.youtube.com/embed/${encodeURIComponent(id)}` : '';
+                }
+                if (host.includes('youtube.com')) {
+                    const v = parsed.searchParams.get('v');
+                    if (v) return `https://www.youtube.com/embed/${encodeURIComponent(v)}`;
+                    const parts = parsed.pathname.split('/').filter(Boolean);
+                    const idx = parts.findIndex(function(p) { return p === 'embed' || p === 'shorts'; });
+                    if (idx >= 0 && parts[idx + 1]) {
+                        return `https://www.youtube.com/embed/${encodeURIComponent(parts[idx + 1])}`;
+                    }
+                }
+            } catch (_) {
+            }
+            return '';
+        }
+
+        function academyBuildPreviewHtml(item) {
+            const type = String(item.type || academyInferType(item.url) || '').toLowerCase();
+            const url = String(item.url || '');
+            if (!url) return '<div class="academy-card-meta">Ingen länk.</div>';
+            if (type === 'pdf') {
+                return `<iframe src="${escapeHtml(url)}" title="${escapeHtml(String(item.title || 'PDF'))}"></iframe>`;
+            }
+            if (type === 'video') {
+                const yt = academyYouTubeEmbedUrl(url);
+                if (yt) {
+                    return `<iframe src="${escapeHtml(yt)}" title="${escapeHtml(String(item.title || 'Video'))}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+                }
+                if (/\.(mp4|webm|ogg|mov|m4v)(?:[?#].*)?$/i.test(url)) {
+                    return `<video controls preload="metadata" src="${escapeHtml(url)}"></video>`;
+                }
+                return `<iframe src="${escapeHtml(url)}" title="${escapeHtml(String(item.title || 'Video'))}" allowfullscreen></iframe>`;
+            }
+            return '<div class="academy-card-meta">Förhandsvisning stöds inte för den här länken.</div>';
+        }
+
+        function resetAcademyForm() {
+            academyEditingId = null;
+            academySelectedType = '';
+            const titleInput = document.getElementById('academyTitleInput');
+            const urlInput = document.getElementById('academyUrlInput');
+            const pdfInput = document.getElementById('academyPdfInput');
+            const hint = document.getElementById('academyAdminHint');
+            if (titleInput) titleInput.value = '';
+            if (urlInput) urlInput.value = '';
+            if (pdfInput) pdfInput.value = '';
+            if (hint) hint.textContent = 'Kort kan vara text, video/pdf eller text + video/pdf.';
+            setAcademyMediaType('');
+        }
+
+        function setAcademyMediaType(nextType) {
+            const normalized = String(nextType || '').trim().toLowerCase();
+            academySelectedType = normalized === 'video' || normalized === 'pdf' ? normalized : '';
+            const videoBtn = document.getElementById('academyAddVideoBtn');
+            const pdfBtn = document.getElementById('academyUploadPdfBtn');
+            if (videoBtn) videoBtn.classList.toggle('is-active', academySelectedType === 'video');
+            if (pdfBtn) pdfBtn.classList.toggle('is-active', academySelectedType === 'pdf');
+        }
+
+        function renderAcademyLinks() {
+            const list = document.getElementById('academyLinksList');
+            const adminPanel = document.getElementById('academyAdminPanel');
+            if (!list || !adminPanel) return;
+            adminPanel.style.display = currentUserIsAdmin ? 'flex' : 'none';
+
+            if (academyLinksLoadError) {
+                list.innerHTML = `<div class="academy-card"><div class="academy-card-title">⚠️ ${escapeHtml(academyLinksLoadError)}</div></div>`;
+                return;
+            }
+            if (!academyLinks.length) {
+                list.innerHTML = '<div class="academy-card"><div class="academy-card-title">Inga länkar ännu.</div><div class="academy-card-meta">Admin kan lägga till video- och PDF-länkar här.</div></div>';
+                return;
+            }
+
+            list.innerHTML = academyLinks.map(function(item) {
+                const itemType = String(item.type || academyInferType(item.url) || '').toLowerCase();
+                const titleText = String(item.title || '').trim();
+                const hasUrl = !!String(item.url || '').trim();
+                const adminButtons = currentUserIsAdmin
+                    ? `
+                        <button class="academy-btn" type="button" data-academy-edit="${escapeHtml(String(item.id))}">Redigera</button>
+                        <button class="academy-btn delete" type="button" data-academy-delete="${escapeHtml(String(item.id))}">Ta bort</button>
+                      `
+                    : '';
+                return `
+                    <article class="academy-card">
+                        ${titleText ? `<div class="academy-card-title">${escapeHtml(titleText)}</div>` : '<div class="academy-card-title">Video/PDF</div>'}
+                        ${hasUrl ? `<div class="academy-preview">${academyBuildPreviewHtml(item)}</div>` : '<div class="academy-card-meta">Textkort (ingen media).</div>'}
+                        <div class="academy-card-meta">${escapeHtml(itemType ? itemType.toUpperCase() : (hasUrl ? 'MEDIA' : 'TEXT'))}</div>
+                        <div class="academy-card-actions">
+                            ${hasUrl ? `<a class="academy-open-link" href="${escapeHtml(String(item.url || '#'))}" target="_blank" rel="noopener">Öppna länk ↗</a>` : '<span></span>'}
+                            <div>${adminButtons}</div>
+                        </div>
+                    </article>
+                `;
+            }).join('');
+
+            if (!currentUserIsAdmin) return;
+            list.querySelectorAll('[data-academy-edit]').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const id = String(btn.getAttribute('data-academy-edit') || '');
+                    const item = academyLinks.find(function(x) { return String(x.id) === id; });
+                    if (!item) return;
+                    academyEditingId = id;
+                    document.getElementById('academyTitleInput').value = String(item.title || '');
+                    document.getElementById('academyUrlInput').value = String(item.url || '');
+                    setAcademyMediaType(String(item.type || academyInferType(item.url) || ''));
+                    document.getElementById('academyAdminHint').textContent = 'Redigerar befintlig länk.';
+                });
+            });
+            list.querySelectorAll('[data-academy-delete]').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const id = String(btn.getAttribute('data-academy-delete') || '');
+                    deleteAcademyLink(id).catch(function(err) {
+                        alert(err.message || 'Kunde inte ta bort länken.');
+                    });
+                });
+            });
+        }
+
+        async function loadFacebookAcademyLinks() {
+            try {
+                const data = await apiGet('/api/facebook-academy/links');
+                academyApiAvailable = true;
+                academyLinksLoadError = '';
+                academyLinks = Array.isArray(data.links) ? data.links.map(function(item) {
+                    return {
+                        id: String(item.id || ''),
+                        title: String(item.title || ''),
+                        url: String(item.url || ''),
+                        type: String(item.type || academyInferType(item.url) || '')
+                    };
+                }) : [];
+            } catch (_) {
+                academyApiAvailable = false;
+                academyLinksLoadError = 'Kunde inte ladda Academy-länkar från servern.';
+                academyLinks = [];
+            }
+            renderAcademyLinks();
+        }
+
+        async function uploadPdfForAcademy(file) {
+            if (!file) throw new Error('Ingen fil vald.');
+            if (String(file.type || '').toLowerCase() !== 'application/pdf') {
+                throw new Error('Välj en PDF-fil.');
+            }
+            const base64 = await fileToBase64(file);
+            const res = await apiSend('/api/facebook-academy/upload-pdf', 'POST', {
+                name: file.name,
+                mime: file.type || 'application/pdf',
+                data_base64: base64
+            });
+            const fileInfo = res && res.file ? res.file : null;
+            if (!fileInfo || !fileInfo.url) throw new Error('Kunde inte ladda upp PDF.');
+            document.getElementById('academyUrlInput').value = String(fileInfo.url || '');
+            setAcademyMediaType('pdf');
+            document.getElementById('academyAdminHint').textContent = `PDF uppladdad: ${String(fileInfo.name || 'fil.pdf')}`;
+        }
+
+        async function saveAcademyLinkFromForm() {
+            if (!currentUserIsAdmin) return;
+            if (!academyApiAvailable) {
+                throw new Error('Serverkoppling saknas. Försök igen om en stund.');
+            }
+            const title = String(document.getElementById('academyTitleInput').value || '').trim();
+            const url = String(document.getElementById('academyUrlInput').value || '').trim();
+            const type = url ? (academySelectedType || academyInferType(url)) : '';
+
+            if (!title && !url) throw new Error('Ange text, länk eller båda.');
+            if (url && !type) throw new Error('Kunde inte avgöra länktyp. Välj video eller pdf.');
+
+            if (academyEditingId) {
+                await apiSend(`/api/facebook-academy/links/${encodeURIComponent(academyEditingId)}`, 'PUT', {
+                    title: title,
+                    url: url,
+                    type: type
+                });
+            } else {
+                await apiSend('/api/facebook-academy/links', 'POST', {
+                    title: title,
+                    url: url,
+                    type: type
+                });
+            }
+            resetAcademyForm();
+            await loadFacebookAcademyLinks();
+        }
+
+        async function deleteAcademyLink(id) {
+            if (!currentUserIsAdmin) return;
+            if (!academyApiAvailable) {
+                throw new Error('Serverkoppling saknas. Länken kunde inte tas bort.');
+            }
+            const ok = window.confirm('Vill du ta bort länken från Facebook Academy?');
+            if (!ok) return;
+            await apiSend(`/api/facebook-academy/links/${encodeURIComponent(String(id || ''))}`, 'DELETE');
+            if (academyEditingId && String(academyEditingId) === String(id)) {
+                resetAcademyForm();
+            }
+            await loadFacebookAcademyLinks();
+        }
+
+        async function openFacebookAcademyModal() {
+            const modal = document.getElementById('facebookAcademyModal');
+            if (!modal) return;
+            resetAcademyForm();
+            modal.style.display = 'flex';
+            await loadFacebookAcademyLinks();
+        }
+
+        function closeFacebookAcademyModal() {
+            const modal = document.getElementById('facebookAcademyModal');
+            if (modal) modal.style.display = 'none';
+            resetAcademyForm();
         }
 
         function renderImportantMessages() {
@@ -5213,6 +5622,11 @@
         document.getElementById('importantAdminBtn').addEventListener('click', function() {
             openImportantAdminModal();
         });
+        document.getElementById('facebookAcademyBtn').addEventListener('click', function() {
+            openFacebookAcademyModal().catch(function(err) {
+                alert(err.message || 'Kunde inte öppna Facebook Academy.');
+            });
+        });
         document.getElementById('adminSettingsIcon').addEventListener('click', function() {
             openMemberManageModal().catch(function() {});
         });
@@ -5220,6 +5634,35 @@
             saveImportantMessageFromForm().catch(function(err) {
                 alert(err.message || 'Kunde inte spara viktigt meddelande.');
             });
+        });
+        document.getElementById('academySaveBtn').addEventListener('click', function() {
+            saveAcademyLinkFromForm().catch(function(err) {
+                alert(err.message || 'Kunde inte spara länken.');
+            });
+        });
+        document.getElementById('academyAddVideoBtn').addEventListener('click', function() {
+            setAcademyMediaType('video');
+            const urlInput = document.getElementById('academyUrlInput');
+            if (urlInput) urlInput.focus();
+            document.getElementById('academyAdminHint').textContent = 'Klistra in videolänk (YouTube/Vimeo eller direkt videofil).';
+        });
+        document.getElementById('academyUploadPdfBtn').addEventListener('click', function() {
+            setAcademyMediaType('pdf');
+            const input = document.getElementById('academyPdfInput');
+            if (input) input.click();
+        });
+        document.getElementById('academyPdfInput').addEventListener('change', function(e) {
+            const file = e && e.target && e.target.files && e.target.files[0] ? e.target.files[0] : null;
+            if (!file) return;
+            uploadPdfForAcademy(file).catch(function(err) {
+                alert(err.message || 'Kunde inte ladda upp PDF.');
+            });
+        });
+        document.getElementById('academyCancelEditBtn').addEventListener('click', function() {
+            resetAcademyForm();
+        });
+        document.getElementById('facebookAcademyModal').addEventListener('click', function(e) {
+            if (e.target === this) closeFacebookAcademyModal();
         });
         document.getElementById('importantAdminModal').addEventListener('click', function(e) {
             if (e.target === this) closeImportantAdminModal();
@@ -5281,6 +5724,7 @@
                 loadMonthEvents(),
                 loadTodayMeetings(),
                 loadImportantMessages(),
+                loadFacebookAcademyLinks(),
                 loadChatMessages(),
                 loadChatPresence(),
                 loadNotes(),
