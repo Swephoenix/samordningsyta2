@@ -492,6 +492,89 @@
             border-left-color: rgba(120,160,255,0.75);
             background: rgba(58,119,243,0.12);
         }
+        .chat-attachment {
+            margin: 6px 0 4px;
+            padding: 7px 9px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.18);
+            background: rgba(255,255,255,0.08);
+            color: inherit;
+            font-size: 0.78rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            max-width: 100%;
+            word-break: break-word;
+        }
+        .chat-attachment-thumb {
+            width: 120px;
+            max-width: 100%;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.2);
+            display: block;
+        }
+        .chat-attachment-file {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .chat-post.theirs .chat-attachment {
+            background: rgba(74,163,255,0.14);
+            border-color: rgba(74,163,255,0.28);
+        }
+        .chat-preview-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.72);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            padding: 20px;
+        }
+        .chat-preview-content {
+            width: min(92vw, 980px);
+            height: min(88vh, 740px);
+            background: #10151d;
+            border: 1px solid #2f3949;
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .chat-preview-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 32px;
+            height: 32px;
+            border: 1px solid #3c4758;
+            border-radius: 8px;
+            background: #1c2430;
+            color: #dbe7f8;
+            cursor: pointer;
+            z-index: 2;
+        }
+        .chat-preview-body {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #dce7f8;
+            padding: 46px 16px 16px;
+        }
+        .chat-preview-body img,
+        .chat-preview-body iframe {
+            max-width: 100%;
+            max-height: 100%;
+            border: none;
+            border-radius: 8px;
+            background: #fff;
+        }
         .chat-input-area input {
             flex: 1;
             padding: 10px 14px;
@@ -1603,7 +1686,7 @@
             <div class="panel calendar-wrapper">
                 <div class="panel-header calendar-header">
                     <button class="calendar-nav" id="prevMonthBtn" aria-label="Föregående månad">‹</button>
-                    <span class="calendar-title" id="calendarTitle">Kalender</span>
+                    <span class="calendar-title" id="calendarTitle">-</span>
                     <button class="calendar-nav" id="nextMonthBtn" aria-label="Nästa månad">›</button>
                 </div>
                 <div class="panel-content">
@@ -1686,11 +1769,13 @@
                         <button class="chat-reply-cancel" id="chatReplyCancelBtn" type="button">Avbryt</button>
                     </div>
                     <div class="chat-input-area">
-                        <button class="btn-icon" title="Bifoga fil">📎</button>
+                        <button class="btn-icon" id="chatAttachBtn" title="Bifoga fil">📎</button>
                         <div class="chat-input-tools">
                             <button class="btn-icon" id="chatEmojiToggleBtn" title="Emoji">🙂</button>
-                            <button class="btn-icon" title="Bild">🖼️</button>
+                            <button class="btn-icon" id="chatImageBtn" title="Bild">🖼️</button>
                         </div>
+                        <input id="chatFileInput" type="file" style="display:none;">
+                        <input id="chatImageInput" type="file" accept="image/*,application/pdf" style="display:none;">
                         <input id="groupChatInput" type="text" placeholder="Skriv ett inlägg eller ladda upp fil...">
                         <button id="groupChatSendBtn" class="chat-send-btn" title="Skicka">➤</button>
                         <div class="chat-emoji-picker" id="chatEmojiPicker"></div>
@@ -1817,6 +1902,13 @@
                 <button class="group-create-btn" type="button" onclick="closeGroupCreateModal()">Avbryt</button>
                 <button class="group-create-btn primary" type="button" id="groupCreateSaveBtn">Skapa & bjud in</button>
             </div>
+        </div>
+    </div>
+
+    <div class="chat-preview-overlay" id="chatPreviewModal">
+        <div class="chat-preview-content">
+            <button class="chat-preview-close" id="chatPreviewCloseBtn" type="button">✕</button>
+            <div class="chat-preview-body" id="chatPreviewBody"></div>
         </div>
     </div>
 
@@ -1971,6 +2063,112 @@
             return data;
         }
 
+        function attachmentLabel(attachment) {
+            if (!attachment) return '';
+            return String(attachment.name || 'Bilaga');
+        }
+
+        function renderAttachmentHtml(attachment) {
+            if (!attachment || !attachment.url) return '';
+            const mime = String(attachment.mime || '').toLowerCase();
+            const isImage = mime.startsWith('image/');
+            const previewUrl = String(attachment.preview_url || attachment.url || '');
+            if (isImage && previewUrl) {
+                return `<div class="chat-attachment" data-attachment-preview="1"><img class="chat-attachment-thumb" src="${escapeHtml(previewUrl)}" alt="${escapeHtml(attachmentLabel(attachment))}"></div>`;
+            }
+            return `<div class="chat-attachment chat-attachment-file" data-attachment-preview="1">📎 <span>${escapeHtml(attachmentLabel(attachment))}</span></div>`;
+        }
+
+        function openChatPreview(attachment) {
+            if (!attachment || !attachment.url) return;
+            const modal = document.getElementById('chatPreviewModal');
+            const body = document.getElementById('chatPreviewBody');
+            if (!modal || !body) return;
+            const mime = String(attachment.mime || '').toLowerCase();
+            const fileName = escapeHtml(attachmentLabel(attachment));
+            if (mime.startsWith('image/')) {
+                body.innerHTML = `<img src="${escapeHtml(attachment.url)}" alt="${fileName}">`;
+            } else if (mime === 'application/pdf') {
+                body.innerHTML = `<iframe src="${escapeHtml(attachment.url)}" title="${fileName}"></iframe>`;
+            } else {
+                body.innerHTML = `<div><p>Förhandsvisning stöds inte för den här filtypen.</p><p><a href="${escapeHtml(attachment.url)}" target="_blank" rel="noopener">Öppna filen</a></p></div>`;
+            }
+            modal.style.display = 'flex';
+        }
+
+        function closeChatPreview() {
+            const modal = document.getElementById('chatPreviewModal');
+            const body = document.getElementById('chatPreviewBody');
+            if (modal) modal.style.display = 'none';
+            if (body) body.innerHTML = '';
+        }
+
+        function fileToBase64(file) {
+            return new Promise(function(resolve, reject) {
+                const reader = new FileReader();
+                reader.onload = function() {
+                    const result = String(reader.result || '');
+                    const comma = result.indexOf(',');
+                    resolve(comma >= 0 ? result.slice(comma + 1) : result);
+                };
+                reader.onerror = function() {
+                    reject(new Error('Kunde inte läsa filen.'));
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function createImagePreviewBlob(file) {
+            return new Promise(function(resolve, reject) {
+                const img = new Image();
+                img.onload = function() {
+                    const maxSide = 360;
+                    const ratio = Math.min(1, maxSide / Math.max(img.width, img.height));
+                    const width = Math.max(1, Math.round(img.width * ratio));
+                    const height = Math.max(1, Math.round(img.height * ratio));
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) return reject(new Error('Kunde inte skapa preview.'));
+                    ctx.drawImage(img, 0, 0, width, height);
+                    canvas.toBlob(function(blob) {
+                        if (!blob) return reject(new Error('Kunde inte komprimera bilden.'));
+                        resolve(blob);
+                    }, 'image/jpeg', 0.72);
+                };
+                img.onerror = function() {
+                    reject(new Error('Kunde inte läsa bilden.'));
+                };
+                img.src = URL.createObjectURL(file);
+            });
+        }
+
+        async function uploadFileToChat(file) {
+            const base64 = await fileToBase64(file);
+            const res = await apiSend('/api/files/upload', 'POST', {
+                name: file.name,
+                mime: file.type || 'application/octet-stream',
+                data_base64: base64
+            });
+            return res.file || null;
+        }
+
+        async function uploadAttachmentWithPreview(file) {
+            const original = await uploadFileToChat(file);
+            if (!original) throw new Error('Kunde inte ladda upp filen.');
+            const mime = String(original.mime || '').toLowerCase();
+            if (!mime.startsWith('image/')) return original;
+
+            const previewBlob = await createImagePreviewBlob(file);
+            const previewFile = new File([previewBlob], `preview_${file.name}.jpg`, { type: 'image/jpeg' });
+            const preview = await uploadFileToChat(previewFile);
+            return {
+                ...original,
+                preview_url: preview && preview.url ? preview.url : original.url
+            };
+        }
+
         function formatDateKey(year, month, day) {
             const mm = String(month + 1).padStart(2, '0');
             const dd = String(day).padStart(2, '0');
@@ -1991,7 +2189,7 @@
         function renderCalendar() {
             const title = document.getElementById('calendarTitle');
             const grid = document.getElementById('calendarGrid');
-            title.innerText = `Kalender - ${monthNames[calendarState.month]} ${calendarState.year}`;
+            title.innerText = `${monthNames[calendarState.month]} ${calendarState.year}`;
             const now = new Date();
             const todayKey = formatDateKey(now.getFullYear(), now.getMonth(), now.getDate());
 
