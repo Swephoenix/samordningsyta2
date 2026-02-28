@@ -6,19 +6,24 @@ services:
       context: .
       dockerfile: Dockerfile
     image: samordningsyta2:docker
+    container_name: samordningsyta2-app
+    restart: unless-stopped
+    user: "1000:1000"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     ports:
-      - "8000:8000"
+      - "${APP_PORT:-8000}:8000"
     environment:
-      - NODE_ENV=production
-      - PORT=8000
+      NODE_ENV: production
+      PORT: 8000
     volumes:
-      - samordningsyta2_data:/app/uploads
+      - ${PERSISTENT_DATA_ROOT}/samordningsyta2/uploads:/app/uploads
     networks:
       - samordningsyta_net
-
-volumes:
-  samordningsyta2_data:
 
 networks:
   samordningsyta_net:
     name: samordningsyta_net
+    driver: bridge
