@@ -269,6 +269,26 @@ CREATE TABLE IF NOT EXISTS app_data (
   value TEXT NOT NULL,
   updated_at INTEGER NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS qna_questions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  question TEXT NOT NULL,
+  image_url TEXT,
+  created_at INTEGER NOT NULL,
+  FOREIGN KEY(user_id) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS qna_answers (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  question_id INTEGER NOT NULL,
+  user_id INTEGER NOT NULL,
+  answer TEXT NOT NULL,
+  image_url TEXT,
+  created_at INTEGER NOT NULL,
+  FOREIGN KEY(question_id) REFERENCES qna_questions(id),
+  FOREIGN KEY(user_id) REFERENCES users(id)
+);
 `);
 
 db.exec(`
@@ -292,6 +312,12 @@ CREATE INDEX IF NOT EXISTS idx_chat_group_members_user_group
 
 CREATE INDEX IF NOT EXISTS idx_chat_group_messages_group_id
   ON chat_group_messages(group_id, id DESC);
+
+CREATE INDEX IF NOT EXISTS idx_qna_questions_created
+  ON qna_questions(created_at DESC, id DESC);
+
+CREATE INDEX IF NOT EXISTS idx_qna_answers_question_created
+  ON qna_answers(question_id, created_at ASC, id ASC);
 `);
 
 function nowTs() {
@@ -501,6 +527,14 @@ function isAllowedAcademyUrl(url) {
   return false;
 }
 
+function isAllowedUploadUrl(url) {
+  const value = String(url || "").trim();
+  if (!value) return false;
+  if (/^\/uploads\/chat\/[a-zA-Z0-9._-]+(?:[?#].*)?$/.test(value)) return true;
+  if (/^https?:\/\//i.test(value)) return true;
+  return false;
+}
+
 function normalizeAcademyLink(row) {
   if (!row || typeof row !== "object") return null;
   const id = String(row.id || "").trim();
@@ -546,6 +580,8 @@ ensureColumn("users", "city", "city TEXT");
 ensureColumn("users", "first_name", "first_name TEXT");
 ensureColumn("users", "last_name", "last_name TEXT");
 ensureColumn("users", "phone", "phone TEXT");
+ensureColumn("qna_questions", "image_url", "image_url TEXT");
+ensureColumn("qna_answers", "image_url", "image_url TEXT");
 
 ensureDefaultUser("admin", "admin");
 ensureDefaultUser("user1", "user1");
@@ -2267,6 +2303,150 @@ app.post("/api/facebook-academy/upload-pdf", (req, res) => {
       mime: "application/pdf",
       size: buffer.length,
       url: publicUrl
+    }
+  });
+});
+
+app.get("/api/qna/questions", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+
+  const search = String(req.query.q || "").trim().toLowerCase();
+  const like = `%${search}%`;
+  const questionRows = db
+    .prepare(
+      `SELECT q.id, q.question, q.image_url, q.created_at, u.email AS user_email
+       FROM qna_questions q
+       JOIN users u ON u.id = q.user_id
+       WHERE (
+         ? = ''
+         OR lower(q.question) LIKE ?
+         OR lower(u.email) LIKE ?
+         OR EXISTS (
+           SELECT 1
+           FROM qna_answers a
+           JOIN users au ON au.id = a.user_id
+           WHERE a.question_id = q.id
+             AND (
+               lower(a.answer) LIKE ?
+               OR lower(au.email) LIKE ?
+             )
+         )
+       )
+       ORDER BY q.created_at DESC, q.id DESC
+       LIMIT 200`
+    )
+    .all(search, like, like, like, like);
+
+  const questionIds = questionRows.map((q) => Number(q.id)).filter((id) => Number.isInteger(id) && id > 0);
+  let answersRows = [];
+  if (questionIds.length) {
+    answersRows = db
+      .prepare(
+        `SELECT a.id, a.question_id, a.answer, a.image_url, a.created_at, u.email AS user_email
+         FROM qna_answers a
+         JOIN users u ON u.id = a.user_id
+         WHERE a.question_id IN (${questionIds.map(() => "?").join(",")})
+         ORDER BY a.created_at ASC, a.id ASC`
+      )
+      .all(...questionIds);
+  }
+
+  const answersByQuestion = new Map();
+  answersRows.forEach((row) => {
+    const key = Number(row.question_id);
+    if (!answersByQuestion.has(key)) answersByQuestion.set(key, []);
+    answersByQuestion.get(key).push({
+      id: Number(row.id),
+      answer: String(row.answer || ""),
+      image_url: String(row.image_url || ""),
+      created_at: Number(row.created_at || 0),
+      user_email: String(row.user_email || "")
+    });
+  });
+
+  const questions = questionRows.map((row) => ({
+    id: Number(row.id),
+    question: String(row.question || ""),
+    image_url: String(row.image_url || ""),
+    created_at: Number(row.created_at || 0),
+    user_email: String(row.user_email || ""),
+    answers: answersByQuestion.get(Number(row.id)) || []
+  }));
+  return res.json({ questions });
+});
+
+app.post("/api/qna/questions", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+
+  const question = String(req.body?.question || "").trim();
+  const imageUrl = String(req.body?.image_url || "").trim();
+  if (!question && !imageUrl) {
+    return res.status(400).json({ error: "Fråga eller bild krävs." });
+  }
+  if (question.length > 2000) {
+    return res.status(400).json({ error: "Frågan är för lång (max 2000 tecken)." });
+  }
+  if (imageUrl && !isAllowedUploadUrl(imageUrl)) {
+    return res.status(400).json({ error: "Ogiltig bildlänk." });
+  }
+
+  const now = nowTs();
+  const result = db
+    .prepare("INSERT INTO qna_questions(user_id, question, image_url, created_at) VALUES (?, ?, ?, ?)")
+    .run(user.id, question, imageUrl || null, now);
+  return res.status(201).json({
+    ok: true,
+    question: {
+      id: Number(result.lastInsertRowid || 0),
+      question: question,
+      image_url: imageUrl || "",
+      created_at: now,
+      user_email: user.email,
+      answers: []
+    }
+  });
+});
+
+app.post("/api/qna/questions/:id/answers", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+
+  const questionId = Number(req.params.id);
+  if (!Number.isInteger(questionId) || questionId <= 0) {
+    return res.status(400).json({ error: "Ogiltigt fråge-id." });
+  }
+  const answer = String(req.body?.answer || "").trim();
+  const imageUrl = String(req.body?.image_url || "").trim();
+  if (!answer && !imageUrl) {
+    return res.status(400).json({ error: "Svar eller bild krävs." });
+  }
+  if (answer.length > 2000) {
+    return res.status(400).json({ error: "Svaret är för långt (max 2000 tecken)." });
+  }
+  if (imageUrl && !isAllowedUploadUrl(imageUrl)) {
+    return res.status(400).json({ error: "Ogiltig bildlänk." });
+  }
+
+  const existing = db.prepare("SELECT id FROM qna_questions WHERE id = ?").get(questionId);
+  if (!existing) {
+    return res.status(404).json({ error: "Frågan hittades inte." });
+  }
+
+  const now = nowTs();
+  const result = db
+    .prepare("INSERT INTO qna_answers(question_id, user_id, answer, image_url, created_at) VALUES (?, ?, ?, ?, ?)")
+    .run(questionId, user.id, answer, imageUrl || null, now);
+  return res.status(201).json({
+    ok: true,
+    answer: {
+      id: Number(result.lastInsertRowid || 0),
+      question_id: questionId,
+      answer: answer,
+      image_url: imageUrl || "",
+      created_at: now,
+      user_email: user.email
     }
   });
 });

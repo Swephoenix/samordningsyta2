@@ -600,6 +600,30 @@
             cursor: pointer;
             font-weight: 700;
         }
+        .chat-attachment-draft {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 8px 12px;
+            border-top: 1px solid #303848;
+            background: #263141;
+            color: #dce6fb;
+            font-size: 0.78rem;
+        }
+        .chat-attachment-draft-text {
+            min-width: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .chat-attachment-draft-remove {
+            border: none;
+            background: transparent;
+            color: #9fc2ff;
+            cursor: pointer;
+            font-weight: 700;
+        }
         .chat-reply-preview {
             margin-bottom: 6px;
             padding: 6px 8px;
@@ -1820,6 +1844,159 @@
             font-size: 0.78rem;
             color: #b7c6de;
         }
+        .qna-modal-content {
+            background: #242a33;
+            border: 1px solid #364052;
+            width: min(94vw, 920px);
+            max-height: min(90vh, 760px);
+            border-radius: 12px;
+            padding: 14px;
+            box-shadow: 0 16px 34px rgba(0,0,0,0.45);
+            color: #eaf1fc;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .qna-modal-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .qna-modal-head h3 {
+            margin: 0;
+            font-size: 1.06rem;
+        }
+        .qna-search-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+        }
+        .qna-search-row input {
+            border: 1px solid #3c4658;
+            border-radius: 8px;
+            padding: 9px 10px;
+            outline: none;
+            background: #1f2530;
+            color: #edf3ff;
+        }
+        .qna-ask-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+        }
+        .qna-ask-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: stretch;
+        }
+        .qna-ask-row textarea {
+            border: 1px solid #3c4658;
+            border-radius: 8px;
+            padding: 10px;
+            outline: none;
+            background: #1f2530;
+            color: #edf3ff;
+            min-height: 72px;
+            resize: vertical;
+        }
+        .qna-btn {
+            border: 1px solid #4a5b74;
+            border-radius: 8px;
+            background: #2c3646;
+            color: #dbe7fb;
+            padding: 8px 11px;
+            cursor: pointer;
+            font-size: 0.82rem;
+            font-weight: 700;
+        }
+        .qna-btn.primary {
+            background: #3a77f3;
+            border-color: #3a77f3;
+            color: #fff;
+        }
+        .qna-list {
+            border: 1px solid #364052;
+            border-radius: 8px;
+            background: #1f2530;
+            max-height: 470px;
+            overflow-y: auto;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .qna-item {
+            border: 1px solid #394557;
+            border-radius: 8px;
+            background: #222a36;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .qna-item-meta {
+            font-size: 0.74rem;
+            color: #b7c6de;
+        }
+        .qna-item-question {
+            color: #eef3fc;
+            line-height: 1.45;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            font-size: 0.92rem;
+        }
+        .qna-answers {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding-left: 8px;
+            border-left: 2px solid #334155;
+        }
+        .qna-answer {
+            font-size: 0.86rem;
+            color: #dde7f6;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+        .qna-answer-meta {
+            font-size: 0.72rem;
+            color: #a8b7cf;
+            margin-bottom: 2px;
+        }
+        .qna-answer-row {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 8px;
+            margin-top: 2px;
+        }
+        .qna-answer-row input {
+            border: 1px solid #3c4658;
+            border-radius: 8px;
+            padding: 8px 10px;
+            outline: none;
+            background: #1f2530;
+            color: #edf3ff;
+        }
+        .qna-empty {
+            font-size: 0.88rem;
+            color: #b7c6de;
+            text-align: center;
+            padding: 12px 4px;
+        }
+        .qna-media-hint {
+            font-size: 0.74rem;
+            color: #9fc2ff;
+            margin-top: 2px;
+        }
+        .qna-image-preview {
+            margin-top: 6px;
+            max-width: min(360px, 100%);
+            border-radius: 8px;
+            border: 1px solid #425166;
+            display: block;
+        }
         @media (max-width: 1100px) {
             .academy-list {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2255,6 +2432,10 @@
                         <span class="chat-reply-text" id="chatReplyText"></span>
                         <button class="chat-reply-cancel" id="chatReplyCancelBtn" type="button">Avbryt</button>
                     </div>
+                    <div class="chat-attachment-draft" id="chatAttachmentDraftBar">
+                        <span class="chat-attachment-draft-text" id="chatAttachmentDraftText"></span>
+                        <button class="chat-attachment-draft-remove" id="chatAttachmentDraftRemoveBtn" type="button">Ta bort</button>
+                    </div>
                     <div class="chat-input-area">
                         <button class="btn-icon" id="chatAttachBtn" title="Bifoga fil">📎</button>
                         <div class="chat-input-tools">
@@ -2292,6 +2473,7 @@
                     <div class="placeholder-icon" title="Idébank">💡</div>
                     <div class="placeholder-icon" title="Statistik">📊</div>
                     <div class="placeholder-icon" title="Inställningar">⚙️</div>
+                    <div class="placeholder-icon" id="qnaToolIcon" title="QnA">❓</div>
                     <div class="placeholder-icon" id="adminSettingsIcon" title="Medlemshantering" style="display:none;">👥</div>
                     <div class="placeholder-icon" title="Mapp" onclick="openFolderModal()">
                         <img src="folder.svg" alt="Mapp" class="tool-icon-svg">
@@ -2300,6 +2482,32 @@
             </div>
         </div>
 
+    </div>
+
+    <div class="modal-overlay" id="qnaModal">
+        <div class="qna-modal-content">
+            <div class="qna-modal-head">
+                <h3>QnA</h3>
+                <button class="modal-close" type="button" onclick="closeQnaModal()">✖</button>
+            </div>
+            <div class="qna-search-row">
+                <input id="qnaSearchInput" type="text" placeholder="Sök i frågor och svar...">
+                <button id="qnaSearchBtn" class="qna-btn" type="button">Sök</button>
+            </div>
+            <div class="qna-ask-row">
+                <textarea id="qnaQuestionInput" maxlength="2000" placeholder="Ställ en fråga till alla..."></textarea>
+                <div class="qna-ask-actions">
+                    <button id="qnaAttachQuestionImageBtn" class="qna-btn" type="button">Bifoga bild</button>
+                    <button id="qnaAskBtn" class="qna-btn primary" type="button">Skapa fråga</button>
+                </div>
+            </div>
+            <div class="qna-media-hint" id="qnaQuestionImageHint">Tips: Lägg gärna med screenshot när det hjälper.</div>
+            <input id="qnaQuestionImageInput" type="file" accept="image/*" style="display:none;">
+            <input id="qnaAnswerImageInput" type="file" accept="image/*" style="display:none;">
+            <div class="qna-list" id="qnaList">
+                <div class="qna-empty">Laddar frågor...</div>
+            </div>
+        </div>
     </div>
 
     <!-- Kalender Event Modal -->
@@ -2557,6 +2765,11 @@
         let academyLinksLoadError = '';
         let academyEditingId = null;
         let academySelectedType = '';
+        let qnaItems = [];
+        let qnaSearchQuery = '';
+        let qnaQuestionImageUrl = '';
+        let qnaPendingAnswerImageByQuestionId = {};
+        let qnaActiveAnswerQuestionId = 0;
         let memberManageUsers = [];
         let memberManageCities = [];
         let memberManageSelectedId = 0;
@@ -2927,7 +3140,7 @@
                 }
                 const attachmentEl = post.querySelector('[data-attachment-preview="1"]');
                 if (attachmentEl && parsed.attachment) {
-                    attachmentEl.addEventListener('dblclick', function(e) {
+                    attachmentEl.addEventListener('click', function(e) {
                         e.preventDefault();
                         openChatPreview(parsed.attachment);
                     });
@@ -3058,7 +3271,8 @@
         async function sendGroupChatMessage() {
             const input = document.getElementById('groupChatInput');
             const message = input.value.trim();
-            if (!message) return;
+            const hasAttachment = !!(pendingChatAttachment && pendingChatAttachment.url);
+            if (!message && !hasAttachment) return;
             if (composeState.active) {
                 const ids = composeState.selectedIds
                     .filter(function(id) { return !!getThreadById(String(id)); });
@@ -3106,10 +3320,11 @@
             const activeId = messengerState.activeThreadId || MESSENGER_GROUP_THREAD_ID;
             const thread = getThreadById(activeId);
             if (!thread) return;
-            const payloadMessage = buildReplyPayload(message, activeReply);
+            const payloadMessage = buildReplyPayload(message, activeReply, pendingChatAttachment);
             await sendPayloadToCurrentThread(payloadMessage, thread);
             input.value = '';
             setActiveReply(null);
+            clearPendingChatAttachment();
             await refreshAfterThreadSend(activeId);
         }
 
@@ -3616,6 +3831,164 @@
             resetAcademyForm();
         }
 
+        function formatQnaTime(ts) {
+            const d = new Date(Number(ts || 0) * 1000);
+            if (!Number.isFinite(d.getTime())) return '';
+            return d.toLocaleString('sv-SE', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+        }
+
+        function resetQnaQuestionImage() {
+            qnaQuestionImageUrl = '';
+            const hint = document.getElementById('qnaQuestionImageHint');
+            const input = document.getElementById('qnaQuestionImageInput');
+            if (hint) hint.textContent = 'Tips: Lägg gärna med screenshot när det hjälper.';
+            if (input) input.value = '';
+        }
+
+        async function uploadQnaImage(file) {
+            if (!file) throw new Error('Ingen bild vald.');
+            const mime = String(file.type || '').toLowerCase();
+            if (!mime.startsWith('image/')) {
+                throw new Error('Endast bilder stöds för QnA.');
+            }
+            const uploaded = await uploadFileToChat(file);
+            if (!uploaded || !uploaded.url) {
+                throw new Error('Kunde inte ladda upp bilden.');
+            }
+            return uploaded;
+        }
+
+        function renderQnaList() {
+            const list = document.getElementById('qnaList');
+            if (!list) return;
+            if (!Array.isArray(qnaItems) || qnaItems.length === 0) {
+                list.innerHTML = '<div class="qna-empty">Inga frågor ännu.</div>';
+                return;
+            }
+            list.innerHTML = qnaItems.map(function(item) {
+                const answers = Array.isArray(item.answers) ? item.answers : [];
+                const answersHtml = answers.length
+                    ? `<div class="qna-answers">${answers.map(function(ans) {
+                        return `
+                            <div>
+                                <div class="qna-answer-meta">${escapeHtml(String(ans.user_email || ''))} · ${escapeHtml(formatQnaTime(ans.created_at))}</div>
+                                <div class="qna-answer">${escapeHtml(String(ans.answer || ''))}</div>
+                                ${ans.image_url ? `<img class="qna-image-preview" src="${escapeHtml(String(ans.image_url || ''))}" alt="Bilaga till svar">` : ''}
+                            </div>
+                        `;
+                    }).join('')}</div>`
+                    : '<div class="qna-empty">Inga svar ännu.</div>';
+                const pendingAnswerImage = String(qnaPendingAnswerImageByQuestionId[String(item.id)] || '');
+                return `
+                    <article class="qna-item" data-qna-id="${Number(item.id)}">
+                        <div class="qna-item-meta">${escapeHtml(String(item.user_email || ''))} · ${escapeHtml(formatQnaTime(item.created_at))}</div>
+                        <div class="qna-item-question">${escapeHtml(String(item.question || ''))}</div>
+                        ${item.image_url ? `<img class="qna-image-preview" src="${escapeHtml(String(item.image_url || ''))}" alt="Bilaga till fråga">` : ''}
+                        ${answersHtml}
+                        <div class="qna-answer-row">
+                            <input type="text" maxlength="2000" data-qna-answer-input="${Number(item.id)}" placeholder="Skriv ett svar...">
+                            <button class="qna-btn" type="button" data-qna-answer-image-btn="${Number(item.id)}">Bild</button>
+                            <button class="qna-btn" type="button" data-qna-answer-btn="${Number(item.id)}">Svara</button>
+                        </div>
+                        <div class="qna-media-hint" data-qna-answer-image-hint="${Number(item.id)}">${pendingAnswerImage ? `Bild vald: ${escapeHtml(pendingAnswerImage.split('/').pop() || 'bild')}` : 'Tips: Lägg gärna med screenshot om det hjälper svaret.'}</div>
+                    </article>
+                `;
+            }).join('');
+
+            list.querySelectorAll('[data-qna-answer-btn]').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const id = Number(btn.getAttribute('data-qna-answer-btn'));
+                    const input = list.querySelector(`[data-qna-answer-input="${id}"]`);
+                    if (!input) return;
+                    const text = String(input.value || '').trim();
+                    const imageUrl = String(qnaPendingAnswerImageByQuestionId[String(id)] || '');
+                    if (!text && !imageUrl) {
+                        alert('Skriv ett svar eller bifoga en bild.');
+                        return;
+                    }
+                    postQnaAnswer(id, text).then(function() {
+                        input.value = '';
+                    }).catch(function(err) {
+                        alert(err.message || 'Kunde inte spara svaret.');
+                    });
+                });
+            });
+            list.querySelectorAll('[data-qna-answer-input]').forEach(function(inputEl) {
+                inputEl.addEventListener('keydown', function(e) {
+                    if (e.key !== 'Enter') return;
+                    e.preventDefault();
+                    const id = Number(inputEl.getAttribute('data-qna-answer-input'));
+                    const text = String(inputEl.value || '').trim();
+                    const imageUrl = String(qnaPendingAnswerImageByQuestionId[String(id)] || '');
+                    if (!text && !imageUrl) return;
+                    postQnaAnswer(id, text).then(function() {
+                        inputEl.value = '';
+                    }).catch(function(err) {
+                        alert(err.message || 'Kunde inte spara svaret.');
+                    });
+                });
+            });
+            list.querySelectorAll('[data-qna-answer-image-btn]').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const id = Number(btn.getAttribute('data-qna-answer-image-btn'));
+                    qnaActiveAnswerQuestionId = id;
+                    const input = document.getElementById('qnaAnswerImageInput');
+                    if (input) input.click();
+                });
+            });
+        }
+
+        async function loadQna() {
+            const q = String(qnaSearchQuery || '').trim();
+            const suffix = q ? `?q=${encodeURIComponent(q)}` : '';
+            const data = await apiGet(`/api/qna/questions${suffix}`);
+            qnaItems = Array.isArray(data.questions) ? data.questions : [];
+            renderQnaList();
+        }
+
+        async function postQnaQuestion() {
+            const input = document.getElementById('qnaQuestionInput');
+            if (!input) return;
+            const question = String(input.value || '').trim();
+            if (!question && !qnaQuestionImageUrl) {
+                alert('Skriv en fråga eller bifoga en bild först.');
+                return;
+            }
+            await apiSend('/api/qna/questions', 'POST', {
+                question: question,
+                image_url: qnaQuestionImageUrl || ''
+            });
+            input.value = '';
+            resetQnaQuestionImage();
+            await loadQna();
+        }
+
+        async function postQnaAnswer(questionId, answerText) {
+            const key = String(questionId);
+            const imageUrl = String(qnaPendingAnswerImageByQuestionId[key] || '');
+            await apiSend(`/api/qna/questions/${Number(questionId)}/answers`, 'POST', {
+                answer: answerText,
+                image_url: imageUrl
+            });
+            delete qnaPendingAnswerImageByQuestionId[key];
+            await loadQna();
+        }
+
+        async function openQnaModal() {
+            const modal = document.getElementById('qnaModal');
+            if (!modal) return;
+            modal.style.display = 'flex';
+            resetQnaQuestionImage();
+            qnaPendingAnswerImageByQuestionId = {};
+            await loadQna();
+        }
+
+        function closeQnaModal() {
+            const modal = document.getElementById('qnaModal');
+            if (modal) modal.style.display = 'none';
+            resetQnaQuestionImage();
+        }
+
         function renderImportantMessages() {
             const box = document.getElementById('importantMessagesList');
             if (!box) return;
@@ -3895,16 +4268,11 @@
                 throw new Error('Bifogning i Ny chatt-läget stöds inte ännu.');
             }
             const activeId = messengerState.activeThreadId || MESSENGER_GROUP_THREAD_ID;
-            const thread = getThreadById(activeId);
-            if (!thread) throw new Error('Ingen aktiv chatt vald.');
+            const currentThread = getThreadById(activeId);
+            if (!currentThread) throw new Error('Ingen aktiv chatt vald.');
 
             const attachment = await uploadAttachmentWithPreview(file);
-            const caption = String(document.getElementById('groupChatInput').value || '').trim();
-            const payload = buildReplyPayload(caption, activeReply, attachment);
-            await sendPayloadToCurrentThread(payload, thread);
-            document.getElementById('groupChatInput').value = '';
-            setActiveReply(null);
-            await refreshAfterThreadSend(activeId);
+            setPendingChatAttachment(attachment);
         }
 
         function initEmojiPicker() {
@@ -4703,6 +5071,7 @@
         let groupChatLastReadId = Number(localStorage.getItem('group_chat_last_read_id') || 0);
         let messengerThreads = [];
         let activeReply = null;
+        let pendingChatAttachment = null;
         let threadLoadSeq = 0;
         const composeState = {
             active: false,
@@ -4797,6 +5166,29 @@
             text.innerText = `Svarar på ${activeReply.author}: ${activeReply.snippet}`;
         }
 
+        function clearPendingChatAttachment() {
+            pendingChatAttachment = null;
+            const bar = document.getElementById('chatAttachmentDraftBar');
+            const text = document.getElementById('chatAttachmentDraftText');
+            if (bar) bar.style.display = 'none';
+            if (text) text.innerText = '';
+        }
+
+        function setPendingChatAttachment(attachment) {
+            pendingChatAttachment = attachment && attachment.url ? attachment : null;
+            const bar = document.getElementById('chatAttachmentDraftBar');
+            const text = document.getElementById('chatAttachmentDraftText');
+            if (!bar || !text) return;
+            if (!pendingChatAttachment) {
+                bar.style.display = 'none';
+                text.innerText = '';
+                return;
+            }
+            const label = attachmentLabel(pendingChatAttachment) || 'Bilaga';
+            text.innerText = `Bilaga klar: ${label} (skriv ev. meddelande och skicka)`;
+            bar.style.display = 'flex';
+        }
+
         function getComposeCandidates() {
             return messengerThreads.filter(function(t) {
                 return !t.isGroup && t.id !== MESSENGER_GROUP_THREAD_ID;
@@ -4808,6 +5200,7 @@
             composeState.selectedIds = [];
             composeState.query = '';
             messengerState.activeThreadId = null;
+            clearPendingChatAttachment();
             renderComposeBar();
             renderMainChatThreadList();
             renderActiveThreadInMainChat();
@@ -4818,6 +5211,7 @@
             composeState.selectedIds = [];
             composeState.query = '';
             hideComposeSuggestions();
+            clearPendingChatAttachment();
             renderComposeBar();
         }
 
@@ -5377,6 +5771,7 @@
         function openThreadFromMainSidebar(threadId) {
             closeComposeMode();
             messengerState.activeThreadId = threadId;
+            clearPendingChatAttachment();
             if (threadId === MESSENGER_GROUP_THREAD_ID) {
                 markGroupChatRead();
                 const groupThread = getThreadById(threadId);
@@ -5568,6 +5963,12 @@
                     setActiveReply(null);
                 });
             }
+            const attachmentDraftRemoveBtn = document.getElementById('chatAttachmentDraftRemoveBtn');
+            if (attachmentDraftRemoveBtn) {
+                attachmentDraftRemoveBtn.addEventListener('click', function() {
+                    clearPendingChatAttachment();
+                });
+            }
         }
 
         // JS för Messenger popup
@@ -5663,6 +6064,71 @@
         });
         document.getElementById('facebookAcademyModal').addEventListener('click', function(e) {
             if (e.target === this) closeFacebookAcademyModal();
+        });
+        document.getElementById('qnaToolIcon').addEventListener('click', function() {
+            openQnaModal().catch(function(err) {
+                alert(err.message || 'Kunde inte öppna QnA.');
+            });
+        });
+        document.getElementById('qnaModal').addEventListener('click', function(e) {
+            if (e.target === this) closeQnaModal();
+        });
+        document.getElementById('qnaAskBtn').addEventListener('click', function() {
+            postQnaQuestion().catch(function(err) {
+                alert(err.message || 'Kunde inte skapa frågan.');
+            });
+        });
+        document.getElementById('qnaAttachQuestionImageBtn').addEventListener('click', function() {
+            const input = document.getElementById('qnaQuestionImageInput');
+            if (input) input.click();
+        });
+        document.getElementById('qnaQuestionImageInput').addEventListener('change', function(e) {
+            const file = e && e.target && e.target.files && e.target.files[0] ? e.target.files[0] : null;
+            if (!file) return;
+            uploadQnaImage(file).then(function(uploaded) {
+                qnaQuestionImageUrl = String(uploaded.url || '');
+                const hint = document.getElementById('qnaQuestionImageHint');
+                if (hint) hint.textContent = `Bild vald: ${String(uploaded.name || 'bild')} (tips: screenshot fungerar bra).`;
+            }).catch(function(err) {
+                alert(err.message || 'Kunde inte ladda upp bilden.');
+            });
+        });
+        document.getElementById('qnaAnswerImageInput').addEventListener('change', function(e) {
+            const file = e && e.target && e.target.files && e.target.files[0] ? e.target.files[0] : null;
+            if (!file || !qnaActiveAnswerQuestionId) return;
+            const qid = qnaActiveAnswerQuestionId;
+            uploadQnaImage(file).then(function(uploaded) {
+                qnaPendingAnswerImageByQuestionId[String(qid)] = String(uploaded.url || '');
+                renderQnaList();
+            }).catch(function(err) {
+                alert(err.message || 'Kunde inte ladda upp bilden.');
+            }).finally(function() {
+                qnaActiveAnswerQuestionId = 0;
+                const input = document.getElementById('qnaAnswerImageInput');
+                if (input) input.value = '';
+            });
+        });
+        document.getElementById('qnaSearchBtn').addEventListener('click', function() {
+            const input = document.getElementById('qnaSearchInput');
+            qnaSearchQuery = String(input && input.value || '').trim();
+            loadQna().catch(function(err) {
+                alert(err.message || 'Kunde inte söka i QnA.');
+            });
+        });
+        document.getElementById('qnaSearchInput').addEventListener('keydown', function(e) {
+            if (e.key !== 'Enter') return;
+            e.preventDefault();
+            qnaSearchQuery = String(e.target && e.target.value || '').trim();
+            loadQna().catch(function(err) {
+                alert(err.message || 'Kunde inte söka i QnA.');
+            });
+        });
+        document.getElementById('qnaQuestionInput').addEventListener('keydown', function(e) {
+            if (e.key !== 'Enter' || e.shiftKey) return;
+            e.preventDefault();
+            postQnaQuestion().catch(function(err) {
+                alert(err.message || 'Kunde inte skapa frågan.');
+            });
         });
         document.getElementById('importantAdminModal').addEventListener('click', function(e) {
             if (e.target === this) closeImportantAdminModal();
