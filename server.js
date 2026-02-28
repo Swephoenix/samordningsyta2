@@ -289,6 +289,18 @@ CREATE TABLE IF NOT EXISTS qna_answers (
   FOREIGN KEY(question_id) REFERENCES qna_questions(id),
   FOREIGN KEY(user_id) REFERENCES users(id)
 );
+
+CREATE TABLE IF NOT EXISTS idea_bank_ideas (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  tag TEXT NOT NULL DEFAULT 'Ny',
+  image_url TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  FOREIGN KEY(user_id) REFERENCES users(id)
+);
 `);
 
 db.exec(`
@@ -318,6 +330,9 @@ CREATE INDEX IF NOT EXISTS idx_qna_questions_created
 
 CREATE INDEX IF NOT EXISTS idx_qna_answers_question_created
   ON qna_answers(question_id, created_at ASC, id ASC);
+
+CREATE INDEX IF NOT EXISTS idx_idea_bank_ideas_created
+  ON idea_bank_ideas(created_at DESC, id DESC);
 `);
 
 function nowTs() {
@@ -348,6 +363,9 @@ function ensureDefaultUser(email, password) {
 }
 
 function seedEventsIfEmpty() {
+  // Seed endast om det uttryckligen aktiverats.
+  if (String(process.env.SEED_DEMO_EVENTS || "") !== "1") return;
+
   const count = db.prepare("SELECT COUNT(*) AS c FROM events").get().c;
   if (count > 0) return;
 
@@ -367,6 +385,26 @@ function seedEventsIfEmpty() {
   ins.run(todayKey, "Designreview", "https://zoom.us/j/24680", null, nowTs());
   ins.run(extraDate, "Projektgenomgång", "https://zoom.us/j/11111", null, nowTs());
   ins.run(extraDate2, "Månadsavslut", "https://zoom.us/j/22222", null, nowTs());
+}
+
+function removeLegacySeededDemoEvents() {
+  // Rensa tidigare demo-seedade möten så listor visar enbart verkliga möten.
+  const demoPairs = [
+    ["Veckomöte Team Alpha", "https://zoom.us/j/12345"],
+    ["Kundavstämning (Zoom)", "https://zoom.us/j/67890"],
+    ["Designreview", "https://zoom.us/j/24680"],
+    ["Projektgenomgång", "https://zoom.us/j/11111"],
+    ["Månadsavslut", "https://zoom.us/j/22222"]
+  ];
+  const delStmt = db.prepare(
+    "DELETE FROM events WHERE created_by IS NULL AND title = ? AND IFNULL(link, '') = ?"
+  );
+  const tx = db.transaction(() => {
+    demoPairs.forEach(([title, link]) => {
+      delStmt.run(title, link);
+    });
+  });
+  tx();
 }
 
 function seedImportantMessagesIfEmpty() {
@@ -393,6 +431,53 @@ function seedImportantMessagesIfEmpty() {
     const nextOrder = Number(nextSortOrderStmt.get().next_order);
     const sortOrder = Number.isInteger(nextOrder) ? nextOrder : idx;
     insStmt.run(msg.icon, msg.text, sortOrder, null, now, now);
+  });
+}
+
+function seedIdeaBankIfEmpty() {
+  const count = Number(db.prepare("SELECT COUNT(*) AS c FROM idea_bank_ideas").get().c || 0);
+  if (count > 0) return;
+
+  const admin = db.prepare("SELECT id FROM users WHERE email = ? LIMIT 1").get("admin");
+  const fallbackUser = db.prepare("SELECT id FROM users ORDER BY id ASC LIMIT 1").get();
+  const userId = Number((admin && admin.id) || (fallbackUser && fallbackUser.id) || 0);
+  if (!userId) return;
+
+  const now = nowTs();
+  const rows = [
+    {
+      title: "Grönare kontor",
+      description: "Vi borde införa fler växter och automatisk bevattning för att förbättra luftkvaliteten.",
+      tag: "Miljö",
+      image_url: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=400"
+    },
+    {
+      title: "Digital fika",
+      description: "En slumpmässig matchning varje torsdag så fler team lär känna varandra.",
+      tag: "Kultur",
+      image_url: "https://images.unsplash.com/photo-1517048676732-d65bc937f952?w=400"
+    },
+    {
+      title: "Lånecyklar",
+      description: "Erbjud elcyklar som personalen kan låna för kortare ärenden under lunchtid.",
+      tag: "Hälsa",
+      image_url: "https://images.unsplash.com/photo-1507035895480-2b3156c31fc8?w=400"
+    }
+  ];
+
+  const ins = db.prepare(
+    "INSERT INTO idea_bank_ideas(user_id, title, description, tag, image_url, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
+  );
+  rows.forEach((row) => {
+    ins.run(
+      userId,
+      row.title,
+      row.description,
+      row.tag,
+      row.image_url,
+      now,
+      now
+    );
   });
 }
 
@@ -587,7 +672,9 @@ ensureDefaultUser("admin", "admin");
 ensureDefaultUser("user1", "user1");
 ensureDefaultUser("user2", "user2");
 seedEventsIfEmpty();
+removeLegacySeededDemoEvents();
 seedImportantMessagesIfEmpty();
+seedIdeaBankIfEmpty();
 ensureFsState();
 ensureRegistrationSetting();
 
@@ -1965,7 +2052,8 @@ app.get("/api/meetings/today", (req, res) => {
   const user = requireAuth(req, res);
   if (!user) return;
 
-  const todayKey = localDateKey();
+  const requestedDateKey = String(req.query.date_key || "").trim();
+  const todayKey = /^\d{4}-\d{2}-\d{2}$/.test(requestedDateKey) ? requestedDateKey : localDateKey();
   const rows = db
     .prepare(
       `SELECT id, date_key, title, link
@@ -2449,6 +2537,166 @@ app.post("/api/qna/questions/:id/answers", (req, res) => {
       user_email: user.email
     }
   });
+});
+
+app.get("/api/idea-bank/ideas", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+
+  const q = String(req.query.q || "").trim().toLowerCase();
+  const like = `%${q}%`;
+  const rows = db
+    .prepare(
+      `SELECT i.id, i.title, i.description, i.tag, i.image_url, i.created_at, i.updated_at, u.email AS user_email
+       FROM idea_bank_ideas i
+       JOIN users u ON u.id = i.user_id
+       WHERE (
+         ? = ''
+         OR lower(i.title) LIKE ?
+         OR lower(i.description) LIKE ?
+         OR lower(i.tag) LIKE ?
+         OR lower(u.email) LIKE ?
+       )
+       ORDER BY i.created_at DESC, i.id DESC
+       LIMIT 300`
+    )
+    .all(q, like, like, like, like);
+
+  return res.json({
+    ideas: rows.map((row) => ({
+      id: Number(row.id || 0),
+      title: String(row.title || ""),
+      description: String(row.description || ""),
+      tag: String(row.tag || "Ny"),
+      image_url: String(row.image_url || ""),
+      created_at: Number(row.created_at || 0),
+      updated_at: Number(row.updated_at || 0),
+      user_email: String(row.user_email || "")
+    }))
+  });
+});
+
+app.post("/api/idea-bank/ideas", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+
+  const title = String(req.body?.title || "").trim();
+  const description = String(req.body?.description || "").trim();
+  const tag = String(req.body?.tag || "Ny").trim() || "Ny";
+  const imageUrl = String(req.body?.image_url || "").trim();
+
+  if (!title) return res.status(400).json({ error: "Titel krävs." });
+  if (!description) return res.status(400).json({ error: "Beskrivning krävs." });
+  if (title.length > 160) return res.status(400).json({ error: "Titeln är för lång (max 160 tecken)." });
+  if (description.length > 5000) return res.status(400).json({ error: "Beskrivningen är för lång (max 5000 tecken)." });
+  if (tag.length > 40) return res.status(400).json({ error: "Taggen är för lång (max 40 tecken)." });
+  if (imageUrl && !isAllowedUploadUrl(imageUrl)) {
+    return res.status(400).json({ error: "Ogiltig bildlänk." });
+  }
+
+  const now = nowTs();
+  const result = db
+    .prepare(
+      "INSERT INTO idea_bank_ideas(user_id, title, description, tag, image_url, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
+    )
+    .run(user.id, title, description, tag, imageUrl || null, now, now);
+
+  return res.status(201).json({
+    ok: true,
+    idea: {
+      id: Number(result.lastInsertRowid || 0),
+      title: title,
+      description: description,
+      tag: tag,
+      image_url: imageUrl || "",
+      created_at: now,
+      updated_at: now,
+      user_email: user.email
+    }
+  });
+});
+
+app.put("/api/idea-bank/ideas/:id", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ error: "Ogiltigt idé-id." });
+  }
+
+  const existing = db
+    .prepare(
+      `SELECT i.id, i.user_id, u.email AS user_email
+       FROM idea_bank_ideas i
+       JOIN users u ON u.id = i.user_id
+       WHERE i.id = ?`
+    )
+    .get(id);
+  if (!existing) {
+    return res.status(404).json({ error: "Idén hittades inte." });
+  }
+
+  const canEdit = Number(existing.user_id) === Number(user.id) || isAdmin(user);
+  if (!canEdit) {
+    return res.status(403).json({ error: "Du får bara redigera dina egna idéer." });
+  }
+
+  const title = String(req.body?.title || "").trim();
+  const description = String(req.body?.description || "").trim();
+  const tag = String(req.body?.tag || "Ny").trim() || "Ny";
+  const imageUrl = String(req.body?.image_url || "").trim();
+
+  if (!title) return res.status(400).json({ error: "Titel krävs." });
+  if (!description) return res.status(400).json({ error: "Beskrivning krävs." });
+  if (title.length > 160) return res.status(400).json({ error: "Titeln är för lång (max 160 tecken)." });
+  if (description.length > 5000) return res.status(400).json({ error: "Beskrivningen är för lång (max 5000 tecken)." });
+  if (tag.length > 40) return res.status(400).json({ error: "Taggen är för lång (max 40 tecken)." });
+  if (imageUrl && !isAllowedUploadUrl(imageUrl)) {
+    return res.status(400).json({ error: "Ogiltig bildlänk." });
+  }
+
+  const now = nowTs();
+  db.prepare(
+    "UPDATE idea_bank_ideas SET title = ?, description = ?, tag = ?, image_url = ?, updated_at = ? WHERE id = ?"
+  ).run(title, description, tag, imageUrl || null, now, id);
+
+  return res.json({
+    ok: true,
+    idea: {
+      id: id,
+      title: title,
+      description: description,
+      tag: tag,
+      image_url: imageUrl || "",
+      updated_at: now
+    }
+  });
+});
+
+app.delete("/api/idea-bank/ideas/:id", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ error: "Ogiltigt idé-id." });
+  }
+
+  const existing = db
+    .prepare("SELECT id, user_id FROM idea_bank_ideas WHERE id = ?")
+    .get(id);
+  if (!existing) {
+    return res.status(404).json({ error: "Idén hittades inte." });
+  }
+
+  const canDelete = Number(existing.user_id) === Number(user.id) || isAdmin(user);
+  if (!canDelete) {
+    return res.status(403).json({ error: "Du får bara ta bort dina egna idéer." });
+  }
+
+  db.prepare("DELETE FROM idea_bank_ideas WHERE id = ?").run(id);
+  return res.json({ ok: true });
 });
 
 app.get("/", (req, res) => {

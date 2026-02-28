@@ -261,6 +261,50 @@
             justify-content: space-between;
             gap: 10px;
         }
+        .meeting-main {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 0;
+        }
+        .meeting-title {
+            color: #e9f3ff;
+            font-weight: 600;
+            font-size: 0.9rem;
+            line-height: 1.3;
+            word-break: break-word;
+        }
+        .meeting-meta {
+            color: #bdd1ea;
+            font-size: 0.76rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .meeting-status {
+            display: inline-flex;
+            border-radius: 999px;
+            padding: 1px 8px;
+            font-weight: 700;
+            font-size: 0.7rem;
+            border: 1px solid transparent;
+        }
+        .meeting-status.now {
+            background: rgba(16, 185, 129, 0.2);
+            color: #96ffd6;
+            border-color: rgba(16, 185, 129, 0.45);
+        }
+        .meeting-status.soon {
+            background: rgba(59, 130, 246, 0.18);
+            color: #bcd9ff;
+            border-color: rgba(59, 130, 246, 0.42);
+        }
+        .meeting-status.past {
+            background: rgba(107, 114, 128, 0.2);
+            color: #d1d5db;
+            border-color: rgba(107, 114, 128, 0.45);
+        }
         .meetings .panel-content {
             padding: 14px;
             display: flex;
@@ -290,6 +334,11 @@
         }
         .meeting-link:hover {
             background: rgba(74, 144, 226, 0.27);
+        }
+        .meeting-link.disabled {
+            opacity: 0.55;
+            cursor: default;
+            pointer-events: none;
         }
         .meeting-edit-btn {
             display: inline-flex;
@@ -1997,6 +2046,248 @@
             border: 1px solid #425166;
             display: block;
         }
+        .idea-bank-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.42);
+            backdrop-filter: blur(3px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 140;
+            padding: 16px;
+        }
+        .idea-bank-dialog {
+            width: min(94vw, 860px);
+            max-height: min(90vh, 760px);
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            box-shadow: 0 24px 50px rgba(0,0,0,0.35);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            color: #111827;
+        }
+        .idea-bank-header {
+            padding: 18px 24px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #fff;
+        }
+        .idea-bank-title {
+            margin: 0;
+            font-size: 1.42rem;
+            font-weight: 700;
+            color: #111827;
+        }
+        .idea-bank-close {
+            border: none;
+            background: none;
+            font-size: 1.6rem;
+            line-height: 1;
+            color: #6b7280;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 8px;
+        }
+        .idea-bank-close:hover {
+            background: #f3f4f6;
+            color: #111827;
+        }
+        .idea-bank-action-bar {
+            padding: 12px 24px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            gap: 12px;
+            background: #fff;
+        }
+        .idea-bank-search {
+            flex: 1;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 10px 14px;
+            background: #fff;
+            color: #111827;
+            outline: none;
+        }
+        .idea-bank-search:focus {
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+        }
+        .idea-bank-primary-btn,
+        .idea-bank-secondary-btn {
+            border: 1px solid transparent;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .idea-bank-primary-btn {
+            background: #10b981;
+            color: #fff;
+        }
+        .idea-bank-primary-btn:hover { background: #0ea271; }
+        .idea-bank-secondary-btn {
+            background: #4f46e5;
+            color: #fff;
+        }
+        .idea-bank-secondary-btn:hover { background: #4338ca; }
+        .idea-bank-grid {
+            padding: 22px;
+            background: #f9fafb;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 18px;
+            overflow-y: auto;
+        }
+        .idea-bank-card {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .idea-bank-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 20px -14px rgba(0,0,0,0.55), 0 6px 12px -8px rgba(0,0,0,0.25);
+        }
+        .idea-bank-card img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 8px;
+            background: #ececec;
+        }
+        .idea-bank-card h4 {
+            margin: 0;
+            font-size: 1.05rem;
+            color: #111827;
+        }
+        .idea-bank-card p {
+            margin: 0;
+            color: #6b7280;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            flex: 1;
+        }
+        .idea-bank-tag {
+            display: inline-block;
+            width: fit-content;
+            border-radius: 999px;
+            padding: 4px 9px;
+            font-size: 0.74rem;
+            font-weight: 700;
+            background: #eef2ff;
+            color: #4f46e5;
+            margin-top: 4px;
+        }
+        .idea-bank-create {
+            display: none;
+            padding: 18px 24px;
+            border-top: 1px solid #e5e7eb;
+            background: #fff;
+            overflow-y: auto;
+        }
+        .idea-bank-create h4 {
+            margin: 0 0 12px;
+            color: #111827;
+        }
+        .idea-bank-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+        .idea-bank-field label {
+            color: #374151;
+            font-size: 0.88rem;
+            font-weight: 600;
+        }
+        .idea-bank-field input[type="text"],
+        .idea-bank-field textarea,
+        .idea-bank-field input[type="file"] {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 0.92rem;
+            color: #111827;
+            background: #fff;
+        }
+        .idea-bank-field textarea {
+            min-height: 86px;
+            resize: vertical;
+        }
+        .idea-bank-create-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 4px;
+        }
+        .idea-bank-preview {
+            margin-top: 8px;
+            max-width: 130px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            display: none;
+        }
+        .idea-bank-detail {
+            display: none;
+            padding: 20px 24px;
+            overflow-y: auto;
+            background: #fff;
+        }
+        .idea-bank-back-btn {
+            border: none;
+            background: none;
+            color: #4f46e5;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 0;
+            margin-bottom: 16px;
+        }
+        .idea-bank-detail-image {
+            width: 100%;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            max-height: 260px;
+            object-fit: cover;
+            background: #efefef;
+        }
+        .idea-bank-detail h3 {
+            margin: 0 0 10px;
+            color: #111827;
+            font-size: 1.46rem;
+        }
+        .idea-bank-detail p {
+            margin: 12px 0 0;
+            color: #1f2937;
+            line-height: 1.55;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+        .idea-bank-detail-actions {
+            margin-top: 14px;
+            display: flex;
+            gap: 8px;
+        }
+        .idea-bank-danger-btn {
+            border: 1px solid rgba(220, 38, 38, 0.45);
+            background: rgba(220, 38, 38, 0.12);
+            color: #991b1b;
+            border-radius: 8px;
+            padding: 9px 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .idea-bank-danger-btn:hover {
+            background: rgba(220, 38, 38, 0.2);
+        }
         @media (max-width: 1100px) {
             .academy-list {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2007,6 +2298,24 @@
                 grid-template-columns: 1fr;
                 grid-auto-rows: auto;
                 max-height: 60vh;
+            }
+            .idea-bank-dialog {
+                width: 100%;
+                max-height: calc(100vh - 28px);
+            }
+            .idea-bank-header,
+            .idea-bank-action-bar,
+            .idea-bank-grid,
+            .idea-bank-create,
+            .idea-bank-detail {
+                padding-left: 14px;
+                padding-right: 14px;
+            }
+            .idea-bank-action-bar {
+                flex-direction: column;
+            }
+            .idea-bank-create-actions {
+                flex-direction: column;
             }
         }
 
@@ -2470,10 +2779,12 @@
                     <div class="placeholder-icon" id="facebookAcademyBtn" title="Facebook Marketing Academy">
                         <img src="fbacademy.png" alt="Facebook Academy" class="tool-icon-svg">
                     </div>
-                    <div class="placeholder-icon" title="Idébank">💡</div>
+                    <div class="placeholder-icon" id="ideaBankToolIcon" title="Idébank">💡</div>
                     <div class="placeholder-icon" title="Statistik">📊</div>
                     <div class="placeholder-icon" title="Inställningar">⚙️</div>
-                    <div class="placeholder-icon" id="qnaToolIcon" title="QnA">❓</div>
+                    <div class="placeholder-icon" id="qnaToolIcon" title="QnA">
+                        <img src="qna.png" alt="QnA" class="tool-icon-svg">
+                    </div>
                     <div class="placeholder-icon" id="adminSettingsIcon" title="Medlemshantering" style="display:none;">👥</div>
                     <div class="placeholder-icon" title="Mapp" onclick="openFolderModal()">
                         <img src="folder.svg" alt="Mapp" class="tool-icon-svg">
@@ -2482,6 +2793,44 @@
             </div>
         </div>
 
+    </div>
+
+    <div class="idea-bank-overlay" id="ideaBankModal">
+        <div class="idea-bank-dialog">
+            <div class="idea-bank-header">
+                <h2 class="idea-bank-title">Idébank 💡</h2>
+                <button class="idea-bank-close" id="ideaBankCloseBtn" type="button" aria-label="Stäng Idébank">×</button>
+            </div>
+            <div class="idea-bank-action-bar" id="ideaBankMainActions">
+                <input id="ideaBankSearchInput" class="idea-bank-search" type="text" placeholder="Sök efter idéer...">
+                <button id="ideaBankCreateBtn" class="idea-bank-primary-btn" type="button">+ Ny Idé</button>
+            </div>
+            <div class="idea-bank-grid" id="ideaBankList"></div>
+            <div class="idea-bank-create" id="ideaBankCreateForm">
+                <h4 id="ideaBankFormTitle">Skapa ny idé</h4>
+                <div class="idea-bank-field">
+                    <label for="ideaBankNewTitle">Titel</label>
+                    <input id="ideaBankNewTitle" type="text" placeholder="Vad heter idén?">
+                </div>
+                <div class="idea-bank-field">
+                    <label for="ideaBankNewDesc">Beskrivning</label>
+                    <textarea id="ideaBankNewDesc" placeholder="Beskriv idén kortfattat..."></textarea>
+                </div>
+                <div class="idea-bank-field">
+                    <label for="ideaBankFileInput">Bifoga bild</label>
+                    <input id="ideaBankFileInput" type="file" accept="image/*">
+                    <img id="ideaBankImgPreview" class="idea-bank-preview" alt="Förhandsvisning">
+                </div>
+                <div class="idea-bank-create-actions">
+                    <button id="ideaBankSaveBtn" class="idea-bank-secondary-btn" type="button">Spara Idé</button>
+                    <button id="ideaBankCancelCreateBtn" class="idea-bank-primary-btn" type="button" style="background:#6b7280;">Avbryt</button>
+                </div>
+            </div>
+            <div class="idea-bank-detail" id="ideaBankDetailView">
+                <button id="ideaBankBackBtn" class="idea-bank-back-btn" type="button">← Tillbaka till listan</button>
+                <div id="ideaBankDetailContent"></div>
+            </div>
+        </div>
     </div>
 
     <div class="modal-overlay" id="qnaModal">
@@ -2770,6 +3119,10 @@
         let qnaQuestionImageUrl = '';
         let qnaPendingAnswerImageByQuestionId = {};
         let qnaActiveAnswerQuestionId = 0;
+        let ideaBankIdeas = [];
+        let ideaBankEditingId = 0;
+        let ideaBankPendingImageFile = null;
+        let ideaBankPreviewObjectUrl = '';
         let memberManageUsers = [];
         let memberManageCities = [];
         let memberManageSelectedId = 0;
@@ -3989,6 +4342,282 @@
             resetQnaQuestionImage();
         }
 
+        async function loadIdeaBankIdeas(query) {
+            const q = String(query || '').trim();
+            const suffix = q ? `?q=${encodeURIComponent(q)}` : '';
+            const data = await apiGet(`/api/idea-bank/ideas${suffix}`);
+            ideaBankIdeas = (data.ideas || []).map(function(idea) {
+                return {
+                    id: Number(idea.id || 0),
+                    title: String(idea.title || ''),
+                    desc: String(idea.description || ''),
+                    tag: String(idea.tag || 'Ny'),
+                    img: String(idea.image_url || ''),
+                    created_at: Number(idea.created_at || 0),
+                    user_email: String(idea.user_email || '')
+                };
+            });
+            return ideaBankIdeas;
+        }
+
+        function renderIdeaBankIdeas(data) {
+            const list = document.getElementById('ideaBankList');
+            if (!list) return;
+            const rows = Array.isArray(data) ? data : [];
+            if (!rows.length) {
+                list.innerHTML = '<div class="idea-bank-card"><h4>Inga träffar</h4><p>Prova ett annat sökord eller skapa en ny idé.</p><span class="idea-bank-tag">Tom lista</span></div>';
+                return;
+            }
+            list.innerHTML = rows.map(function(idea) {
+                const img = String(idea.img || '');
+                const safeTitle = escapeHtml(String(idea.title || 'Untitled'));
+                const descText = String(idea.desc || '');
+                const preview = escapeHtml(descText.length > 90 ? descText.slice(0, 90) + '...' : descText);
+                const tag = escapeHtml(String(idea.tag || 'Idé'));
+                return `
+                    <article class="idea-bank-card" data-idea-bank-open="${Number(idea.id)}">
+                        <img src="${img || 'https://via.placeholder.com/400x200?text=Ingen+bild'}" alt="Idébild">
+                        <h4>${safeTitle}</h4>
+                        <p>${preview}</p>
+                        <span class="idea-bank-tag">${tag}</span>
+                    </article>
+                `;
+            }).join('');
+            list.querySelectorAll('[data-idea-bank-open]').forEach(function(card) {
+                card.addEventListener('click', function() {
+                    const id = Number(card.getAttribute('data-idea-bank-open'));
+                    showIdeaBankDetail(id);
+                });
+            });
+        }
+
+        async function filterIdeaBankIdeas() {
+            const input = document.getElementById('ideaBankSearchInput');
+            const term = String(input && input.value || '').trim().toLowerCase();
+            try {
+                const rows = await loadIdeaBankIdeas(term);
+                renderIdeaBankIdeas(rows);
+            } catch (err) {
+                const list = document.getElementById('ideaBankList');
+                if (list) {
+                    list.innerHTML = `<div class="idea-bank-card"><h4>Kunde inte ladda</h4><p>${escapeHtml(String(err.message || 'Okänt fel.'))}</p><span class="idea-bank-tag">Fel</span></div>`;
+                }
+            }
+        }
+
+        function resetIdeaBankCreateForm() {
+            const title = document.getElementById('ideaBankNewTitle');
+            const desc = document.getElementById('ideaBankNewDesc');
+            const file = document.getElementById('ideaBankFileInput');
+            const preview = document.getElementById('ideaBankImgPreview');
+            const formTitle = document.getElementById('ideaBankFormTitle');
+            const saveBtn = document.getElementById('ideaBankSaveBtn');
+            if (title) title.value = '';
+            if (desc) desc.value = '';
+            if (file) file.value = '';
+            if (preview) {
+                preview.src = '';
+                preview.style.display = 'none';
+            }
+            if (formTitle) formTitle.textContent = 'Skapa ny idé';
+            if (saveBtn) saveBtn.textContent = 'Spara Idé';
+            ideaBankEditingId = 0;
+            if (ideaBankPreviewObjectUrl) {
+                URL.revokeObjectURL(ideaBankPreviewObjectUrl);
+            }
+            ideaBankPreviewObjectUrl = '';
+            ideaBankPendingImageFile = null;
+        }
+
+        function backIdeaBankToList() {
+            const detail = document.getElementById('ideaBankDetailView');
+            const list = document.getElementById('ideaBankList');
+            const actions = document.getElementById('ideaBankMainActions');
+            const form = document.getElementById('ideaBankCreateForm');
+            if (detail) detail.style.display = 'none';
+            if (list) list.style.display = 'grid';
+            if (actions) actions.style.display = 'flex';
+            if (form) form.style.display = 'none';
+        }
+
+        function toggleIdeaBankCreateForm() {
+            const form = document.getElementById('ideaBankCreateForm');
+            const list = document.getElementById('ideaBankList');
+            const actions = document.getElementById('ideaBankMainActions');
+            if (!form || !list || !actions) return;
+            const opening = form.style.display !== 'block';
+            form.style.display = opening ? 'block' : 'none';
+            list.style.display = opening ? 'none' : 'grid';
+            actions.style.display = opening ? 'none' : 'flex';
+            if (!opening) {
+                resetIdeaBankCreateForm();
+            }
+        }
+
+        function openIdeaBankEditForm(id) {
+            const idea = ideaBankIdeas.find(function(item) { return Number(item.id) === Number(id); });
+            if (!idea) return;
+            const form = document.getElementById('ideaBankCreateForm');
+            const list = document.getElementById('ideaBankList');
+            const actions = document.getElementById('ideaBankMainActions');
+            const detail = document.getElementById('ideaBankDetailView');
+            const titleEl = document.getElementById('ideaBankNewTitle');
+            const descEl = document.getElementById('ideaBankNewDesc');
+            const preview = document.getElementById('ideaBankImgPreview');
+            const formTitle = document.getElementById('ideaBankFormTitle');
+            const saveBtn = document.getElementById('ideaBankSaveBtn');
+            if (!form || !list || !actions || !detail || !titleEl || !descEl || !formTitle || !saveBtn) return;
+
+            ideaBankEditingId = Number(id);
+            titleEl.value = String(idea.title || '');
+            descEl.value = String(idea.desc || '');
+            if (preview) {
+                preview.src = String(idea.img || '');
+                preview.style.display = idea.img ? 'block' : 'none';
+            }
+            formTitle.textContent = 'Redigera idé';
+            saveBtn.textContent = 'Spara ändringar';
+            detail.style.display = 'none';
+            list.style.display = 'none';
+            actions.style.display = 'none';
+            form.style.display = 'block';
+        }
+
+        function previewIdeaBankImage(event) {
+            const file = event && event.target && event.target.files ? event.target.files[0] : null;
+            const preview = document.getElementById('ideaBankImgPreview');
+            if (!preview) return;
+            if (!file) {
+                preview.src = '';
+                preview.style.display = 'none';
+                ideaBankPendingImageFile = null;
+                return;
+            }
+            if (ideaBankPreviewObjectUrl) {
+                URL.revokeObjectURL(ideaBankPreviewObjectUrl);
+            }
+            ideaBankPreviewObjectUrl = URL.createObjectURL(file);
+            preview.src = ideaBankPreviewObjectUrl;
+            preview.style.display = 'block';
+            ideaBankPendingImageFile = file;
+        }
+
+        async function saveIdeaBankIdea() {
+            const titleEl = document.getElementById('ideaBankNewTitle');
+            const descEl = document.getElementById('ideaBankNewDesc');
+            const title = String(titleEl && titleEl.value || '').trim();
+            const desc = String(descEl && descEl.value || '').trim();
+            if (!title || !desc) {
+                alert('Fyll i både titel och beskrivning.');
+                return;
+            }
+            let imageUrl = '';
+            if (ideaBankPendingImageFile) {
+                const uploaded = await uploadFileToChat(ideaBankPendingImageFile);
+                imageUrl = String(uploaded && uploaded.url || '');
+            } else if (ideaBankEditingId) {
+                const existing = ideaBankIdeas.find(function(item) { return Number(item.id) === Number(ideaBankEditingId); });
+                imageUrl = String(existing && existing.img || '');
+            }
+            if (ideaBankEditingId) {
+                const existing = ideaBankIdeas.find(function(item) { return Number(item.id) === Number(ideaBankEditingId); });
+                await apiSend(`/api/idea-bank/ideas/${Number(ideaBankEditingId)}`, 'PUT', {
+                    title: title,
+                    description: desc,
+                    tag: String(existing && existing.tag || 'Ny'),
+                    image_url: imageUrl
+                });
+            } else {
+                await apiSend('/api/idea-bank/ideas', 'POST', {
+                    title: title,
+                    description: desc,
+                    tag: 'Ny',
+                    image_url: imageUrl
+                });
+            }
+            await loadIdeaBankIdeas('');
+            resetIdeaBankCreateForm();
+            renderIdeaBankIdeas(ideaBankIdeas);
+            toggleIdeaBankCreateForm();
+        }
+
+        function showIdeaBankDetail(id) {
+            const idea = ideaBankIdeas.find(function(item) { return Number(item.id) === Number(id); });
+            if (!idea) return;
+            const detail = document.getElementById('ideaBankDetailView');
+            const detailContent = document.getElementById('ideaBankDetailContent');
+            const list = document.getElementById('ideaBankList');
+            const actions = document.getElementById('ideaBankMainActions');
+            if (!detail || !detailContent || !list || !actions) return;
+            const img = String(idea.img || '');
+            const canManage = currentUserIsAdmin || String(idea.user_email || '').toLowerCase() === String(currentUserEmail || '').toLowerCase();
+            const manageActions = canManage
+                ? `<div class="idea-bank-detail-actions">
+                       <button type="button" class="idea-bank-secondary-btn" data-idea-edit="${Number(idea.id)}">Redigera</button>
+                       <button type="button" class="idea-bank-danger-btn" data-idea-delete="${Number(idea.id)}">Ta bort</button>
+                   </div>`
+                : '';
+            detailContent.innerHTML = `
+                <img class="idea-bank-detail-image" src="${img || 'https://via.placeholder.com/400x200?text=Ingen+bild'}" alt="Idébild">
+                <h3>${escapeHtml(String(idea.title || 'Untitled'))}</h3>
+                <span class="idea-bank-tag">${escapeHtml(String(idea.tag || 'Idé'))}</span>
+                <p>${escapeHtml(String(idea.desc || ''))}</p>
+                ${manageActions}
+            `;
+            const editBtn = detailContent.querySelector('[data-idea-edit]');
+            if (editBtn) {
+                editBtn.addEventListener('click', function() {
+                    openIdeaBankEditForm(Number(idea.id));
+                });
+            }
+            const deleteBtn = detailContent.querySelector('[data-idea-delete]');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', function() {
+                    deleteIdeaBankIdea(Number(idea.id)).catch(function(err) {
+                        alert(err.message || 'Kunde inte ta bort idén.');
+                    });
+                });
+            }
+            detail.style.display = 'block';
+            list.style.display = 'none';
+            actions.style.display = 'none';
+        }
+
+        async function deleteIdeaBankIdea(id) {
+            const ok = window.confirm('Vill du ta bort idén?');
+            if (!ok) return;
+            await apiSend(`/api/idea-bank/ideas/${Number(id)}`, 'DELETE');
+            await loadIdeaBankIdeas('');
+            backIdeaBankToList();
+            renderIdeaBankIdeas(ideaBankIdeas);
+        }
+
+        async function openIdeaBankModal() {
+            const modal = document.getElementById('ideaBankModal');
+            if (!modal) return;
+            modal.style.display = 'flex';
+            resetIdeaBankCreateForm();
+            backIdeaBankToList();
+            const list = document.getElementById('ideaBankList');
+            if (list) {
+                list.innerHTML = '<div class="idea-bank-card"><h4>Laddar...</h4><p>Hämtar idéer från servern.</p><span class="idea-bank-tag">Vänta</span></div>';
+            }
+            await loadIdeaBankIdeas('');
+            renderIdeaBankIdeas(ideaBankIdeas);
+            const search = document.getElementById('ideaBankSearchInput');
+            if (search) {
+                search.value = '';
+                search.focus();
+            }
+        }
+
+        function closeIdeaBankModal() {
+            const modal = document.getElementById('ideaBankModal');
+            if (modal) modal.style.display = 'none';
+            resetIdeaBankCreateForm();
+            backIdeaBankToList();
+        }
+
         function renderImportantMessages() {
             const box = document.getElementById('importantMessagesList');
             if (!box) return;
@@ -4140,23 +4769,88 @@
 
         async function loadTodayMeetings() {
             return singleFlightLoad('todayMeetings', async function() {
-                const data = await apiGet('/api/meetings/today');
-                const meetings = data.meetings || [];
                 const list = document.getElementById('meetingsList');
+                if (!list) return;
+
+                const now = new Date();
+                const todayKeyClient = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                let meetings = [];
+                try {
+                    const data = await apiGet(`/api/meetings/today?date_key=${encodeURIComponent(todayKeyClient)}`);
+                    meetings = Array.isArray(data.meetings) ? data.meetings.slice() : [];
+                } catch (_) {
+                    list.innerHTML = '<div class=\"meeting-item\"><span class=\"meeting-title\">Kunde inte ladda dagens möten.</span></div>';
+                    return;
+                }
+
+                function parseMeetingTimeWindow(title) {
+                    const txt = String(title || '');
+                    const rangeMatch = txt.match(/(\d{1,2}):(\d{2})\s*[-–]\s*(\d{1,2}):(\d{2})/);
+                    if (rangeMatch) {
+                        const sh = Number(rangeMatch[1]);
+                        const sm = Number(rangeMatch[2]);
+                        const eh = Number(rangeMatch[3]);
+                        const em = Number(rangeMatch[4]);
+                        if (
+                            sh >= 0 && sh <= 23 && sm >= 0 && sm <= 59 &&
+                            eh >= 0 && eh <= 23 && em >= 0 && em <= 59
+                        ) {
+                            let start = sh * 60 + sm;
+                            let end = eh * 60 + em;
+                            if (end < start) end += 24 * 60;
+                            return { start: start, end: end };
+                        }
+                    }
+                    const oneMatch = txt.match(/(?:^|\s)(\d{1,2}):(\d{2})(?:\s|$)/);
+                    if (!oneMatch) return { start: null, end: null };
+                    const hh = Number(oneMatch[1]);
+                    const mm = Number(oneMatch[2]);
+                    if (hh < 0 || hh > 23 || mm < 0 || mm > 59) return { start: null, end: null };
+                    const start = hh * 60 + mm;
+                    return { start: start, end: null };
+                }
+
+                const nowMinutes = now.getHours() * 60 + now.getMinutes();
+                meetings = meetings.filter(function(m) {
+                    const win = parseMeetingTimeWindow(m.title);
+                    if (win.start === null) return true;
+                    if (win.end !== null) return win.end > nowMinutes;
+                    // Om sluttid saknas: anta 60 min standardmöte för att avgöra om det passerat.
+                    return (win.start + 60) > nowMinutes;
+                });
+
+                meetings.sort(function(a, b) {
+                    const wa = parseMeetingTimeWindow(a.title);
+                    const wb = parseMeetingTimeWindow(b.title);
+                    if (wa.start === null && wb.start === null) return Number(a.id || 0) - Number(b.id || 0);
+                    if (wa.start === null) return 1;
+                    if (wb.start === null) return -1;
+                    return wa.start - wb.start;
+                });
+
                 if (!meetings.length) {
                     list.innerHTML = '<div class=\"meeting-item\"><span>Inga möten idag</span><span></span></div>';
                     return;
                 }
+
                 list.innerHTML = meetings.map(function(m) {
-                    const link = m.link || '#';
+                    const link = String(m.link || '').trim();
+                    const hasLink = /^https?:\/\//i.test(link);
+                    const win = parseMeetingTimeWindow(m.title);
                     const editBtn = currentUserIsAdmin
                         ? `<button class=\"meeting-edit-btn\" type=\"button\" data-edit-event-id=\"${m.id}\" title=\"Redigera\">✏️</button>`
                         : '';
+                    const joinBtn = hasLink
+                        ? `<a class=\"meeting-link\" href=\"${link}\" target=\"_blank\" rel=\"noopener\" title=\"Anslut till mötet\">🎥</a>`
+                        : `<span class=\"meeting-link disabled\" title=\"Ingen möteslänk\">🎥</span>`;
+                    const titleText = win.start === null
+                        ? `${String(m.title || '')}`
+                        : `${String(m.title || '')} • ${String(Math.floor(win.start / 60)).padStart(2, '0')}:${String(win.start % 60).padStart(2, '0')}`;
                     return `
                         <div class=\"meeting-item\">
-                            <span>${escapeHtml(m.title)}</span>
+                            <span>${escapeHtml(titleText)}</span>
                             <span class=\"meeting-actions\">
-                                <a class=\"meeting-link\" href=\"${link}\" target=\"_blank\" title=\"Anslut till mötet\">🎥</a>
+                                ${joinBtn}
                                 ${editBtn}
                             </span>
                         </div>
@@ -6027,6 +6721,39 @@
             openFacebookAcademyModal().catch(function(err) {
                 alert(err.message || 'Kunde inte öppna Facebook Academy.');
             });
+        });
+        document.getElementById('ideaBankToolIcon').addEventListener('click', function() {
+            openIdeaBankModal().catch(function(err) {
+                alert(err.message || 'Kunde inte öppna Idébank.');
+            });
+        });
+        document.getElementById('ideaBankCloseBtn').addEventListener('click', function() {
+            closeIdeaBankModal();
+        });
+        document.getElementById('ideaBankBackBtn').addEventListener('click', function() {
+            backIdeaBankToList();
+        });
+        document.getElementById('ideaBankCreateBtn').addEventListener('click', function() {
+            toggleIdeaBankCreateForm();
+        });
+        document.getElementById('ideaBankCancelCreateBtn').addEventListener('click', function() {
+            toggleIdeaBankCreateForm();
+        });
+        document.getElementById('ideaBankSaveBtn').addEventListener('click', function() {
+            saveIdeaBankIdea().catch(function(err) {
+                alert(err.message || 'Kunde inte spara idén.');
+            });
+        });
+        document.getElementById('ideaBankSearchInput').addEventListener('input', function() {
+            filterIdeaBankIdeas().catch(function(err) {
+                console.warn(err);
+            });
+        });
+        document.getElementById('ideaBankFileInput').addEventListener('change', function(e) {
+            previewIdeaBankImage(e);
+        });
+        document.getElementById('ideaBankModal').addEventListener('click', function(e) {
+            if (e.target === this) closeIdeaBankModal();
         });
         document.getElementById('adminSettingsIcon').addEventListener('click', function() {
             openMemberManageModal().catch(function() {});
