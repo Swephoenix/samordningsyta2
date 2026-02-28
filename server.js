@@ -127,6 +127,12 @@ CREATE TABLE IF NOT EXISTS events (
   created_at INTEGER NOT NULL,
   FOREIGN KEY(created_by) REFERENCES users(id)
 );
+
+CREATE TABLE IF NOT EXISTS app_data (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL,
+  updated_at INTEGER NOT NULL
+);
 `);
 
 db.exec(`
@@ -207,12 +213,97 @@ function ensureColumn(table, column, ddl) {
   if (!exists) db.exec(`ALTER TABLE ${table} ADD COLUMN ${ddl}`);
 }
 
+function defaultFsState() {
+  return {
+    name: "root",
+    type: "folder",
+    created_by_email: "admin",
+    created_by_admin: true,
+    children: {
+      "Gemensam mapp": {
+        type: "folder",
+        created_by_email: "admin",
+        created_by_admin: true,
+        children: {
+          "Projektplan.pdf": {
+            type: "file",
+            content: "Projektplan version 1.2",
+            created_by_email: "admin",
+            created_by_admin: true
+          },
+          "Roadmap.txt": {
+            type: "file",
+            content: "Q1: Planering\nQ2: Leverans",
+            created_by_email: "admin",
+            created_by_admin: true
+          }
+        }
+      },
+      Privat: {
+        type: "folder",
+        created_by_email: "admin",
+        created_by_admin: true,
+        children: {},
+        user_homes: {
+          admin: {
+            type: "folder",
+            created_by_email: "admin",
+            created_by_admin: true,
+            children: {
+              "Anteckningar.txt": {
+                type: "file",
+                content: "Mina privata anteckningar.",
+                created_by_email: "admin",
+                created_by_admin: true
+              }
+            }
+          }
+        }
+      },
+      "Delat med mig": {
+        type: "folder",
+        created_by_email: "admin",
+        created_by_admin: true,
+        children: {},
+        user_homes: {}
+      }
+    }
+  };
+}
+
+function getAppDataJson(key) {
+  const row = db.prepare("SELECT value FROM app_data WHERE key = ?").get(key);
+  if (!row) return null;
+  try {
+    return JSON.parse(row.value);
+  } catch (_) {
+    return null;
+  }
+}
+
+function setAppDataJson(key, value) {
+  db.prepare(
+    `INSERT INTO app_data(key, value, updated_at)
+     VALUES (?, ?, ?)
+     ON CONFLICT(key) DO UPDATE SET
+       value = excluded.value,
+       updated_at = excluded.updated_at`
+  ).run(key, JSON.stringify(value), nowTs());
+}
+
+function ensureFsState() {
+  const current = getAppDataJson("fs_state_v1");
+  if (current && typeof current === "object") return;
+  setAppDataJson("fs_state_v1", defaultFsState());
+}
+
 ensureColumn("sessions", "last_seen_at", "last_seen_at INTEGER NOT NULL DEFAULT 0");
 
 ensureDefaultUser("admin", "admin");
 ensureDefaultUser("user1", "user1");
 ensureDefaultUser("user2", "user2");
 seedEventsIfEmpty();
+ensureFsState();
 
 app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
@@ -828,6 +919,29 @@ app.put("/api/notes/me", (req, res) => {
        updated_at = excluded.updated_at`
   ).run(user.id, content, nowTs());
 
+  return res.json({ ok: true });
+});
+
+app.get("/api/fs/state", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+  const state = getAppDataJson("fs_state_v1");
+  if (!state || typeof state !== "object") {
+    const fresh = defaultFsState();
+    setAppDataJson("fs_state_v1", fresh);
+    return res.json({ state: fresh });
+  }
+  return res.json({ state });
+});
+
+app.put("/api/fs/state", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+  const state = req.body?.state;
+  if (!state || typeof state !== "object" || Array.isArray(state)) {
+    return res.status(400).json({ error: "Ogiltigt filsystem-state." });
+  }
+  setAppDataJson("fs_state_v1", state);
   return res.json({ ok: true });
 });
 

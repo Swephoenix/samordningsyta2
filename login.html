@@ -9,16 +9,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-1: #f6f8fc;
-            --bg-2: #d9e7ff;
-            --card: #ffffff;
-            --text: #1b2330;
-            --muted: #5f6b7f;
-            --line: #d7dfec;
-            --accent: #1b6dff;
-            --accent-hover: #1358cf;
-            --danger: #b42318;
-            --ok: #027a48;
+            --card: rgba(20, 28, 39, 0.86);
+            --text: #eaf0f8;
+            --muted: #9fb0c3;
+            --line: #2b3a4d;
+            --accent: #4A90E2;
+            --accent-hover: #357ABD;
+            --danger: #ff7b7b;
+            --ok: #56d39b;
         }
 
         * {
@@ -34,10 +32,27 @@
             padding: 24px;
             font-family: "Space Grotesk", sans-serif;
             color: var(--text);
+            background-color: #121a24;
+            background-image:
+                radial-gradient(
+                    circle at center,
+                    #2c3b50 0%,
+                    #1f2b3a 45%,
+                    #121a24 100%
+                );
+            position: relative;
+        }
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
             background:
-                radial-gradient(circle at 15% 20%, #ffffff 0%, rgba(255,255,255,0) 45%),
-                radial-gradient(circle at 90% 85%, #c9dbff 0%, rgba(201,219,255,0) 38%),
-                linear-gradient(160deg, var(--bg-1), var(--bg-2));
+                linear-gradient(
+                    180deg,
+                    rgba(255,255,255,0.03),
+                    rgba(0,0,0,0.15)
+                );
         }
 
         .login-card {
@@ -47,7 +62,10 @@
             border: 1px solid var(--line);
             border-radius: 20px;
             padding: 28px;
-            box-shadow: 0 22px 60px rgba(27, 61, 120, 0.18);
+            box-shadow: 0 22px 60px rgba(0, 0, 0, 0.35);
+            backdrop-filter: blur(8px);
+            position: relative;
+            z-index: 1;
         }
 
         h1 {
@@ -83,11 +101,16 @@
             padding: 0 12px;
             font: inherit;
             outline: none;
+            background: rgba(255,255,255,0.04);
+            color: var(--text);
         }
 
         input:focus {
             border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(27, 109, 255, 0.18);
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+        }
+        input::placeholder {
+            color: #8ea1b6;
         }
 
         .row {

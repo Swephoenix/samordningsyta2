@@ -7,11 +7,11 @@
     <title>Minimal Dashboard</title>
     <style>
         :root {
-            --bg-color: #f4f7f6;
-            --panel-bg: #ffffff;
-            --text-main: #333333;
-            --text-muted: #777777;
-            --border-color: #e0e0e0;
+            --bg-color: #121a24;
+            --panel-bg: rgba(20, 28, 39, 0.82);
+            --text-main: #eaf0f8;
+            --text-muted: #9fb0c3;
+            --border-color: #2b3a4d;
             --accent: #4A90E2;
             --accent-hover: #357ABD;
             --danger: #e74c3c;
@@ -28,16 +28,38 @@
         /* Låser huvudfönstret från att scrolla */
         body {
             background-color: var(--bg-color);
+            background-image:
+                radial-gradient(
+                    circle at center,
+                    #2c3b50 0%,
+                    #1f2b3a 45%,
+                    #121a24 100%
+                );
             color: var(--text-main);
             height: 100vh;
             overflow: hidden; 
             display: flex;
             padding: 20px;
             gap: 20px;
+            position: relative;
+        }
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background:
+                linear-gradient(
+                    180deg,
+                    rgba(255,255,255,0.03),
+                    rgba(0,0,0,0.15)
+                );
+            z-index: 0;
         }
         .auth-logout {
             border: 1px solid var(--border-color);
-            background: #fff;
+            background: rgba(255,255,255,0.06);
+            color: #dfe9f7;
             border-radius: 10px;
             padding: 12px 14px;
             cursor: pointer;
@@ -46,7 +68,7 @@
             width: 100%;
             min-height: 44px;
         }
-        .auth-logout:hover { background: #f3f5f8; }
+        .auth-logout:hover { background: rgba(255,255,255,0.12); }
         .meetings-logout-wrap {
             margin-top: 6px;
             display: flex;
@@ -63,23 +85,27 @@
             gap: 20px;
             width: 100%;
             height: 100%;
+            position: relative;
+            z-index: 1;
         }
 
         .panel {
             background: var(--panel-bg);
             border-radius: var(--radius);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            box-shadow: 0 16px 32px rgba(0,0,0,0.24);
             border: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            backdrop-filter: blur(6px);
         }
 
         .panel-header {
             padding: 15px 20px;
             border-bottom: 1px solid var(--border-color);
             font-weight: 600;
-            background: #fafafa;
+            background: rgba(255,255,255,0.03);
+            color: #dbe7f5;
         }
 
         .panel-content {
@@ -102,20 +128,21 @@
             resize: none;
             outline: none;
             color: var(--text-main);
+            background: transparent;
             line-height: 1.5;
         }
 
         .msg-item {
             padding: 10px;
-            background: #fff3cd;
-            border-left: 4px solid #ffc107;
+            background: rgba(255, 203, 107, 0.12);
+            border-left: 4px solid #ffc65a;
             margin-bottom: 10px;
             border-radius: 4px;
             font-size: 0.9em;
         }
         .meeting-item {
             padding: 8px 10px;
-            background: #eef5ff;
+            background: rgba(74, 144, 226, 0.12);
             border-left: 4px solid var(--accent);
             margin-bottom: 8px;
             border-radius: 4px;
@@ -148,12 +175,12 @@
             height: 30px;
             border-radius: 8px;
             text-decoration: none;
-            background: #dce9ff;
-            color: #1e5ec7;
-            border: 1px solid #bdd3ff;
+            background: rgba(74, 144, 226, 0.18);
+            color: #beddff;
+            border: 1px solid rgba(74, 144, 226, 0.35);
         }
         .meeting-link:hover {
-            background: #cfe1ff;
+            background: rgba(74, 144, 226, 0.27);
         }
         .meeting-edit-btn {
             display: inline-flex;
@@ -973,7 +1000,7 @@
             padding: 10px;
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            grid-auto-rows: 100px;
+            grid-auto-rows: 112px;
             gap: 10px;
             overflow-y: auto;
             align-content: start;
@@ -995,13 +1022,15 @@
             border-color: #cce8ff;
         }
         .fs-item-icon {
-            font-size: 40px;
+            font-size: 104px;
             margin-bottom: 5px;
         }
         .fs-item-name {
             font-size: 12px;
-            word-break: break-all;
-            max-width: 90px;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            max-width: 108px;
+            color: #111;
         }
         .fs-context-menu {
             position: absolute;
@@ -1017,10 +1046,86 @@
             padding: 8px 15px;
             cursor: pointer;
             font-size: 13px;
+            color: #111;
         }
         .fs-menu-item:hover {
             background: #0078d7;
             color: #fff;
+        }
+        .fs-menu-item.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+            background: transparent;
+            color: inherit;
+        }
+        .fs-share-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.35);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 5;
+        }
+        .fs-share-modal {
+            width: min(92%, 520px);
+            max-height: min(86%, 560px);
+            background: #fff;
+            border: 1px solid #d4d4d4;
+            border-radius: 10px;
+            box-shadow: 0 14px 36px rgba(0,0,0,0.25);
+            display: flex;
+            flex-direction: column;
+        }
+        .fs-share-header {
+            padding: 12px 14px;
+            border-bottom: 1px solid #e3e3e3;
+            font-weight: 700;
+        }
+        .fs-share-list {
+            padding: 10px 12px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-height: 120px;
+        }
+        .fs-share-item {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 10px;
+            align-items: center;
+            border: 1px solid #ececec;
+            border-radius: 8px;
+            padding: 8px 10px;
+        }
+        .fs-share-name {
+            font-size: 0.9rem;
+            color: #222;
+        }
+        .fs-share-email {
+            font-size: 0.78rem;
+            color: #666;
+        }
+        .fs-share-perm {
+            border: 1px solid #d0d0d0;
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 0.82rem;
+            background: #fff;
+        }
+        .fs-share-empty {
+            font-size: 0.88rem;
+            color: #666;
+            padding: 8px 2px;
+        }
+        .fs-share-actions {
+            padding: 10px 12px;
+            border-top: 1px solid #e3e3e3;
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
         }
         .fs-editor-overlay {
             position: absolute;
@@ -1065,6 +1170,10 @@
         .fs-btn {
             padding: 5px 15px;
             cursor: pointer;
+        }
+        .fs-btn[disabled] {
+            opacity: 0.55;
+            cursor: not-allowed;
         }
         .fs-btn-primary {
             background: #0078d7;
@@ -1460,6 +1569,9 @@
                     <button class="calendar-nav" id="nextMonthBtn" aria-label="Nästa månad">›</button>
                 </div>
                 <div class="panel-content">
+                    <div class="meetings-admin-row" id="meetingsAdminRow">
+                        <button class="meetings-admin-btn" type="button" onclick="openEventEditorCreate()">+ Nytt möte</button>
+                    </div>
                     <div class="calendar-grid" id="calendarGrid">
                         <div class="cal-day-header">M</div><div class="cal-day-header">T</div><div class="cal-day-header">O</div><div class="cal-day-header">T</div><div class="cal-day-header">F</div><div class="cal-day-header">L</div><div class="cal-day-header">S</div>
                     </div>
@@ -1470,9 +1582,6 @@
             <div class="panel meetings">
                 <div class="panel-header">Dagens möten</div>
                 <div class="panel-content">
-                    <div class="meetings-admin-row" id="meetingsAdminRow">
-                        <button class="meetings-admin-btn" type="button" onclick="openEventEditorCreate()">+ Nytt möte</button>
-                    </div>
                     <div class="meetings-list" id="meetingsList"></div>
                     <div class="meetings-logout-wrap">
                         <button class="auth-logout" type="button" onclick="logout()">Logga ut</button>
@@ -1567,7 +1676,6 @@
                     <div class="placeholder-icon" title="Facebook Marketing Academy">🎓</div>
                     <div class="placeholder-icon" title="Idébank">💡</div>
                     <div class="placeholder-icon" title="Statistik">📊</div>
-                    <div class="placeholder-icon" title="Filer">📁</div>
                     <div class="placeholder-icon" title="Inställningar">⚙️</div>
                     <div class="placeholder-icon" id="adminSettingsIcon" title="Admin inställning" style="display:none;">🛡️</div>
                     <div class="placeholder-icon" title="Mapp" onclick="openFolderModal()">
@@ -1626,6 +1734,8 @@
             <div class="fs-context-menu" id="fsContextMenu">
                 <div class="fs-menu-item" onclick="fsCreateNewItem('folder')">Ny mapp</div>
                 <div class="fs-menu-item" onclick="fsCreateNewItem('file')">Ny textfil (.txt)</div>
+                <div class="fs-menu-item" id="fsShareItemMenu" onclick="fsOpenShareModalForContextTarget()">Dela...</div>
+                <div class="fs-menu-item" id="fsDeleteItemMenu" onclick="fsDeleteContextTarget()">Ta bort markerad</div>
             </div>
 
             <div class="fs-editor-overlay" id="fsEditorOverlay">
@@ -1634,7 +1744,18 @@
                     <textarea class="fs-text-content" id="fsTextContent"></textarea>
                     <div class="fs-btn-row">
                         <button class="fs-btn" type="button" onclick="fsCloseEditor()">Avbryt</button>
-                        <button class="fs-btn fs-btn-primary" type="button" onclick="fsSaveFile()">Spara</button>
+                        <button class="fs-btn fs-btn-primary" id="fsSaveBtn" type="button" onclick="fsSaveFile()">Spara</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="fs-share-overlay" id="fsShareOverlay">
+                <div class="fs-share-modal">
+                    <div class="fs-share-header" id="fsShareTitle">Dela</div>
+                    <div class="fs-share-list" id="fsShareList"></div>
+                    <div class="fs-share-actions">
+                        <button class="fs-btn" type="button" onclick="fsCloseShareModal()">Avbryt</button>
+                        <button class="fs-btn fs-btn-primary" type="button" onclick="fsApplyShare()">Dela</button>
                     </div>
                 </div>
             </div>
@@ -2226,7 +2347,7 @@
                 title: event.title,
                 link: event.link || ''
             };
-            document.getElementById('modalDate').innerText = payload.dateLabel;
+            document.getElementById('modalDate').innerText = payload.dateKey;
             document.getElementById('modalTitle').innerText = event.title;
             document.getElementById('modalLink').href = event.link || '#';
             document.getElementById('eventModal').style.display = 'flex';
@@ -2278,6 +2399,26 @@
                 alert('Datum och titel krävs.');
                 return;
             }
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) {
+                alert('Datum måste vara i formatet YYYY-MM-DD.');
+                return;
+            }
+
+            const [yearStr, monthStr] = dateKey.split('-');
+            const eventsForMonth = await apiGet(`/api/events?year=${Number(yearStr)}&month=${Number(monthStr)}`);
+            const collisions = (eventsForMonth.events || []).filter(function(evt) {
+                if (String(evt.date_key || '') !== dateKey) return false;
+                if (eventEditorMode === 'edit' && editingEventId && Number(evt.id) === Number(editingEventId)) return false;
+                return true;
+            });
+            if (collisions.length > 0) {
+                const existingTitles = collisions
+                    .slice(0, 3)
+                    .map(function(evt) { return String(evt.title || 'Möte'); })
+                    .join(', ');
+                const message = `Varning: Det finns redan ${collisions.length} möte(n) ${dateKey}${existingTitles ? ` (${existingTitles})` : ''}. Vill du spara ändå?`;
+                if (!window.confirm(message)) return;
+            }
 
             if (eventEditorMode === 'edit' && editingEventId) {
                 await apiSend(`/api/events/${editingEventId}`, 'PUT', {
@@ -2299,69 +2440,493 @@
             renderCalendar();
         }
 
-        function openFolderModal() {
+        async function openFolderModal() {
             document.getElementById('folderModal').style.display = 'flex';
+            try {
+                await fsLoadState(true);
+            } catch (err) {
+            }
             fsRender();
         }
 
         function closeFolderModal() {
             document.getElementById('folderModal').style.display = 'none';
             document.getElementById('fsContextMenu').style.display = 'none';
+            fsCloseShareModal();
             fsCloseEditor();
         }
 
-        const fsModel = {
+        let fsModel = {
             name: 'root',
             type: 'folder',
+            created_by_email: 'admin',
+            created_by_admin: true,
             children: {
                 'Gemensam mapp': {
                     type: 'folder',
+                    created_by_email: 'admin',
+                    created_by_admin: true,
                     children: {
-                        'Projektplan.pdf': { type: 'file', content: 'Projektplan version 1.2' },
-                        'Roadmap.txt': { type: 'file', content: 'Q1: Planering\nQ2: Leverans' }
+                        'Projektplan.pdf': {
+                            type: 'file',
+                            content: 'Projektplan version 1.2',
+                            created_by_email: 'admin',
+                            created_by_admin: true
+                        },
+                        'Roadmap.txt': {
+                            type: 'file',
+                            content: 'Q1: Planering\nQ2: Leverans',
+                            created_by_email: 'admin',
+                            created_by_admin: true
+                        }
                     }
                 },
                 'Privat': {
                     type: 'folder',
-                    children: {
-                        'Anteckningar.txt': { type: 'file', content: 'Mina privata anteckningar.' }
+                    created_by_email: 'admin',
+                    created_by_admin: true,
+                    children: {},
+                    user_homes: {
+                        admin: {
+                            type: 'folder',
+                            created_by_email: 'admin',
+                            created_by_admin: true,
+                            children: {
+                                'Anteckningar.txt': {
+                                    type: 'file',
+                                    content: 'Mina privata anteckningar.',
+                                    created_by_email: 'admin',
+                                    created_by_admin: true
+                                }
+                            }
+                        }
                     }
+                },
+                'Delat med mig': {
+                    type: 'folder',
+                    created_by_email: 'admin',
+                    created_by_admin: true,
+                    children: {},
+                    user_homes: {}
                 }
             }
         };
         let fsCurrentPath = [];
         let fsOpenFileName = null;
+        let fsContextTargetName = null;
+        let fsShareTargetName = null;
+        let fsNodeIdSeq = 1;
+        let fsRefreshTimer = null;
+        let fsSyncInFlight = null;
+        let fsStateLoaded = false;
+        const FS_REFRESH_ACTIVE_MS = 5000;
+        const FS_REFRESH_BG_MS = 15000;
+        const FS_REFRESH_IDLE_MS = 30000;
         const fsFileDisplay = document.getElementById('fsFileDisplay');
         const fsContextMenu = document.getElementById('fsContextMenu');
         const fsAddressBar = document.getElementById('fsAddressBar');
         const fsEditorOverlay = document.getElementById('fsEditorOverlay');
         const fsTextContent = document.getElementById('fsTextContent');
         const fsEditorFilename = document.getElementById('fsEditorFilename');
+        const fsSaveBtn = document.getElementById('fsSaveBtn');
+        const fsShareOverlay = document.getElementById('fsShareOverlay');
+        const fsShareTitle = document.getElementById('fsShareTitle');
+        const fsShareList = document.getElementById('fsShareList');
+
+        function fsNormalizeEmail(email) {
+            return String(email || '').trim().toLowerCase();
+        }
+
+        function fsIsModalOpen() {
+            const modal = document.getElementById('folderModal');
+            return !!modal && modal.style.display === 'flex';
+        }
+
+        function fsGetRefreshDelay() {
+            if (!fsIsModalOpen()) return FS_REFRESH_IDLE_MS;
+            return document.hidden ? FS_REFRESH_BG_MS : FS_REFRESH_ACTIVE_MS;
+        }
+
+        function fsScheduleAutoRefresh(immediate) {
+            if (fsRefreshTimer) clearTimeout(fsRefreshTimer);
+            const delay = immediate ? 0 : fsGetRefreshDelay();
+            fsRefreshTimer = setTimeout(async function() {
+                if (fsIsModalOpen()) {
+                    try {
+                        await fsLoadState(true);
+                    } catch (err) {
+                    }
+                    fsRender();
+                }
+                fsScheduleAutoRefresh(false);
+            }, delay);
+        }
+
+        function startFsAutoRefresh() {
+            fsScheduleAutoRefresh(false);
+        }
+
+        function refreshFsAutoRefreshSoon() {
+            fsScheduleAutoRefresh(true);
+        }
+
+        async function fsLoadState(force) {
+            if (!force && fsStateLoaded) return;
+            if (fsSyncInFlight) return fsSyncInFlight;
+            fsSyncInFlight = (async function() {
+                const data = await apiGet('/api/fs/state');
+                if (data && data.state && typeof data.state === 'object') {
+                    fsModel = data.state;
+                    fsEnsureNodeIds(fsModel);
+                    fsStateLoaded = true;
+                }
+            })();
+            try {
+                await fsSyncInFlight;
+            } finally {
+                fsSyncInFlight = null;
+            }
+        }
+
+        async function fsPersistState() {
+            await apiSend('/api/fs/state', 'PUT', { state: fsModel });
+        }
+
+        function fsCurrentUserEmail() {
+            return fsNormalizeEmail(currentUserEmail);
+        }
+
+        function fsCurrentUserKey() {
+            return fsCurrentUserEmail() || '__guest__';
+        }
+
+        function fsIsSharedPath(pathParts) {
+            return Array.isArray(pathParts) && pathParts[0] === 'Gemensam mapp';
+        }
+
+        function fsIsPrivatePath(pathParts) {
+            return Array.isArray(pathParts) && pathParts[0] === 'Privat';
+        }
+
+        function fsIsAdminCreated(item) {
+            if (!item) return false;
+            if (item.created_by_admin) return true;
+            return String(item.created_by_email || '').trim().toLowerCase() === 'admin';
+        }
+
+        function fsCanModifyItem(item, itemPathParts) {
+            const inheritedSharePermission = fsGetInheritedSharePermission(itemPathParts);
+            if (inheritedSharePermission) {
+                return inheritedSharePermission === 'edit';
+            }
+            if (item && item.shared_link) {
+                return String(item.share_permission || 'read') === 'edit';
+            }
+            if (currentUserIsAdmin) return true;
+            if (fsIsAdminCreated(item)) return false;
+            if (fsIsSharedPath(itemPathParts)) return true;
+            return true;
+        }
+
+        function fsCreateNode(type) {
+            const isFile = type === 'file';
+            return {
+                type: type,
+                content: isFile ? '' : null,
+                children: isFile ? null : {},
+                created_by_email: fsCurrentUserEmail() || 'unknown',
+                created_by_admin: !!currentUserIsAdmin
+            };
+        }
+
+        function fsEnsureNodeId(node) {
+            if (!node) return '';
+            if (!node.__fs_id) {
+                node.__fs_id = `node_${fsNodeIdSeq++}`;
+            }
+            return node.__fs_id;
+        }
+
+        function fsResolveNode(node) {
+            if (!node) return null;
+            return node.shared_link ? node.source : node;
+        }
+
+        function fsEnsureNodeIds(node) {
+            if (!node) return;
+            fsEnsureNodeId(node);
+            if (node.type !== 'folder' || !node.children) return;
+            Object.keys(node.children).forEach(function(name) {
+                const child = fsResolveNode(node.children[name]);
+                fsEnsureNodeIds(child);
+            });
+        }
+
+        function fsGetPrivateHomeByUser(userEmail, createIfMissing) {
+            const privatRoot = fsModel.children['Privat'];
+            if (!privatRoot) return null;
+            if (!privatRoot.user_homes) privatRoot.user_homes = {};
+            const key = fsNormalizeEmail(userEmail) || '__guest__';
+            if (!privatRoot.user_homes[key] && createIfMissing !== false) {
+                privatRoot.user_homes[key] = {
+                    type: 'folder',
+                    created_by_email: key,
+                    created_by_admin: key === 'admin',
+                    children: {}
+                };
+                fsEnsureNodeId(privatRoot.user_homes[key]);
+            }
+            return privatRoot.user_homes[key] || null;
+        }
+
+        function fsGetPrivateHome(createIfMissing) {
+            return fsGetPrivateHomeByUser(fsCurrentUserKey(), createIfMissing);
+        }
+
+        function fsGetSharedHomeByUser(userEmail, createIfMissing) {
+            const sharedRoot = fsModel.children['Delat med mig'];
+            if (!sharedRoot) return null;
+            if (!sharedRoot.user_homes) sharedRoot.user_homes = {};
+            const key = fsNormalizeEmail(userEmail) || '__guest__';
+            if (!sharedRoot.user_homes[key] && createIfMissing !== false) {
+                sharedRoot.user_homes[key] = {
+                    type: 'folder',
+                    created_by_email: key,
+                    created_by_admin: key === 'admin',
+                    children: {}
+                };
+                fsEnsureNodeId(sharedRoot.user_homes[key]);
+            }
+            return sharedRoot.user_homes[key] || null;
+        }
+
+        function fsGetSharedHome(createIfMissing) {
+            return fsGetSharedHomeByUser(fsCurrentUserKey(), createIfMissing);
+        }
+
+        function fsMakeShareLinkName(baseName, ownerEmail, targetHome) {
+            const ownerLabel = String(ownerEmail || '').split('@')[0] || ownerEmail || 'okänd';
+            const base = `${baseName} (delad av ${ownerLabel})`;
+            if (!targetHome.children[base]) return base;
+            let i = 2;
+            while (targetHome.children[`${base} ${i}`]) i += 1;
+            return `${base} ${i}`;
+        }
+
+        function fsUpsertShareLink(sourceNode, sourceName, recipientEmail, permission) {
+            const recipient = fsNormalizeEmail(recipientEmail);
+            if (!recipient) return;
+            const recipientHome = fsGetSharedHomeByUser(recipient, true);
+            if (!recipientHome) return;
+            const sourceId = fsEnsureNodeId(sourceNode);
+            const existing = Object.keys(recipientHome.children).find(function(name) {
+                const item = recipientHome.children[name];
+                return !!item && item.shared_link && item.shared_source_id === sourceId;
+            });
+            const linkName = existing || fsMakeShareLinkName(sourceName, sourceNode.created_by_email, recipientHome);
+            recipientHome.children[linkName] = {
+                type: sourceNode.type,
+                shared_link: true,
+                shared_source_id: sourceId,
+                source: sourceNode,
+                source_owner_email: fsNormalizeEmail(sourceNode.created_by_email),
+                share_permission: permission === 'edit' ? 'edit' : 'read',
+                created_by_email: fsCurrentUserEmail() || 'unknown',
+                created_by_admin: !!currentUserIsAdmin
+            };
+        }
+
+        async function fsGetShareCandidates() {
+            try {
+                const data = await apiGet('/api/users');
+                return (data.users || [])
+                    .map(function(u) {
+                        const email = fsNormalizeEmail(u.email);
+                        return { email: email, label: messengerDisplayName(email) || email };
+                    })
+                    .filter(function(u) { return !!u.email && u.email !== fsCurrentUserEmail(); });
+            } catch (err) {
+                const map = {};
+                messengerThreads.forEach(function(t) {
+                    if (!t || t.isGroup) return;
+                    const email = fsNormalizeEmail(t.email);
+                    if (!email || email === fsCurrentUserEmail()) return;
+                    map[email] = { email: email, label: t.name || email };
+                });
+                return Object.keys(map).sort().map(function(k) { return map[k]; });
+            }
+        }
+
+        function fsCanShareItem(item, itemPathParts) {
+            if (!item) return false;
+            if (item.shared_link) return false;
+            if (!fsIsPrivatePath(itemPathParts)) return false;
+            if (fsGetInheritedSharePermission(itemPathParts)) return false;
+            return fsCanModifyItem(item, itemPathParts);
+        }
+
+        function fsCloseShareModal() {
+            fsShareOverlay.style.display = 'none';
+            fsShareTargetName = null;
+            fsShareList.innerHTML = '';
+        }
+
+        async function fsOpenShareModalForContextTarget() {
+            if (!fsContextTargetName) return;
+            const folder = fsGetCurrentFolder();
+            const item = folder ? folder.children[fsContextTargetName] : null;
+            if (!item) return;
+            if (!fsCanShareItem(item, fsCurrentPath.concat([fsContextTargetName]))) {
+                alert('Det här objektet kan inte delas.');
+                return;
+            }
+
+            fsShareTargetName = fsContextTargetName;
+            const candidates = await fsGetShareCandidates();
+            fsShareTitle.innerText = `Dela: ${fsShareTargetName}`;
+            if (!candidates.length) {
+                fsShareList.innerHTML = '<div class="fs-share-empty">Inga användare att dela med.</div>';
+                fsShareOverlay.style.display = 'flex';
+                return;
+            }
+
+            fsShareList.innerHTML = candidates.map(function(user) {
+                return `
+                    <label class="fs-share-item">
+                        <input type="checkbox" data-share-email="${escapeHtml(user.email)}">
+                        <div>
+                            <div class="fs-share-name">${escapeHtml(user.label)}</div>
+                            <div class="fs-share-email">${escapeHtml(user.email)}</div>
+                        </div>
+                        <select class="fs-share-perm" data-share-perm-for="${escapeHtml(user.email)}" disabled>
+                            <option value="read">Kan läsa</option>
+                            <option value="edit">Kan redigera</option>
+                        </select>
+                    </label>
+                `;
+            }).join('');
+
+            fsShareList.querySelectorAll('input[type="checkbox"][data-share-email]').forEach(function(cb) {
+                cb.addEventListener('change', function() {
+                    const email = cb.getAttribute('data-share-email');
+                    const select = fsShareList.querySelector(`select[data-share-perm-for="${email}"]`);
+                    if (select) select.disabled = !cb.checked;
+                });
+            });
+            fsShareOverlay.style.display = 'flex';
+        }
+
+        async function fsApplyShare() {
+            if (!fsShareTargetName) return;
+            const folder = fsGetCurrentFolder();
+            const item = folder ? folder.children[fsShareTargetName] : null;
+            if (!item) {
+                fsCloseShareModal();
+                return;
+            }
+            const sourceNode = fsResolveNode(item);
+            const sourceName = fsShareTargetName;
+            if (!sourceNode) return;
+            fsEnsureNodeId(sourceNode);
+            if (!sourceNode.shared_with) sourceNode.shared_with = {};
+
+            const selected = Array.from(fsShareList.querySelectorAll('input[type="checkbox"][data-share-email]:checked'));
+            if (!selected.length) {
+                alert('Välj minst en person att dela med.');
+                return;
+            }
+
+            selected.forEach(function(cb) {
+                const email = fsNormalizeEmail(cb.getAttribute('data-share-email'));
+                if (!email) return;
+                const sel = fsShareList.querySelector(`select[data-share-perm-for="${cb.getAttribute('data-share-email')}"]`);
+                const perm = sel && sel.value === 'edit' ? 'edit' : 'read';
+                sourceNode.shared_with[email] = perm;
+                fsUpsertShareLink(sourceNode, sourceName, email, perm);
+            });
+            try {
+                await fsPersistState();
+            } catch (err) {
+                alert('Kunde inte spara delningen.');
+                return;
+            }
+
+            fsCloseShareModal();
+            fsContextMenu.style.display = 'none';
+            alert('Delning uppdaterad.');
+        }
 
         function fsGetCurrentFolder() {
             let folder = fsModel;
-            fsCurrentPath.forEach(function(part) {
-                folder = folder.children[part];
-            });
+            for (let i = 0; i < fsCurrentPath.length; i++) {
+                const part = fsCurrentPath[i];
+                if (!folder || !folder.children) return null;
+                if (i === 0 && part === 'Privat') {
+                    folder = fsGetPrivateHome(true);
+                    continue;
+                }
+                if (i === 0 && part === 'Delat med mig') {
+                    folder = fsGetSharedHome(true);
+                    continue;
+                }
+                const next = folder.children[part];
+                folder = fsResolveNode(next);
+            }
             return folder;
+        }
+
+        function fsGetInheritedSharePermission(pathParts) {
+            if (!fsIsPrivatePath(pathParts)) return null;
+            const privateHome = fsGetPrivateHome(true);
+            if (!privateHome || !privateHome.children || pathParts.length < 2) return null;
+            const top = privateHome.children[pathParts[1]];
+            if (!top || !top.shared_link) return null;
+            return String(top.share_permission || 'read');
+        }
+
+        function fsUpdateContextMenuState() {
+            const share = document.getElementById('fsShareItemMenu');
+            const del = document.getElementById('fsDeleteItemMenu');
+            if (!del) return;
+            if (!fsContextTargetName) {
+                if (share) share.classList.add('disabled');
+                del.classList.add('disabled');
+                return;
+            }
+            const folder = fsGetCurrentFolder();
+            const item = folder.children[fsContextTargetName];
+            const canDelete = !!item && fsCanModifyItem(item, fsCurrentPath.concat([fsContextTargetName]));
+            const canShare = !!item && fsCanShareItem(item, fsCurrentPath.concat([fsContextTargetName]));
+            if (share) share.classList.toggle('disabled', !canShare);
+            del.classList.toggle('disabled', !canDelete);
         }
 
         function fsRender() {
             const folder = fsGetCurrentFolder();
+            if (!folder) return;
             fsFileDisplay.innerHTML = '';
-            fsAddressBar.innerText = 'Denna dator > ' + (fsCurrentPath.join(' > ') || 'Dokument');
+            if (fsIsPrivatePath(fsCurrentPath)) {
+                fsAddressBar.innerText = 'Denna dator > Privat (' + (fsCurrentUserEmail() || 'okänd användare') + ')';
+            } else if (Array.isArray(fsCurrentPath) && fsCurrentPath[0] === 'Delat med mig') {
+                fsAddressBar.innerText = 'Denna dator > Delat med mig (' + (fsCurrentUserEmail() || 'okänd användare') + ')';
+            } else {
+                fsAddressBar.innerText = 'Denna dator > ' + (fsCurrentPath.join(' > ') || 'Dokument');
+            }
 
             Object.keys(folder.children).forEach(function(name) {
                 const item = folder.children[name];
                 const icon = item.type === 'folder' ? '📁' : '📄';
                 const div = document.createElement('div');
                 div.className = 'fs-item';
+                div.setAttribute('data-fs-name', name);
+                const sharedMark = item.shared_link ? ' 🔗' : '';
                 div.innerHTML = `
                     <div class="fs-item-icon">${icon}</div>
-                    <div class="fs-item-name">${name}</div>
+                    <div class="fs-item-name">${name}${sharedMark}</div>
                 `;
                 div.onclick = function() {
-                    if (item.type === 'folder') {
+                    const target = fsResolveNode(item);
+                    if (target && target.type === 'folder') {
                         fsCurrentPath.push(name);
                         fsRender();
                     } else {
@@ -2379,8 +2944,17 @@
             }
         }
 
-        function fsCreateNewItem(type) {
-            const name = prompt(type === 'folder' ? 'Ange mappnamn:' : 'Ange filnamn:');
+        async function fsCreateNewItem(type) {
+            if (Array.isArray(fsCurrentPath) && fsCurrentPath[0] === 'Delat med mig') {
+                alert('Du kan inte skapa nya filer eller mappar i Delat med mig.');
+                return;
+            }
+            if (!fsCanModifyItem(null, fsCurrentPath)) {
+                alert('Du har bara läsbehörighet här.');
+                return;
+            }
+            const rawName = prompt(type === 'folder' ? 'Ange mappnamn:' : 'Ange filnamn:');
+            const name = String(rawName || '').trim();
             if (!name) return;
 
             const folder = fsGetCurrentFolder();
@@ -2389,41 +2963,124 @@
                 return;
             }
 
-            folder.children[name] = {
-                type: type,
-                content: type === 'file' ? '' : null,
-                children: type === 'folder' ? {} : null
-            };
+            folder.children[name] = fsCreateNode(type);
             fsContextMenu.style.display = 'none';
+            fsContextTargetName = null;
+            try {
+                await fsPersistState();
+            } catch (err) {
+                alert('Kunde inte spara ändringen.');
+                return;
+            }
             fsRender();
         }
 
         function fsOpenFile(name) {
             const folder = fsGetCurrentFolder();
+            const item = folder.children[name];
+            const target = fsResolveNode(item);
+            if (!item || !target || target.type !== 'file') return;
             fsOpenFileName = name;
             fsEditorFilename.innerText = name;
-            fsTextContent.value = folder.children[name].content || '';
+            fsTextContent.value = target.content || '';
+            const canEdit = fsCanModifyItem(item, fsCurrentPath.concat([name]));
+            fsTextContent.readOnly = !canEdit;
+            if (fsSaveBtn) {
+                fsSaveBtn.disabled = !canEdit;
+                fsSaveBtn.title = canEdit ? '' : 'Detta dokument är låst för vanliga användare.';
+            }
             fsEditorOverlay.style.display = 'flex';
         }
 
         function fsCloseEditor() {
             fsEditorOverlay.style.display = 'none';
             fsOpenFileName = null;
+            fsTextContent.readOnly = false;
+            if (fsSaveBtn) {
+                fsSaveBtn.disabled = false;
+                fsSaveBtn.title = '';
+            }
         }
 
-        function fsSaveFile() {
+        async function fsSaveFile() {
             const folder = fsGetCurrentFolder();
             if (!fsOpenFileName || !folder.children[fsOpenFileName]) return;
-            folder.children[fsOpenFileName].content = fsTextContent.value;
+            const item = folder.children[fsOpenFileName];
+            const target = fsResolveNode(item);
+            if (!fsCanModifyItem(item, fsCurrentPath.concat([fsOpenFileName]))) {
+                alert('Du kan inte ändra dokument som admin har skapat.');
+                return;
+            }
+            if (!target || target.type !== 'file') return;
+            target.content = fsTextContent.value;
+            try {
+                await fsPersistState();
+            } catch (err) {
+                alert('Kunde inte spara filen på servern.');
+                return;
+            }
             fsCloseEditor();
             alert('Filen sparades!');
+        }
+
+        async function fsDeleteContextTarget() {
+            if (!fsContextTargetName) return;
+            const folder = fsGetCurrentFolder();
+            const item = folder.children[fsContextTargetName];
+            if (!item) {
+                fsContextTargetName = null;
+                fsContextMenu.style.display = 'none';
+                fsRender();
+                return;
+            }
+            if (item.shared_link) {
+                const source = fsResolveNode(item);
+                const me = fsCurrentUserEmail();
+                if (source && source.shared_with && me) {
+                    delete source.shared_with[me];
+                }
+                delete folder.children[fsContextTargetName];
+                try {
+                    await fsPersistState();
+                } catch (err) {
+                    alert('Kunde inte spara ändringen.');
+                    return;
+                }
+                fsContextTargetName = null;
+                fsContextMenu.style.display = 'none';
+                fsRender();
+                return;
+            }
+            if (!fsCanModifyItem(item, fsCurrentPath.concat([fsContextTargetName]))) {
+                alert('Du kan inte ta bort mappar eller dokument som admin har skapat.');
+                return;
+            }
+            const label = item.type === 'folder' ? 'mappen' : 'filen';
+            const ok = window.confirm(`Vill du ta bort ${label} "${fsContextTargetName}"?`);
+            if (!ok) return;
+            delete folder.children[fsContextTargetName];
+            try {
+                await fsPersistState();
+            } catch (err) {
+                alert('Kunde inte spara ändringen.');
+                return;
+            }
+            fsContextTargetName = null;
+            fsContextMenu.style.display = 'none';
+            fsRender();
         }
 
         document.getElementById('folderModal').addEventListener('click', function(e) {
             if (e.target === this) closeFolderModal();
         });
+        fsShareOverlay.addEventListener('click', function(e) {
+            if (e.target === fsShareOverlay) fsCloseShareModal();
+        });
         fsFileDisplay.addEventListener('contextmenu', function(e) {
             e.preventDefault();
+            const itemEl = e.target.closest('.fs-item');
+            fsContextTargetName = itemEl ? String(itemEl.getAttribute('data-fs-name') || '') : null;
+            fsUpdateContextMenuState();
             fsContextMenu.style.display = 'block';
             const bounds = document.querySelector('.folder-modal-content').getBoundingClientRect();
             fsContextMenu.style.left = (e.clientX - bounds.left) + 'px';
@@ -2432,8 +3089,10 @@
         document.addEventListener('click', function(e) {
             if (!fsContextMenu.contains(e.target)) {
                 fsContextMenu.style.display = 'none';
+                fsContextTargetName = null;
             }
         });
+        fsEnsureNodeIds(fsModel);
 
         const messengerState = {
             activeThreadId: null,
@@ -3323,10 +3982,12 @@
         document.addEventListener('visibilitychange', function() {
             if (!document.hidden) {
                 refreshPollingSoon();
+                refreshFsAutoRefreshSoon();
             }
         });
         window.addEventListener('focus', function() {
             refreshPollingSoon();
+            refreshFsAutoRefreshSoon();
         });
 
         (async function initApp() {
@@ -3341,11 +4002,13 @@
                 loadTodayMeetings(),
                 loadChatMessages(),
                 loadChatPresence(),
-                loadNotes()
+                loadNotes(),
+                fsLoadState(true)
             ]);
             renderCalendar();
             initMessenger();
             startAdaptivePolling();
+            startFsAutoRefresh();
             document.body.style.visibility = 'visible';
         })();
     </script>
