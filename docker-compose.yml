@@ -13,6 +13,12 @@ services:
       - PORT=8000
     volumes:
       - samordningsyta2_data:/app/uploads
+    networks:
+      - samordningsyta_net
 
 volumes:
   samordningsyta2_data:
+
+networks:
+  samordningsyta_net:
+    name: samordningsyta_net
