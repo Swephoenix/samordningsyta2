@@ -175,10 +175,7 @@ function ensureDefaultUser(email, password) {
   db.prepare(
     `INSERT INTO users(email, password_hash, salt, iterations, created_at)
      VALUES (?, ?, ?, ?, ?)
-     ON CONFLICT(email) DO UPDATE SET
-       password_hash = excluded.password_hash,
-       salt = excluded.salt,
-       iterations = excluded.iterations`
+     ON CONFLICT(email) DO NOTHING`
   ).run(email, passwordHash, salt, PBKDF2_ITERATIONS, nowTs());
 }
 
@@ -568,11 +565,15 @@ app.get("/api/messenger/messages/:userId", (req, res) => {
   const rows = db
     .prepare(
       `SELECT id, sender_id, recipient_id, message, created_at
-       FROM direct_messages
-       WHERE (sender_id = ? AND recipient_id = ?)
-          OR (sender_id = ? AND recipient_id = ?)
-       ORDER BY created_at ASC, id ASC
-       LIMIT 500`
+       FROM (
+         SELECT id, sender_id, recipient_id, message, created_at
+         FROM direct_messages
+         WHERE (sender_id = ? AND recipient_id = ?)
+            OR (sender_id = ? AND recipient_id = ?)
+         ORDER BY created_at DESC, id DESC
+         LIMIT 500
+       ) recent
+       ORDER BY created_at ASC, id ASC`
     )
     .all(user.id, otherUserId, otherUserId, user.id);
 
@@ -644,11 +645,15 @@ app.get("/api/messenger/groups/:groupId/messages", (req, res) => {
   const rows = db
     .prepare(
       `SELECT gm.id, gm.message, gm.created_at, gm.sender_id, u.email
-       FROM chat_group_messages gm
+       FROM (
+         SELECT id, message, created_at, sender_id
+         FROM chat_group_messages
+         WHERE group_id = ?
+         ORDER BY id DESC
+         LIMIT 500
+       ) gm
        JOIN users u ON u.id = gm.sender_id
-       WHERE gm.group_id = ?
-       ORDER BY gm.id ASC
-       LIMIT 500`
+       ORDER BY gm.id ASC`
     )
     .all(groupId);
 

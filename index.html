@@ -1671,7 +1671,8 @@
             try {
                 const resp = await fetch('/api/me', { credentials: 'include' });
                 if (!resp.ok) {
-                    window.location.href = 'login.html';
+                    const next = encodeURIComponent(window.location.pathname + window.location.search);
+                    window.location.href = `login.html?next=${next}`;
                     return false;
                 }
                 const data = await resp.json();
@@ -1706,6 +1707,84 @@
         let eventsByDate = {};
         let allChatMessages = [];
         let notesSaveTimer = null;
+        const loadInFlight = {
+            chatMessages: null,
+            chatPresence: null,
+            todayMeetings: null,
+            messengerUsers: null
+        };
+        const pollConfig = {
+            chatMessages: { foregroundMs: 5000, backgroundMs: 25000, maxMs: 120000 },
+            chatPresence: { foregroundMs: 7000, backgroundMs: 30000, maxMs: 120000 },
+            todayMeetings: { foregroundMs: 60000, backgroundMs: 180000, maxMs: 300000 },
+            messengerUsers: { foregroundMs: 3000, backgroundMs: 12000, maxMs: 90000 }
+        };
+        const pollState = {
+            chatMessages: { timerId: null, running: false, failures: 0 },
+            chatPresence: { timerId: null, running: false, failures: 0 },
+            todayMeetings: { timerId: null, running: false, failures: 0 },
+            messengerUsers: { timerId: null, running: false, failures: 0 }
+        };
+
+        function singleFlightLoad(key, task) {
+            if (loadInFlight[key]) return loadInFlight[key];
+            const promise = (async function() {
+                return await task();
+            })();
+            loadInFlight[key] = promise;
+            return promise.finally(function() {
+                if (loadInFlight[key] === promise) {
+                    loadInFlight[key] = null;
+                }
+            });
+        }
+
+        function getPollDelay(taskName) {
+            const cfg = pollConfig[taskName];
+            const state = pollState[taskName];
+            const base = document.hidden ? cfg.backgroundMs : cfg.foregroundMs;
+            const multiplier = Math.min(8, Math.pow(2, state.failures));
+            return Math.min(cfg.maxMs, base * multiplier);
+        }
+
+        async function runPollTask(taskName, taskFn) {
+            const state = pollState[taskName];
+            if (state.running) return;
+            state.running = true;
+            try {
+                await taskFn();
+                state.failures = 0;
+            } catch (err) {
+                state.failures = Math.min(state.failures + 1, 8);
+            } finally {
+                state.running = false;
+            }
+        }
+
+        function schedulePollTask(taskName, taskFn, immediate) {
+            const state = pollState[taskName];
+            if (state.timerId) {
+                clearTimeout(state.timerId);
+            }
+            const delay = immediate ? 0 : getPollDelay(taskName);
+            state.timerId = setTimeout(async function() {
+                await runPollTask(taskName, taskFn);
+                schedulePollTask(taskName, taskFn, false);
+            }, delay);
+        }
+
+        function startAdaptivePolling() {
+            schedulePollTask('chatMessages', loadChatMessages, false);
+            schedulePollTask('chatPresence', loadChatPresence, false);
+            schedulePollTask('todayMeetings', loadTodayMeetings, false);
+            schedulePollTask('messengerUsers', loadMessengerUsers, false);
+        }
+
+        function refreshPollingSoon() {
+            schedulePollTask('chatMessages', loadChatMessages, true);
+            schedulePollTask('chatPresence', loadChatPresence, true);
+            schedulePollTask('messengerUsers', loadMessengerUsers, true);
+        }
 
         async function apiGet(url) {
             const resp = await fetch(url, { credentials: 'include' });
@@ -1822,7 +1901,7 @@
             feed.innerHTML = '';
             messages.forEach(function(msg) {
                 const dt = new Date(msg.created_at * 1000);
-                const dateKey = dt.toISOString().slice(0, 10);
+                const dateKey = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
                 if (dateKey !== currentDateKey) {
                     currentDateKey = dateKey;
                     const divider = document.createElement('div');
@@ -1963,27 +2042,31 @@
         }
 
         async function loadChatMessages() {
-            const data = await apiGet('/api/chat/messages?limit=200');
-            allChatMessages = data.messages || [];
-            if (data.current_user_email) currentUserEmail = data.current_user_email;
-            if (messengerState.activeThreadId === MESSENGER_GROUP_THREAD_ID) {
-                markGroupChatRead();
-            }
-            syncPinnedGroupThreadFromChatMessages();
-            if ((messengerState.activeThreadId || MESSENGER_GROUP_THREAD_ID) === MESSENGER_GROUP_THREAD_ID) {
-                applyChatFilters();
-            }
-            renderMessengerList();
-            renderActiveThreadInMainChat();
+            return singleFlightLoad('chatMessages', async function() {
+                const data = await apiGet('/api/chat/messages?limit=200');
+                allChatMessages = data.messages || [];
+                if (data.current_user_email) currentUserEmail = data.current_user_email;
+                if (messengerState.activeThreadId === MESSENGER_GROUP_THREAD_ID) {
+                    markGroupChatRead();
+                }
+                syncPinnedGroupThreadFromChatMessages();
+                if ((messengerState.activeThreadId || MESSENGER_GROUP_THREAD_ID) === MESSENGER_GROUP_THREAD_ID) {
+                    applyChatFilters();
+                }
+                renderMessengerList();
+                renderActiveThreadInMainChat();
+            });
         }
 
         async function loadChatPresence() {
-            const data = await apiGet('/api/chat/presence');
-            const count = Number(data.online_count || 0);
-            window.__presenceCount = count;
-            if ((messengerState.activeThreadId || MESSENGER_GROUP_THREAD_ID) === MESSENGER_GROUP_THREAD_ID) {
-                document.getElementById('groupChatPresence').innerText = `${count} online`;
-            }
+            return singleFlightLoad('chatPresence', async function() {
+                const data = await apiGet('/api/chat/presence');
+                const count = Number(data.online_count || 0);
+                window.__presenceCount = count;
+                if ((messengerState.activeThreadId || MESSENGER_GROUP_THREAD_ID) === MESSENGER_GROUP_THREAD_ID) {
+                    document.getElementById('groupChatPresence').innerText = `${count} online`;
+                }
+            });
         }
 
         async function sendGroupChatMessage() {
@@ -2080,38 +2163,40 @@
         }
 
         async function loadTodayMeetings() {
-            const data = await apiGet('/api/meetings/today');
-            const meetings = data.meetings || [];
-            const list = document.getElementById('meetingsList');
-            if (!meetings.length) {
-                list.innerHTML = '<div class=\"meeting-item\"><span>Inga möten idag</span><span></span></div>';
-                return;
-            }
-            list.innerHTML = meetings.map(function(m) {
-                const link = m.link || '#';
-                const editBtn = currentUserIsAdmin
-                    ? `<button class=\"meeting-edit-btn\" type=\"button\" data-edit-event-id=\"${m.id}\" title=\"Redigera\">✏️</button>`
-                    : '';
-                return `
-                    <div class=\"meeting-item\">
-                        <span>${escapeHtml(m.title)}</span>
-                        <span class=\"meeting-actions\">
-                            <a class=\"meeting-link\" href=\"${link}\" target=\"_blank\" title=\"Anslut till mötet\">🎥</a>
-                            ${editBtn}
-                        </span>
-                    </div>
-                `;
-            }).join('');
+            return singleFlightLoad('todayMeetings', async function() {
+                const data = await apiGet('/api/meetings/today');
+                const meetings = data.meetings || [];
+                const list = document.getElementById('meetingsList');
+                if (!meetings.length) {
+                    list.innerHTML = '<div class=\"meeting-item\"><span>Inga möten idag</span><span></span></div>';
+                    return;
+                }
+                list.innerHTML = meetings.map(function(m) {
+                    const link = m.link || '#';
+                    const editBtn = currentUserIsAdmin
+                        ? `<button class=\"meeting-edit-btn\" type=\"button\" data-edit-event-id=\"${m.id}\" title=\"Redigera\">✏️</button>`
+                        : '';
+                    return `
+                        <div class=\"meeting-item\">
+                            <span>${escapeHtml(m.title)}</span>
+                            <span class=\"meeting-actions\">
+                                <a class=\"meeting-link\" href=\"${link}\" target=\"_blank\" title=\"Anslut till mötet\">🎥</a>
+                                ${editBtn}
+                            </span>
+                        </div>
+                    `;
+                }).join('');
 
-            if (currentUserIsAdmin) {
-                list.querySelectorAll('[data-edit-event-id]').forEach(function(btn) {
-                    btn.addEventListener('click', function() {
-                        const id = Number(btn.getAttribute('data-edit-event-id'));
-                        const match = meetings.find(function(x) { return x.id === id; });
-                        openEventEditorEdit(match);
+                if (currentUserIsAdmin) {
+                    list.querySelectorAll('[data-edit-event-id]').forEach(function(btn) {
+                        btn.addEventListener('click', function() {
+                            const id = Number(btn.getAttribute('data-edit-event-id'));
+                            const match = meetings.find(function(x) { return x.id === id; });
+                            openEventEditorEdit(match);
+                        });
                     });
-                });
-            }
+                }
+            });
         }
 
         function initGroupChat() {
@@ -2631,60 +2716,62 @@
         }
 
         async function loadMessengerUsers() {
-            const data = await apiGet('/api/messenger/threads');
-            const prevGroup = getThreadById(MESSENGER_GROUP_THREAD_ID);
-            const prevById = {};
-            messengerThreads.forEach(function(thread) {
-                prevById[String(thread.id)] = thread;
+            return singleFlightLoad('messengerUsers', async function() {
+                const data = await apiGet('/api/messenger/threads');
+                const prevGroup = getThreadById(MESSENGER_GROUP_THREAD_ID);
+                const prevById = {};
+                messengerThreads.forEach(function(thread) {
+                    prevById[String(thread.id)] = thread;
+                });
+
+                const apiThreads = (data.threads || []).map(function(threadData) {
+                    const id = String(threadData.id);
+                    const prev = prevById[id];
+                    const isGroup = threadData.kind === 'group';
+                    const email = String(threadData.email || '');
+                    const displayName = isGroup ? String(threadData.name || 'Grupp') : messengerDisplayName(email);
+                    const statusText = isGroup
+                        ? `${Number(threadData.member_count || 0)} medlemmar`
+                        : (threadData.online ? 'Aktiv nu' : 'Offline');
+                    const parsedLast = parseReplyPayload(threadData.last_message_text || '');
+                    const cleanLastText = String(parsedLast.body || '');
+                    return {
+                        id: id,
+                        kind: String(threadData.kind || 'direct'),
+                        email: email,
+                        name: displayName,
+                        avatar: isGroup
+                            ? ('https://api.dicebear.com/9.x/initials/svg?seed=' + encodeURIComponent(displayName))
+                            : messengerAvatarUrl(email),
+                        online: !!threadData.online,
+                        unread: Number(threadData.unread_count || 0),
+                        isGroup: isGroup,
+                        statusText: statusText,
+                        updatedAt: threadData.last_message_at ? Number(threadData.last_message_at) * 1000 : (prev ? prev.updatedAt : 0),
+                        lastPreview: cleanLastText
+                            ? ((threadData.last_message_from_me ? 'Du: ' : '') + cleanLastText)
+                            : 'Inga meddelanden än.',
+                        messages: prev ? prev.messages : []
+                    };
+                });
+
+                messengerThreads = [buildPinnedGroupThread(prevGroup)].concat(apiThreads);
+                if (!messengerState.activeThreadId && !composeState.active) {
+                    messengerState.activeThreadId = MESSENGER_GROUP_THREAD_ID;
+                }
+
+                if (messengerState.activeThreadId && !getThreadById(messengerState.activeThreadId)) {
+                    messengerState.activeThreadId = null;
+                    renderMainChatThreadList();
+                    return;
+                }
+
+                renderMessengerList();
+                const threadView = document.getElementById('msgpThreadView');
+                if (threadView && threadView.style.display === 'flex' && messengerState.activeThreadId) {
+                    loadActiveMessengerThreadMessages().catch(function() {});
+                }
             });
-
-            const apiThreads = (data.threads || []).map(function(threadData) {
-                const id = String(threadData.id);
-                const prev = prevById[id];
-                const isGroup = threadData.kind === 'group';
-                const email = String(threadData.email || '');
-                const displayName = isGroup ? String(threadData.name || 'Grupp') : messengerDisplayName(email);
-                const statusText = isGroup
-                    ? `${Number(threadData.member_count || 0)} medlemmar`
-                    : (threadData.online ? 'Aktiv nu' : 'Offline');
-                const parsedLast = parseReplyPayload(threadData.last_message_text || '');
-                const cleanLastText = String(parsedLast.body || '');
-                return {
-                    id: id,
-                    kind: String(threadData.kind || 'direct'),
-                    email: email,
-                    name: displayName,
-                    avatar: isGroup
-                        ? ('https://api.dicebear.com/9.x/initials/svg?seed=' + encodeURIComponent(displayName))
-                        : messengerAvatarUrl(email),
-                    online: !!threadData.online,
-                    unread: Number(threadData.unread_count || 0),
-                    isGroup: isGroup,
-                    statusText: statusText,
-                    updatedAt: threadData.last_message_at ? Number(threadData.last_message_at) * 1000 : (prev ? prev.updatedAt : 0),
-                    lastPreview: cleanLastText
-                        ? ((threadData.last_message_from_me ? 'Du: ' : '') + cleanLastText)
-                        : 'Inga meddelanden än.',
-                    messages: prev ? prev.messages : []
-                };
-            });
-
-            messengerThreads = [buildPinnedGroupThread(prevGroup)].concat(apiThreads);
-            if (!messengerState.activeThreadId && !composeState.active) {
-                messengerState.activeThreadId = MESSENGER_GROUP_THREAD_ID;
-            }
-
-            if (messengerState.activeThreadId && !getThreadById(messengerState.activeThreadId)) {
-                messengerState.activeThreadId = null;
-                renderMainChatThreadList();
-                return;
-            }
-
-            renderMessengerList();
-            const threadView = document.getElementById('msgpThreadView');
-            if (threadView && threadView.style.display === 'flex' && messengerState.activeThreadId) {
-                loadActiveMessengerThreadMessages().catch(function() {});
-            }
         }
 
         async function loadActiveMessengerThreadMessages() {
@@ -3233,6 +3320,14 @@
         document.getElementById('nextMonthBtn').addEventListener('click', function() {
             changeMonth(1).catch(function() {});
         });
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                refreshPollingSoon();
+            }
+        });
+        window.addEventListener('focus', function() {
+            refreshPollingSoon();
+        });
 
         (async function initApp() {
             document.body.style.visibility = 'hidden';
@@ -3250,10 +3345,7 @@
             ]);
             renderCalendar();
             initMessenger();
-            setInterval(function() { loadChatMessages().catch(function() {}); }, 5000);
-            setInterval(function() { loadChatPresence().catch(function() {}); }, 5000);
-            setInterval(function() { loadTodayMeetings().catch(function() {}); }, 60000);
-            setInterval(function() { loadMessengerUsers().catch(function() {}); }, 3000);
+            startAdaptivePolling();
             document.body.style.visibility = 'visible';
         })();
     </script>
