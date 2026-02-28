@@ -1044,6 +1044,11 @@
             border: 1px solid #e5e5e5;
             border-radius: 10px;
             background: #fff;
+            cursor: pointer;
+        }
+        .member-manage-item.active {
+            border-color: #3a77f3;
+            box-shadow: 0 0 0 2px rgba(58, 119, 243, 0.14);
         }
         .member-manage-avatar {
             width: 36px;
@@ -1108,6 +1113,32 @@
         .member-manage-btn[disabled] {
             opacity: 0.45;
             cursor: not-allowed;
+        }
+        .member-manage-detail {
+            margin-top: 12px;
+            border: 1px solid #e5e5e5;
+            border-radius: 10px;
+            background: #fafcff;
+            padding: 12px;
+            color: #202734;
+        }
+        .member-manage-detail h4 {
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+        .member-manage-detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px 14px;
+            font-size: 0.84rem;
+        }
+        .member-manage-detail-grid strong {
+            color: #4f5a6f;
+            font-size: 0.78rem;
+            display: block;
+            margin-bottom: 2px;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
         }
         .chat-thread-list {
             flex: 1;
@@ -2289,6 +2320,10 @@
             <div class="member-manage-list" id="memberManageList">
                 <div class="member-manage-item"><span>Laddar användare...</span><span></span><span></span></div>
             </div>
+            <div class="member-manage-detail" id="memberManageDetail">
+                <h4>Användardetaljer</h4>
+                <div>Klicka på en användare för att se detaljer.</div>
+            </div>
         </div>
     </div>
 
@@ -2347,6 +2382,7 @@
         let importantMessagesLoadError = '';
         let memberManageUsers = [];
         let memberManageCities = [];
+        let memberManageSelectedId = 0;
         let profileCities = [];
         let notesSaveTimer = null;
         const chatEmojiSet = [
@@ -2986,6 +3022,31 @@
             return s ? s.charAt(0).toUpperCase() : '?';
         }
 
+        function renderMemberManageDetail(user) {
+            const box = document.getElementById('memberManageDetail');
+            if (!box) return;
+            if (!user) {
+                box.innerHTML = '<h4>Användardetaljer</h4><div>Klicka på en användare för att se detaljer.</div>';
+                return;
+            }
+            const fullName = `${String(user.first_name || '').trim()} ${String(user.last_name || '').trim()}`.trim() || memberManageDisplayName(user.email);
+            const role = user.is_admin ? 'Admin' : 'Användare';
+            const status = user.online ? 'Inloggad' : 'Ej inloggad';
+            box.innerHTML = `
+                <h4>Användardetaljer</h4>
+                <div class="member-manage-detail-grid">
+                    <div><strong>Namn</strong><div>${escapeHtml(fullName)}</div></div>
+                    <div><strong>Roll</strong><div>${escapeHtml(role)}</div></div>
+                    <div><strong>Användarnamn</strong><div>${escapeHtml(String(user.email || '-'))}</div></div>
+                    <div><strong>Status</strong><div>${escapeHtml(status)}</div></div>
+                    <div><strong>E-post</strong><div>${escapeHtml(String(user.contact_email || '-'))}</div></div>
+                    <div><strong>Telefon</strong><div>${escapeHtml(String(user.phone || '-'))}</div></div>
+                    <div><strong>Ort</strong><div>${escapeHtml(String(user.city || '-'))}</div></div>
+                    <div><strong>ID</strong><div>${escapeHtml(String(user.id || '-'))}</div></div>
+                </div>
+            `;
+        }
+
         async function memberManageEditUser(userId) {
             const user = memberManageUsers.find(function(u) { return Number(u.id) === Number(userId); });
             if (!user) return;
@@ -3022,7 +3083,12 @@
             if (!list) return;
             if (!Array.isArray(users) || users.length === 0) {
                 list.innerHTML = '<div class="member-manage-item"><div class="member-manage-avatar">?</div><div class="member-manage-info"><div class="member-manage-name">Inga användare hittades.</div></div><div class="member-manage-actions"></div></div>';
+                renderMemberManageDetail(null);
                 return;
+            }
+            const selectedExists = users.some(function(u) { return Number(u.id) === Number(memberManageSelectedId); });
+            if (!selectedExists) {
+                memberManageSelectedId = Number(users[0].id || 0);
             }
             list.innerHTML = users.map(function(user) {
                 const email = String(user.email || '');
@@ -3032,8 +3098,9 @@
                 const lampClass = isOnline ? 'online' : '';
                 const isSelf = Number(user.id) === Number(currentUserId) || email === currentUserEmail;
                 const isRootAdmin = !!user.is_admin;
+                const activeClass = Number(memberManageSelectedId) === Number(user.id) ? ' active' : '';
                 return `
-                    <div class="member-manage-item">
+                    <div class="member-manage-item${activeClass}" data-member-row="${Number(user.id)}">
                         <div class="member-manage-avatar">${escapeHtml(memberManageInitial(name))}</div>
                         <div class="member-manage-info">
                             <div class="member-manage-name">${escapeHtml(name)}</div>
@@ -3050,6 +3117,15 @@
                     </div>
                 `;
             }).join('');
+
+            list.querySelectorAll('[data-member-row]').forEach(function(row) {
+                row.addEventListener('click', function(e) {
+                    if (e.target.closest('.member-manage-actions')) return;
+                    const id = Number(row.getAttribute('data-member-row'));
+                    memberManageSelectedId = id;
+                    renderMemberManageList(users);
+                });
+            });
 
             list.querySelectorAll('[data-member-edit]').forEach(function(btn) {
                 btn.addEventListener('click', function() {
@@ -3068,6 +3144,8 @@
                     });
                 });
             });
+            const selectedUser = users.find(function(u) { return Number(u.id) === Number(memberManageSelectedId); }) || null;
+            renderMemberManageDetail(selectedUser);
         }
 
         function filterMemberManageList() {
@@ -3104,11 +3182,14 @@
                 ]);
                 memberManageUsers = (usersData.users || []).slice();
                 memberManageCities = Array.isArray(registerOptions.cities) ? registerOptions.cities : [];
+                memberManageSelectedId = memberManageUsers.length ? Number(memberManageUsers[0].id || 0) : 0;
                 registrationSwitch.checked = !!settingsData.allow_registrations;
                 renderMemberManageList(memberManageUsers);
             } catch (err) {
                 memberManageUsers = [];
+                memberManageSelectedId = 0;
                 list.innerHTML = '<div class="member-manage-item"><div class="member-manage-avatar">!</div><div class="member-manage-info"><div class="member-manage-name">Kunde inte hämta användare.</div></div><div class="member-manage-actions"></div></div>';
+                renderMemberManageDetail(null);
             }
         }
 

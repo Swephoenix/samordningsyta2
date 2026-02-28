@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<title>Medlemshantering</title>
+<style>
+  body {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #ffffff;
+    color: #111;
+    margin: 0;
+    padding: 32px;
+  }
+
+  h1 {
+    margin-bottom: 16px;
+  }
+
+  .top-bar {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+
+  .switch {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .switch input {
+    width: 40px;
+    height: 20px;
+  }
+
+  input[type="text"] {
+    padding: 8px 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    min-width: 260px;
+  }
+
+  .member-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .member {
+    display: grid;
+    grid-template-columns: 40px 1fr auto;
+    align-items: center;
+    gap: 16px;
+    padding: 12px;
+    border: 1px solid #e5e5e5;
+    border-radius: 10px;
+  }
+
+  .avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #eee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+  }
+
+  .member-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .username {
+    font-size: 12px;
+    color: #666;
+  }
+
+  .page a {
+    color: #0066cc;
+    text-decoration: none;
+  }
+
+  .page span {
+    color: #666;
+    font-size: 13px;
+  }
+
+  .status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #555;
+  }
+
+  .lamp {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #ccc;
+  }
+
+  .lamp.online {
+    background: #3cb371;
+  }
+
+  .actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  button {
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 6px 10px;
+    cursor: pointer;
+  }
+
+  button.delete {
+    border-color: #d33;
+    color: #d33;
+  }
+</style>
+</head>
+<body>
+
+<h1>Medlemshantering</h1>
+
+<div class="top-bar">
+  <input type="text" id="search" placeholder="Sök medlem eller sida…">
+  <div class="switch">
+    <label>
+      <input type="checkbox" checked>
+      Tillåt nya registreringar
+    </label>
+  </div>
+</div>
+
+<div class="member-list" id="members">
+
+  <div class="member" data-search="anna stockholm ambition stockholm">
+    <div class="avatar">A</div>
+
+    <div class="member-info">
+      <strong contenteditable="true">Anna Svensson</strong>
+      <div class="username">@anna_sthlm_01</div>
+
+      <div class="page">
+        <a href="https://facebook.com/ambitionstockholm" target="_blank" contenteditable="true">
+          Ambition Stockholm
+        </a>
+        <span>· 12 430 följare</span>
+      </div>
+
+      <div class="status">
+        <div class="lamp online"></div>
+        Inloggad
+      </div>
+    </div>
+
+    <div class="actions">
+      <button>Redigera</button>
+      <button class="delete">Ta bort</button>
+    </div>
+  </div>
+
+  <div class="member" data-search="erik malmö ambition malmö">
+    <div class="avatar">E</div>
+
+    <div class="member-info">
+      <strong contenteditable="true">Erik Johansson</strong>
+      <div class="username">@erik_malmoe_07</div>
+
+      <div class="page">
+        <a href="https://facebook.com/ambitionmalmo" target="_blank" contenteditable="true">
+          Ambition Malmö
+        </a>
+        <span>· 8 210 följare</span>
+      </div>
+
+      <div class="status">
+        <div class="lamp"></div>
+        Ej inloggad
+      </div>
+    </div>
+
+    <div class="actions">
+      <button>Redigera</button>
+      <button class="delete">Ta bort</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const searchInput = document.getElementById("search");
+  const members = document.querySelectorAll(".member");
+
+  searchInput.addEventListener("input", () => {
+    const value = searchInput.value.toLowerCase();
+
+    members.forEach(member => {
+      const text = member.dataset.search;
+      member.style.display = text.includes(value) ? "grid" : "none";
+    });
+  });
+
+  document.querySelectorAll(".delete").forEach(btn => {
+    btn.addEventListener("click", () => {
+      if (confirm("Vill du ta bort denna medlem?")) {
+        btn.closest(".member").remove();
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
