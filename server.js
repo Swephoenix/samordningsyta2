@@ -492,6 +492,15 @@ function inferAcademyLinkType(url) {
   return null;
 }
 
+function isAllowedAcademyUrl(url) {
+  const value = String(url || "").trim();
+  if (!value) return false;
+  if (/^https?:\/\//i.test(value)) return true;
+  // Tillåt lokala uppladdade filer från appens chat-uploadmapp.
+  if (/^\/uploads\/chat\/[a-zA-Z0-9._-]+(?:[?#].*)?$/.test(value)) return true;
+  return false;
+}
+
 function normalizeAcademyLink(row) {
   if (!row || typeof row !== "object") return null;
   const id = String(row.id || "").trim();
@@ -2111,8 +2120,10 @@ app.post("/api/facebook-academy/links", (req, res) => {
   if (!title && !url) {
     return res.status(400).json({ error: "Ange text, länk eller båda." });
   }
-  if (url && !/^https?:\/\//i.test(url)) {
-    return res.status(400).json({ error: "Länken måste börja med http:// eller https://." });
+  if (url && !isAllowedAcademyUrl(url)) {
+    return res.status(400).json({
+      error: "Ogiltig länk. Använd http(s)-länk eller uppladdad PDF från /uploads/chat/."
+    });
   }
 
   let type = "";
@@ -2156,8 +2167,10 @@ app.put("/api/facebook-academy/links/:id", (req, res) => {
   if (!title && !url) {
     return res.status(400).json({ error: "Ange text, länk eller båda." });
   }
-  if (url && !/^https?:\/\//i.test(url)) {
-    return res.status(400).json({ error: "Länken måste börja med http:// eller https://." });
+  if (url && !isAllowedAcademyUrl(url)) {
+    return res.status(400).json({
+      error: "Ogiltig länk. Använd http(s)-länk eller uppladdad PDF från /uploads/chat/."
+    });
   }
   let type = "";
   if (url) {
