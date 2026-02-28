@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrera</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --card: rgba(20, 28, 39, 0.86);
+            --text: #eaf0f8;
+            --muted: #9fb0c3;
+            --line: #2b3a4d;
+            --accent: #4A90E2;
+            --accent-hover: #357ABD;
+            --danger: #ff7b7b;
+            --ok: #56d39b;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 24px;
+            font-family: "Space Grotesk", sans-serif;
+            color: var(--text);
+            background-color: #121a24;
+            background-image: radial-gradient(circle at center, #2c3b50 0%, #1f2b3a 45%, #121a24 100%);
+            position: relative;
+        }
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.15));
+        }
+        .card {
+            width: 100%;
+            max-width: 430px;
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: 0 22px 60px rgba(0, 0, 0, 0.35);
+            backdrop-filter: blur(8px);
+            position: relative;
+            z-index: 1;
+        }
+        h1 { font-size: 1.9rem; line-height: 1.05; margin-bottom: 6px; }
+        .subtitle { color: var(--muted); margin-bottom: 20px; font-size: 0.95rem; }
+        .field { margin-bottom: 14px; }
+        label { display: block; font-size: 0.86rem; font-weight: 700; margin-bottom: 6px; }
+        input[type="text"], input[type="email"], input[type="password"], input[type="tel"], select {
+            width: 100%;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            height: 44px;
+            padding: 0 12px;
+            font: inherit;
+            outline: none;
+            background: rgba(255,255,255,0.04);
+            color: var(--text);
+        }
+        input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2); }
+        input::placeholder { color: #8ea1b6; }
+        .hint { margin: 2px 0 16px; color: var(--muted); font-size: 0.86rem; }
+        .btn {
+            width: 100%;
+            height: 46px;
+            border: none;
+            border-radius: 11px;
+            background: var(--accent);
+            color: #fff;
+            font: inherit;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .btn:hover { background: var(--accent-hover); }
+        .btn[disabled] { opacity: 0.7; cursor: wait; }
+        .foot { margin-top: 14px; text-align: center; font-size: 0.9rem; color: var(--muted); }
+        .link { color: var(--accent); text-decoration: none; font-weight: 700; }
+        .link:hover { text-decoration: underline; }
+        .notice { min-height: 22px; margin-top: 12px; font-size: 0.9rem; font-weight: 700; }
+        .notice.error { color: var(--danger); }
+        .notice.ok { color: var(--ok); }
+    </style>
+</head>
+<body>
+    <main class="card">
+        <h1>Skapa konto</h1>
+        <p class="subtitle">Registrera en ny användare.</p>
+
+        <form id="registerForm">
+            <div class="field">
+                <label for="firstName">Förnamn</label>
+                <input id="firstName" name="firstName" type="text" placeholder="Förnamn" required>
+            </div>
+
+            <div class="field">
+                <label for="lastName">Efternamn</label>
+                <input id="lastName" name="lastName" type="text" placeholder="Efternamn" required>
+            </div>
+
+            <div class="field">
+                <label for="phone">Telefonnummer</label>
+                <input id="phone" name="phone" type="tel" placeholder="+46..." required>
+            </div>
+
+            <div class="field">
+                <label for="workEmail">E-post (@ambitionsverige.se)</label>
+                <input id="workEmail" name="workEmail" type="email" placeholder="fornamn.efternamn@ambitionsverige.se" required>
+            </div>
+
+            <div class="field">
+                <label for="city">Ort (Facebook-sida)</label>
+                <select id="city" name="city" required>
+                    <option value="">Laddar orter...</option>
+                </select>
+            </div>
+
+            <div class="hint">Användarnamn och lösenord genereras automatiskt och skickas till din e-post.</div>
+            <button class="btn" id="submitBtn" type="submit">Registrera</button>
+        </form>
+
+        <p class="foot">Har du redan konto? <a href="/login.html" class="link">Logga in</a></p>
+        <p class="notice" id="notice"></p>
+    </main>
+
+    <script>
+        const form = document.getElementById('registerForm');
+        const notice = document.getElementById('notice');
+        const submitBtn = document.getElementById('submitBtn');
+        const citySelect = document.getElementById('city');
+        const workEmailInput = document.getElementById('workEmail');
+        const firstNameInput = document.getElementById('firstName');
+        const lastNameInput = document.getElementById('lastName');
+        const phoneInput = document.getElementById('phone');
+        let allowedDomain = '@ambitionsverige.se';
+
+        function setNotice(msg, kind) {
+            notice.className = 'notice ' + (kind || '');
+            notice.textContent = msg || '';
+        }
+
+        async function getJson(url) {
+            const resp = await fetch(url, { credentials: 'include' });
+            const data = await resp.json().catch(function() { return {}; });
+            if (!resp.ok) throw new Error(data.error || 'Något gick fel.');
+            return data;
+        }
+
+        async function postJson(url, payload) {
+            const resp = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(payload || {})
+            });
+            const data = await resp.json().catch(function() { return {}; });
+            if (!resp.ok) throw new Error(data.error || 'Något gick fel.');
+            return data;
+        }
+
+        async function bootstrap() {
+            try {
+                const meResp = await fetch('/api/me', { credentials: 'include' });
+                if (meResp.ok) {
+                    window.location.href = '/index.html';
+                    return;
+                }
+            } catch (_) {
+            }
+
+            try {
+                const [settingsData, registerOptions] = await Promise.all([
+                    getJson('/api/settings/public'),
+                    getJson('/api/register/options')
+                ]);
+                if (!settingsData.allow_registrations) {
+                    window.location.href = '/login.html?register=closed';
+                    return;
+                }
+                allowedDomain = String(registerOptions.allowed_domain || '@ambitionsverige.se').toLowerCase();
+                const cities = Array.isArray(registerOptions.cities) ? registerOptions.cities : [];
+                citySelect.innerHTML = '<option value=\"\">Välj ort</option>' +
+                    cities.map(function(city) {
+                        return `<option value=\"${city}\">${city}</option>`;
+                    }).join('');
+            } catch (_) {
+                citySelect.innerHTML = '<option value=\"\">Kunde inte ladda orter</option>';
+            }
+        }
+
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            setNotice('', '');
+            submitBtn.disabled = true;
+
+            const firstName = String(firstNameInput.value || '').trim();
+            const lastName = String(lastNameInput.value || '').trim();
+            const phone = String(phoneInput.value || '').trim();
+            const email = String(workEmailInput.value || '').trim().toLowerCase();
+            const city = String(citySelect.value || '').trim();
+            if (!firstName || !lastName || !phone || !email || !city) {
+                submitBtn.disabled = false;
+                setNotice('Fyll i förnamn, efternamn, telefon, e-post och ort.', 'error');
+                return;
+            }
+            if (!email.endsWith(allowedDomain)) {
+                submitBtn.disabled = false;
+                setNotice(`Endast ${allowedDomain} är tillåtet.`, 'error');
+                return;
+            }
+
+            try {
+                await postJson('/api/register', {
+                    first_name: firstName,
+                    last_name: lastName,
+                    phone: phone,
+                    work_email: email,
+                    city: city
+                });
+                setNotice('Konto skapat. Kontrollera din e-post för användarnamn och lösenord.', 'ok');
+                form.reset();
+            } catch (err) {
+                setNotice(err.message, 'error');
+            } finally {
+                submitBtn.disabled = false;
+            }
+        });
+
+        bootstrap();
+    </script>
+</body>
+</html>

@@ -402,6 +402,18 @@
             font-size: 0.95rem;
         }
         .chat-header-btn:hover { background: #384355; }
+        .chat-profile-btn {
+            border: 1px solid #3a4353;
+            border-radius: 999px;
+            background: #2a3342;
+            color: #dbe6ff;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 6px 10px;
+            cursor: pointer;
+            height: 32px;
+        }
+        .chat-profile-btn:hover { background: #334058; }
         .chat-search-bar {
             padding: 0;
             border: 0;
@@ -972,6 +984,131 @@
             color: #fff;
             font-weight: 700;
         }
+        .member-manage-content {
+            background: #fff;
+            border: 1px solid #e5e5e5;
+            width: min(92vw, 760px);
+            border-radius: 12px;
+            padding: 22px;
+            box-shadow: 0 16px 34px rgba(0,0,0,0.28);
+            color: #111;
+            max-height: 86vh;
+            overflow: auto;
+            position: relative;
+        }
+        .member-manage-content .modal-close {
+            color: #333;
+        }
+        .member-manage-content h3 {
+            margin-bottom: 16px;
+            font-size: 1.28rem;
+            color: #111;
+        }
+        .member-manage-top {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .member-manage-search {
+            padding: 8px 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            min-width: 260px;
+            color: #111;
+            background: #fff;
+        }
+        .member-manage-switch {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #222;
+            font-size: 0.9rem;
+        }
+        .member-manage-switch input {
+            width: 40px;
+            height: 20px;
+        }
+        .member-manage-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .member-manage-item {
+            display: grid;
+            grid-template-columns: 40px 1fr auto;
+            align-items: center;
+            gap: 16px;
+            padding: 12px;
+            border: 1px solid #e5e5e5;
+            border-radius: 10px;
+            background: #fff;
+        }
+        .member-manage-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #eee;
+            color: #222;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+        .member-manage-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 0;
+        }
+        .member-manage-name {
+            color: #111;
+            font-weight: 700;
+            word-break: break-word;
+        }
+        .member-manage-username {
+            font-size: 12px;
+            color: #666;
+            word-break: break-all;
+        }
+        .member-manage-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: #555;
+        }
+        .member-manage-lamp {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ccc;
+        }
+        .member-manage-lamp.online {
+            background: #3cb371;
+        }
+        .member-manage-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .member-manage-btn {
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            padding: 6px 10px;
+            cursor: pointer;
+            color: #444;
+            font-size: 0.82rem;
+        }
+        .member-manage-btn.delete {
+            border-color: #d33;
+            color: #d33;
+        }
+        .member-manage-btn[disabled] {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
         .chat-thread-list {
             flex: 1;
             overflow-y: auto;
@@ -1130,6 +1267,10 @@
             margin-top: 0;
             padding-top: 6px;
             padding-bottom: 10px;
+        }
+        #adminSettingsIcon {
+            grid-column: 3;
+            grid-row: 2;
         }
         
         .placeholder-icon {
@@ -1453,6 +1594,60 @@
         .event-editor-btn.primary {
             background: var(--accent);
             border-color: var(--accent);
+            color: #fff;
+            font-weight: 700;
+        }
+        .profile-modal-content {
+            background: #242a33;
+            border: 1px solid #364052;
+            width: min(92vw, 480px);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 16px 34px rgba(0,0,0,0.45);
+            color: #eaf1fc;
+        }
+        .profile-modal-content h3 {
+            margin-bottom: 10px;
+            font-size: 1.08rem;
+        }
+        .profile-row { margin-bottom: 10px; }
+        .profile-row label {
+            display: block;
+            font-size: 0.82rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: #c8d5ea;
+        }
+        .profile-row input,
+        .profile-row select {
+            width: 100%;
+            border: 1px solid #3c4658;
+            border-radius: 8px;
+            padding: 8px 10px;
+            outline: none;
+            background: #1f2530;
+            color: #edf3ff;
+        }
+        .profile-row input[readonly] {
+            opacity: 0.75;
+        }
+        .profile-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .profile-btn {
+            border: 1px solid #3b4558;
+            border-radius: 8px;
+            background: #2b3342;
+            color: #dce6fb;
+            padding: 7px 10px;
+            cursor: pointer;
+        }
+        .profile-btn.primary {
+            background: #3a77f3;
+            border-color: #3a77f3;
             color: #fff;
             font-weight: 700;
         }
@@ -1840,6 +2035,7 @@
                 </div>
                 <div class="chat-header-actions">
                     <span class="chat-auth-badge" id="chatCurrentUserBadge">Inloggad som: -</span>
+                    <button class="chat-profile-btn" id="openProfileBtn" type="button">Min profil</button>
                     <button class="chat-header-btn" type="button" title="Samtal">📞</button>
                     <button class="chat-header-btn" type="button" title="Video">🎥</button>
                     <button class="chat-header-btn" type="button" title="Info">ℹ</button>
@@ -1915,7 +2111,7 @@
                     <div class="placeholder-icon" title="Idébank">💡</div>
                     <div class="placeholder-icon" title="Statistik">📊</div>
                     <div class="placeholder-icon" title="Inställningar">⚙️</div>
-                    <div class="placeholder-icon" id="adminSettingsIcon" title="Admin inställning" style="display:none;">🛡️</div>
+                    <div class="placeholder-icon" id="adminSettingsIcon" title="Medlemshantering" style="display:none;">👥</div>
                     <div class="placeholder-icon" title="Mapp" onclick="openFolderModal()">
                         <img src="folder.svg" alt="Mapp" class="tool-icon-svg">
                     </div>
@@ -1956,6 +2152,43 @@
             <div class="event-editor-actions">
                 <button class="event-editor-btn" type="button" onclick="closeEventEditor()">Avbryt</button>
                 <button class="event-editor-btn primary" type="button" id="eventEditorSaveBtn">Spara</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="profileModal">
+        <div class="profile-modal-content">
+            <button class="modal-close" type="button" onclick="closeProfileModal()">✖</button>
+            <h3>Min profil</h3>
+            <div class="profile-row">
+                <label for="profileUsername">Användarnamn</label>
+                <input id="profileUsername" type="text" readonly>
+            </div>
+            <div class="profile-row">
+                <label for="profileFirstName">Förnamn</label>
+                <input id="profileFirstName" type="text">
+            </div>
+            <div class="profile-row">
+                <label for="profileLastName">Efternamn</label>
+                <input id="profileLastName" type="text">
+            </div>
+            <div class="profile-row">
+                <label for="profilePhone">Telefonnummer</label>
+                <input id="profilePhone" type="tel">
+            </div>
+            <div class="profile-row">
+                <label for="profileContactEmail">E-post</label>
+                <input id="profileContactEmail" type="email">
+            </div>
+            <div class="profile-row">
+                <label for="profileCity">Ort</label>
+                <select id="profileCity">
+                    <option value="">Välj ort</option>
+                </select>
+            </div>
+            <div class="profile-actions">
+                <button class="profile-btn" type="button" onclick="closeProfileModal()">Avbryt</button>
+                <button class="profile-btn primary" id="profileSaveBtn" type="button">Spara</button>
             </div>
         </div>
     </div>
@@ -2042,8 +2275,26 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="memberManageModal">
+        <div class="member-manage-content">
+            <button class="modal-close" type="button" onclick="closeMemberManageModal()">✖</button>
+            <h3>Medlemshantering</h3>
+            <div class="member-manage-top">
+                <input id="memberManageSearch" class="member-manage-search" type="text" placeholder="Sök medlem eller sida…">
+                <label class="member-manage-switch">
+                    <input id="memberManageRegistrationSwitch" type="checkbox" checked>
+                    Tillåt nya registreringar
+                </label>
+            </div>
+            <div class="member-manage-list" id="memberManageList">
+                <div class="member-manage-item"><span>Laddar användare...</span><span></span><span></span></div>
+            </div>
+        </div>
+    </div>
+
     <script>
         let currentUserEmail = '';
+        let currentUserId = 0;
         let currentUserIsAdmin = false;
         let activeModalEvent = null;
         let eventEditorMode = 'create';
@@ -2058,6 +2309,7 @@
                     return false;
                 }
                 const data = await resp.json();
+                currentUserId = Number(data.id || 0);
                 currentUserEmail = String(data.email || '');
                 currentUserIsAdmin = !!data.is_admin;
                 const userBadge = document.getElementById('chatCurrentUserBadge');
@@ -2093,6 +2345,9 @@
         let importantEditingId = null;
         let importantApiAvailable = false;
         let importantMessagesLoadError = '';
+        let memberManageUsers = [];
+        let memberManageCities = [];
+        let profileCities = [];
         let notesSaveTimer = null;
         const chatEmojiSet = [
             "😀","😁","😂","🤣","😊","😍","😎","😉",
@@ -2653,6 +2908,213 @@
         async function saveNotes() {
             const content = document.getElementById('notesArea').value;
             await apiSend('/api/notes/me', 'PUT', { content: content });
+        }
+
+        async function openProfileModal() {
+            const modal = document.getElementById('profileModal');
+            if (!modal) return;
+            try {
+                const [profileData, registerOptions] = await Promise.all([
+                    apiGet('/api/me/profile'),
+                    apiGet('/api/register/options')
+                ]);
+                profileCities = Array.isArray(registerOptions.cities) ? registerOptions.cities : [];
+                const citySelect = document.getElementById('profileCity');
+                if (citySelect) {
+                    citySelect.innerHTML = '<option value="">Välj ort</option>' + profileCities.map(function(city) {
+                        return `<option value="${escapeHtml(city)}">${escapeHtml(city)}</option>`;
+                    }).join('');
+                    citySelect.value = String(profileData.city || '');
+                }
+                document.getElementById('profileUsername').value = String(profileData.username || '');
+                document.getElementById('profileFirstName').value = String(profileData.first_name || '');
+                document.getElementById('profileLastName').value = String(profileData.last_name || '');
+                document.getElementById('profilePhone').value = String(profileData.phone || '');
+                document.getElementById('profileContactEmail').value = String(profileData.contact_email || '');
+                modal.style.display = 'flex';
+            } catch (err) {
+                alert(err.message || 'Kunde inte ladda profilen.');
+            }
+        }
+
+        function closeProfileModal() {
+            const modal = document.getElementById('profileModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        async function saveProfileFromModal() {
+            const firstName = String(document.getElementById('profileFirstName').value || '').trim();
+            const lastName = String(document.getElementById('profileLastName').value || '').trim();
+            const phone = String(document.getElementById('profilePhone').value || '').trim();
+            const contactEmail = String(document.getElementById('profileContactEmail').value || '').trim().toLowerCase();
+            const city = String(document.getElementById('profileCity').value || '').trim();
+
+            if (!firstName || !lastName || !phone || !contactEmail || !city) {
+                alert('Fyll i alla profilfält.');
+                return;
+            }
+            await apiSend('/api/me/profile', 'PUT', {
+                first_name: firstName,
+                last_name: lastName,
+                phone: phone,
+                contact_email: contactEmail,
+                city: city
+            });
+            closeProfileModal();
+            alert('Profil uppdaterad.');
+        }
+
+        function memberManageDisplayName(email) {
+            const local = String(email || '').split('@')[0] || String(email || '');
+            const words = local
+                .replace(/[._-]+/g, ' ')
+                .trim()
+                .split(/\s+/)
+                .filter(Boolean);
+            return words.map(function(w) {
+                return w.charAt(0).toUpperCase() + w.slice(1);
+            }).join(' ') || String(email || '');
+        }
+
+        function memberManageUsername(email) {
+            const local = String(email || '').split('@')[0] || '';
+            return '@' + local.replace(/[^a-zA-Z0-9_]/g, '_');
+        }
+
+        function memberManageInitial(name) {
+            const s = String(name || '').trim();
+            return s ? s.charAt(0).toUpperCase() : '?';
+        }
+
+        async function memberManageEditUser(userId) {
+            const user = memberManageUsers.find(function(u) { return Number(u.id) === Number(userId); });
+            if (!user) return;
+            const newEmailRaw = prompt('Användarnamn:', String(user.email || ''));
+            if (newEmailRaw === null) return;
+            const newContactRaw = prompt('Kontaktmail (@ambitionsverige.se):', String(user.contact_email || ''));
+            if (newContactRaw === null) return;
+            const cityPrompt = memberManageCities.length
+                ? `Ort (${memberManageCities.join(', ')}):`
+                : 'Ort:';
+            const newCityRaw = prompt(cityPrompt, String(user.city || ''));
+            if (newCityRaw === null) return;
+
+            const payload = {
+                email: String(newEmailRaw || '').trim().toLowerCase(),
+                contact_email: String(newContactRaw || '').trim().toLowerCase(),
+                city: String(newCityRaw || '').trim()
+            };
+            await apiSend(`/api/admin/users/${Number(userId)}`, 'PUT', payload);
+            await openMemberManageModal();
+        }
+
+        async function memberManageDeleteUser(userId) {
+            const user = memberManageUsers.find(function(u) { return Number(u.id) === Number(userId); });
+            if (!user) return;
+            const ok = window.confirm(`Ta bort användaren "${user.email}"?`);
+            if (!ok) return;
+            await apiSend(`/api/admin/users/${Number(userId)}`, 'DELETE');
+            await openMemberManageModal();
+        }
+
+        function renderMemberManageList(users) {
+            const list = document.getElementById('memberManageList');
+            if (!list) return;
+            if (!Array.isArray(users) || users.length === 0) {
+                list.innerHTML = '<div class="member-manage-item"><div class="member-manage-avatar">?</div><div class="member-manage-info"><div class="member-manage-name">Inga användare hittades.</div></div><div class="member-manage-actions"></div></div>';
+                return;
+            }
+            list.innerHTML = users.map(function(user) {
+                const email = String(user.email || '');
+                const name = memberManageDisplayName(email);
+                const isOnline = !!user.online;
+                const statusText = isOnline ? 'Inloggad' : 'Ej inloggad';
+                const lampClass = isOnline ? 'online' : '';
+                const isSelf = Number(user.id) === Number(currentUserId) || email === currentUserEmail;
+                const isRootAdmin = !!user.is_admin;
+                return `
+                    <div class="member-manage-item">
+                        <div class="member-manage-avatar">${escapeHtml(memberManageInitial(name))}</div>
+                        <div class="member-manage-info">
+                            <div class="member-manage-name">${escapeHtml(name)}</div>
+                            <div class="member-manage-username">${escapeHtml(memberManageUsername(email))}</div>
+                            <div class="member-manage-status">
+                                <div class="member-manage-lamp ${lampClass}"></div>
+                                ${statusText}
+                            </div>
+                        </div>
+                        <div class="member-manage-actions">
+                            <button class="member-manage-btn" type="button" data-member-edit="${Number(user.id)}">Redigera</button>
+                            <button class="member-manage-btn delete" type="button" data-member-delete="${Number(user.id)}" ${isSelf || isRootAdmin ? 'disabled' : ''}>Ta bort</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            list.querySelectorAll('[data-member-edit]').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const id = Number(btn.getAttribute('data-member-edit'));
+                    memberManageEditUser(id).catch(function(err) {
+                        alert(err.message || 'Kunde inte redigera användaren.');
+                    });
+                });
+            });
+            list.querySelectorAll('[data-member-delete]').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    if (btn.disabled) return;
+                    const id = Number(btn.getAttribute('data-member-delete'));
+                    memberManageDeleteUser(id).catch(function(err) {
+                        alert(err.message || 'Kunde inte ta bort användaren.');
+                    });
+                });
+            });
+        }
+
+        function filterMemberManageList() {
+            const input = document.getElementById('memberManageSearch');
+            const query = String(input && input.value || '').trim().toLowerCase();
+            if (!query) {
+                renderMemberManageList(memberManageUsers);
+                return;
+            }
+            const filtered = memberManageUsers.filter(function(user) {
+                const email = String(user.email || '').toLowerCase();
+                const display = memberManageDisplayName(user.email).toLowerCase();
+                const username = memberManageUsername(user.email).toLowerCase();
+                return email.includes(query) || display.includes(query) || username.includes(query);
+            });
+            renderMemberManageList(filtered);
+        }
+
+        async function openMemberManageModal() {
+            if (!currentUserIsAdmin) return;
+            const modal = document.getElementById('memberManageModal');
+            const list = document.getElementById('memberManageList');
+            const searchInput = document.getElementById('memberManageSearch');
+            const registrationSwitch = document.getElementById('memberManageRegistrationSwitch');
+            if (!modal || !list || !searchInput || !registrationSwitch) return;
+            searchInput.value = '';
+            list.innerHTML = '<div class="member-manage-item"><div class="member-manage-avatar">?</div><div class="member-manage-info"><div class="member-manage-name">Laddar användare...</div></div><div class="member-manage-actions"></div></div>';
+            modal.style.display = 'flex';
+            try {
+                const [usersData, settingsData, registerOptions] = await Promise.all([
+                    apiGet('/api/admin/users'),
+                    apiGet('/api/admin/settings'),
+                    apiGet('/api/register/options')
+                ]);
+                memberManageUsers = (usersData.users || []).slice();
+                memberManageCities = Array.isArray(registerOptions.cities) ? registerOptions.cities : [];
+                registrationSwitch.checked = !!settingsData.allow_registrations;
+                renderMemberManageList(memberManageUsers);
+            } catch (err) {
+                memberManageUsers = [];
+                list.innerHTML = '<div class="member-manage-item"><div class="member-manage-avatar">!</div><div class="member-manage-info"><div class="member-manage-name">Kunde inte hämta användare.</div></div><div class="member-manage-actions"></div></div>';
+            }
+        }
+
+        function closeMemberManageModal() {
+            const modal = document.getElementById('memberManageModal');
+            if (modal) modal.style.display = 'none';
         }
 
         function initNotes() {
@@ -4196,6 +4658,14 @@
             return messengerThreads.find(function(t) { return t.id === id; });
         }
 
+        function threadHasMessages(thread) {
+            if (!thread) return false;
+            if ((thread.messages || []).length > 0) return true;
+            if (Number(thread.updatedAt || 0) > 0) return true;
+            const preview = String(thread.lastPreview || '').trim().toLowerCase();
+            return !!preview && preview !== 'inga meddelanden än.';
+        }
+
         function formatMessengerTime(ts) {
             if (!ts) return '';
             const diffMinutes = Math.floor((Date.now() - ts) / 60000);
@@ -4280,6 +4750,9 @@
                 .sort(function(a, b) {
                     if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
                     return b.updatedAt - a.updatedAt;
+                })
+                .filter(function(thread) {
+                    return threadHasMessages(thread);
                 })
                 .filter(function(thread) {
                     if (!filter) return true;
@@ -4660,7 +5133,7 @@
             openImportantAdminModal();
         });
         document.getElementById('adminSettingsIcon').addEventListener('click', function() {
-            openImportantAdminModal();
+            openMemberManageModal().catch(function() {});
         });
         document.getElementById('importantSaveBtn').addEventListener('click', function() {
             saveImportantMessageFromForm().catch(function(err) {
@@ -4669,6 +5142,34 @@
         });
         document.getElementById('importantAdminModal').addEventListener('click', function(e) {
             if (e.target === this) closeImportantAdminModal();
+        });
+        document.getElementById('memberManageModal').addEventListener('click', function(e) {
+            if (e.target === this) closeMemberManageModal();
+        });
+        document.getElementById('profileModal').addEventListener('click', function(e) {
+            if (e.target === this) closeProfileModal();
+        });
+        document.getElementById('memberManageSearch').addEventListener('input', function() {
+            filterMemberManageList();
+        });
+        document.getElementById('memberManageRegistrationSwitch').addEventListener('change', function(e) {
+            const prev = !e.target.checked;
+            apiSend('/api/admin/settings/registrations', 'PUT', {
+                allow_registrations: !!e.target.checked
+            }).catch(function(err) {
+                e.target.checked = prev;
+                alert(err.message || 'Kunde inte uppdatera registreringsinställningen.');
+            });
+        });
+        document.getElementById('openProfileBtn').addEventListener('click', function() {
+            openProfileModal().catch(function(err) {
+                alert(err.message || 'Kunde inte öppna profil.');
+            });
+        });
+        document.getElementById('profileSaveBtn').addEventListener('click', function() {
+            saveProfileFromModal().catch(function(err) {
+                alert(err.message || 'Kunde inte spara profil.');
+            });
         });
 
         document.getElementById('prevMonthBtn').addEventListener('click', function() {

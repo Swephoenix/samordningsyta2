@@ -1,9 +1,35 @@
 const path = require("path");
 const fs = require("fs");
 const crypto = require("crypto");
+const net = require("net");
+const tls = require("tls");
 const express = require("express");
 const cookieParser = require("cookie-parser");
 const Database = require("better-sqlite3");
+
+function loadEnvFromFile(filePath, override) {
+  if (!fs.existsSync(filePath)) return;
+  const content = fs.readFileSync(filePath, "utf8");
+  content.split(/\r?\n/).forEach((line) => {
+    const trimmed = String(line || "").trim();
+    if (!trimmed || trimmed.startsWith("#")) return;
+    const idx = trimmed.indexOf("=");
+    if (idx <= 0) return;
+    const key = trimmed.slice(0, idx).trim();
+    let val = trimmed.slice(idx + 1).trim();
+    if (
+      (val.startsWith('"') && val.endsWith('"')) ||
+      (val.startsWith("'") && val.endsWith("'"))
+    ) {
+      val = val.slice(1, -1);
+    }
+    if (!override && process.env[key] !== undefined) return;
+    process.env[key] = val;
+  });
+}
+
+loadEnvFromFile(path.join(__dirname, ".env.example"), false);
+loadEnvFromFile(path.join(__dirname, ".env"), true);
 
 const app = express();
 const PORT = Number(process.env.PORT || 8000);
@@ -14,6 +40,100 @@ const PBKDF2_ITERATIONS = 240000;
 const SESSION_COOKIE = "session_token";
 const UPLOAD_DIR = path.join(__dirname, "uploads", "chat");
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+const REGISTER_ALLOWED_DOMAIN = "@ambitionsverige.se";
+const FORCED_SMTP_IDENTITY = "mail@ambitionsverige.se";
+const REGISTER_ANIMAL_NAMES = [
+  "Räven",
+  "Ugglan",
+  "Björnen",
+  "Vargen",
+  "Lodjuret",
+  "Örnen",
+  "Ekorren",
+  "Renen",
+  "Sälen",
+  "Haren",
+  "Älgen",
+  "Tigern",
+  "Lejonet",
+  "Falken",
+  "Uttern",
+  "Delfinen",
+  "Valen",
+  "Svanen",
+  "Hjorten",
+  "Pantern"
+];
+const REGISTER_CITIES = [
+  "Avesta",
+  "Blekinge/Sölvesborg",
+  "Boden",
+  "Borlänge",
+  "Borås",
+  "Eskilstuna",
+  "Falköping",
+  "Gislaved",
+  "Gotland",
+  "Göteborg",
+  "Halmstad",
+  "Heby",
+  "Hedemora",
+  "Helsingborg",
+  "Härjedalen",
+  "Härnösand",
+  "Hässleholm",
+  "Högsby",
+  "Hörby",
+  "Jämtland",
+  "Jönköping",
+  "Kalmar",
+  "Kramfors",
+  "Kungsbacka",
+  "Kungälv",
+  "Leksand",
+  "Lidköping",
+  "Ljusdal",
+  "Malmö",
+  "Malå",
+  "Motala",
+  "Norrköping",
+  "Nynäshamn",
+  "Nässjö",
+  "Osby",
+  "Oskarshamn",
+  "Ovanåker",
+  "Ramsberg",
+  "Roslagen",
+  "Sala",
+  "Sjuhärad",
+  "Skellefteå",
+  "Skåne östra",
+  "Stenungsund",
+  "Stockholm Farsta",
+  "Stockholm Norra",
+  "Stockholm Sollentuna",
+  "Stockholm Täby",
+  "Storuman",
+  "Strängnäs",
+  "Sundsvall",
+  "Söderköping",
+  "Södertälje",
+  "Södra Lappland",
+  "Trollhättan",
+  "Umeå",
+  "Uppsala",
+  "Valdemarsvik",
+  "Vetlanda",
+  "Värmland Norra",
+  "Värmland Södra",
+  "Värnamo",
+  "Västerås",
+  "Västra Götaland Norra",
+  "Ystad",
+  "Ängelholm",
+  "Örebro",
+  "Örnsköldsvik"
+];
 
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
@@ -340,7 +460,31 @@ function ensureFsState() {
   setAppDataJson("fs_state_v1", defaultFsState());
 }
 
+function getAllowRegistrations() {
+  const value = getAppDataJson("allow_registrations_v1");
+  if (typeof value === "boolean") return value;
+  if (value && typeof value === "object" && typeof value.enabled === "boolean") {
+    return value.enabled;
+  }
+  return true;
+}
+
+function setAllowRegistrations(allowed) {
+  setAppDataJson("allow_registrations_v1", !!allowed);
+}
+
+function ensureRegistrationSetting() {
+  if (getAppDataJson("allow_registrations_v1") === null) {
+    setAllowRegistrations(true);
+  }
+}
+
 ensureColumn("sessions", "last_seen_at", "last_seen_at INTEGER NOT NULL DEFAULT 0");
+ensureColumn("users", "contact_email", "contact_email TEXT");
+ensureColumn("users", "city", "city TEXT");
+ensureColumn("users", "first_name", "first_name TEXT");
+ensureColumn("users", "last_name", "last_name TEXT");
+ensureColumn("users", "phone", "phone TEXT");
 
 ensureDefaultUser("admin", "admin");
 ensureDefaultUser("user1", "user1");
@@ -348,6 +492,7 @@ ensureDefaultUser("user2", "user2");
 seedEventsIfEmpty();
 seedImportantMessagesIfEmpty();
 ensureFsState();
+ensureRegistrationSetting();
 
 app.use(express.json({ limit: "15mb" }));
 app.use(cookieParser());
@@ -420,36 +565,325 @@ function isAdmin(user) {
   return String(user.email || "").toLowerCase() === "admin";
 }
 
-app.post("/api/register", (req, res) => {
-  const email = String(req.body?.email || "").trim().toLowerCase();
-  const password = String(req.body?.password || "");
+function normalizeEmail(value) {
+  return String(value || "").trim().toLowerCase();
+}
 
-  if (!email || email.length < 2) {
-    return res.status(400).json({ error: "Ogiltigt användarnamn/e-post." });
+function slugify(value) {
+  return String(value || "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+function makeRandomPassword(length = 14) {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
+  const bytes = crypto.randomBytes(length);
+  let out = "";
+  for (let i = 0; i < length; i += 1) {
+    out += alphabet[bytes[i] % alphabet.length];
   }
-  if (password.length < 8) {
-    return res.status(400).json({ error: "Lösenord måste vara minst 8 tecken." });
+  return out;
+}
+
+function generateUniqueUsername() {
+  const findExisting = db.prepare("SELECT id FROM users WHERE email = ? LIMIT 1");
+  for (let i = 0; i < 5000; i += 1) {
+    const animal = REGISTER_ANIMAL_NAMES[Math.floor(Math.random() * REGISTER_ANIMAL_NAMES.length)];
+    const number = Math.floor(Math.random() * 90) + 10; // 10-99
+    const candidate = `${animal}${number}`;
+    const exists = findExisting.get(candidate);
+    if (!exists) return candidate;
   }
+  for (let i = 0; i < 5000; i += 1) {
+    const animal = REGISTER_ANIMAL_NAMES[Math.floor(Math.random() * REGISTER_ANIMAL_NAMES.length)];
+    const number = Math.floor(Math.random() * 900) + 100; // 100-999
+    const candidate = `${animal}${number}`;
+    const exists = findExisting.get(candidate);
+    if (!exists) return candidate;
+  }
+  const tail = crypto.randomBytes(2).toString("hex");
+  return `Räven${tail}`;
+}
+
+async function sendMailViaSmtp({ toEmail, subject, text }) {
+  const smtpHost = String(process.env.SMTP_HOST || "").trim();
+  const smtpPort = Number(process.env.SMTP_PORT || 587);
+  const smtpPass = String(process.env.SMTP_PASS || "").trim();
+  const smtpSecureRaw = String(process.env.SMTP_SECURE || "").trim().toLowerCase();
+  const smtpFrom = FORCED_SMTP_IDENTITY;
+  const smtpAuthUser = FORCED_SMTP_IDENTITY;
+  const smtpSecure = smtpSecureRaw
+    ? ["1", "true", "yes", "on"].includes(smtpSecureRaw)
+    : smtpPort === 465;
+
+  if (!smtpHost || !smtpPass) {
+    throw new Error("SMTP-inställningar saknas i .env/.env.example.");
+  }
+
+  function waitForSmtpResponse(socket, timeoutMs = 20000) {
+    return new Promise((resolve, reject) => {
+      let buffer = "";
+      const timer = setTimeout(() => {
+        cleanup();
+        reject(new Error("SMTP timeout"));
+      }, timeoutMs);
+
+      function cleanup() {
+        clearTimeout(timer);
+        socket.off("data", onData);
+        socket.off("error", onErr);
+        socket.off("close", onClose);
+      }
+
+      function onErr(err) {
+        cleanup();
+        reject(err);
+      }
+
+      function onClose() {
+        cleanup();
+        reject(new Error("SMTP connection closed"));
+      }
+
+      function onData(chunk) {
+        buffer += chunk.toString("utf8");
+        const lines = buffer.split(/\r?\n/);
+        buffer = lines.pop() || "";
+        for (const line of lines) {
+          const m = line.match(/^(\d{3})([ -])(.*)$/);
+          if (!m) continue;
+          if (m[2] === " ") {
+            cleanup();
+            resolve({ code: Number(m[1]), line: line });
+            return;
+          }
+        }
+      }
+
+      socket.on("data", onData);
+      socket.on("error", onErr);
+      socket.on("close", onClose);
+    });
+  }
+
+  async function smtpCommand(socket, command, allowedCodes) {
+    if (command) socket.write(command + "\r\n");
+    const resp = await waitForSmtpResponse(socket);
+    if (!allowedCodes.includes(resp.code)) {
+      throw new Error(`SMTP fel (${resp.code}): ${resp.line}`);
+    }
+    return resp;
+  }
+
+  async function sendViaSocket(socket) {
+    await smtpCommand(socket, null, [220]);
+    await smtpCommand(socket, "EHLO ambitionsverige.se", [250]);
+
+    if (!smtpSecure) {
+      // Prova STARTTLS, men fortsätt utan om servern inte svarar som väntat.
+      try {
+        await smtpCommand(socket, "STARTTLS", [220]);
+        const upgraded = await new Promise((resolve, reject) => {
+          const tlsSocket = tls.connect(
+            {
+              socket: socket,
+              servername: smtpHost
+            },
+            () => resolve(tlsSocket)
+          );
+          tlsSocket.on("error", reject);
+        });
+        socket = upgraded;
+        await smtpCommand(socket, "EHLO ambitionsverige.se", [250]);
+      } catch (_) {
+      }
+    }
+
+    await smtpCommand(socket, "AUTH LOGIN", [334]);
+    await smtpCommand(socket, Buffer.from(smtpAuthUser, "utf8").toString("base64"), [334]);
+    await smtpCommand(socket, Buffer.from(smtpPass, "utf8").toString("base64"), [235]);
+    await smtpCommand(socket, `MAIL FROM:<${smtpFrom}>`, [250]);
+    await smtpCommand(socket, `RCPT TO:<${toEmail}>`, [250, 251]);
+    await smtpCommand(socket, "DATA", [354]);
+
+    const body = [
+      `From: ${smtpFrom}`,
+      `To: ${toEmail}`,
+      `Subject: ${subject}`,
+      "Content-Type: text/plain; charset=utf-8",
+      "",
+      text
+    ].join("\r\n");
+    socket.write(body.replace(/^\./gm, "..") + "\r\n.\r\n");
+    await smtpCommand(socket, null, [250]);
+    try {
+      await smtpCommand(socket, "QUIT", [221]);
+    } catch (_) {
+    }
+    socket.end();
+  }
+
+  const initialSocket = await new Promise((resolve, reject) => {
+    const socket = smtpSecure
+      ? tls.connect({ host: smtpHost, port: smtpPort, servername: smtpHost }, () => resolve(socket))
+      : net.connect({ host: smtpHost, port: smtpPort }, () => resolve(socket));
+    socket.setTimeout(20000, () => {
+      socket.destroy(new Error("SMTP socket timeout"));
+    });
+    socket.on("error", reject);
+  });
+  await sendViaSocket(initialSocket);
+  return { mode: "smtp", auth_user: smtpAuthUser };
+}
+
+async function sendGeneratedCredentialsEmail({ workEmail, username, password, city }) {
+  const subject = "Dina inloggningsuppgifter - Ambition Sverige";
+  const text = [
+    "Hej!",
+    "",
+    `Din registrering för ort: ${city} är klar.`,
+    "",
+    "Dina inloggningsuppgifter:",
+    `Användarnamn: ${username}`,
+    `Lösenord: ${password}`,
+    "",
+    "Logga in på samordningsytan och byt lösenord direkt.",
+    "",
+    "Vänliga hälsningar,",
+    "Ambition Sverige"
+  ].join("\n");
+  return sendMailViaSmtp({
+    toEmail: workEmail,
+    subject: subject,
+    text: text
+  });
+}
+
+async function sendPasswordResetEmail({ recipientEmail, username, password }) {
+  const subject = "Nytt lösenord - Ambition Sverige";
+  const text = [
+    "Hej!",
+    "",
+    "Du har begärt ett nytt randomiserat lösenord.",
+    "",
+    "Nya inloggningsuppgifter:",
+    `Användarnamn: ${username}`,
+    `Lösenord: ${password}`,
+    "",
+    "Logga in och byt lösenord så snart som möjligt.",
+    "",
+    "Vänliga hälsningar,",
+    "Ambition Sverige"
+  ].join("\n");
+  return sendMailViaSmtp({
+    toEmail: recipientEmail,
+    subject: subject,
+    text: text
+  });
+}
+
+app.get("/api/register/options", (_req, res) => {
+  return res.json({
+    allowed_domain: REGISTER_ALLOWED_DOMAIN,
+    cities: REGISTER_CITIES
+  });
+});
+
+app.post("/api/register", async (req, res) => {
+  if (!getAllowRegistrations()) {
+    return res.status(403).json({ error: "Registrering är avstängd av administratör." });
+  }
+
+  const workEmail = normalizeEmail(req.body?.work_email || req.body?.email || "");
+  const city = String(req.body?.city || "").trim();
+  const firstName = String(req.body?.first_name || "").trim();
+  const lastName = String(req.body?.last_name || "").trim();
+  const phone = String(req.body?.phone || "").trim();
+
+  if (!firstName) {
+    return res.status(400).json({ error: "Förnamn krävs." });
+  }
+  if (!lastName) {
+    return res.status(400).json({ error: "Efternamn krävs." });
+  }
+  if (!phone) {
+    return res.status(400).json({ error: "Telefonnummer krävs." });
+  }
+  const phoneDigits = phone.replace(/[^\d+]/g, "");
+  if (phoneDigits.length < 7) {
+    return res.status(400).json({ error: "Ogiltigt telefonnummer." });
+  }
+
+  if (!workEmail || !workEmail.endsWith(REGISTER_ALLOWED_DOMAIN)) {
+    return res.status(400).json({ error: `Endast e-post med domänen ${REGISTER_ALLOWED_DOMAIN} är tillåten.` });
+  }
+  if (!REGISTER_CITIES.includes(city)) {
+    return res.status(400).json({ error: "Välj en giltig ort från listan." });
+  }
+
+  const existingByContact = db
+    .prepare("SELECT id FROM users WHERE lower(contact_email) = ? LIMIT 1")
+    .get(workEmail);
+  if (existingByContact) {
+    return res.status(409).json({ error: "Den här e-postadressen är redan registrerad." });
+  }
+
+  const username = generateUniqueUsername();
+  const password = makeRandomPassword(14);
 
   const salt = crypto.randomBytes(16).toString("hex");
   const passwordHash = hashPassword(password, salt, PBKDF2_ITERATIONS);
 
+  let createdId = null;
   try {
     const result = db
       .prepare(
-        `INSERT INTO users(email, password_hash, salt, iterations, created_at)
-         VALUES (?, ?, ?, ?, ?)`
+        `INSERT INTO users(email, password_hash, salt, iterations, created_at, contact_email, city, first_name, last_name, phone)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
-      .run(email, passwordHash, salt, PBKDF2_ITERATIONS, nowTs());
+      .run(
+        username,
+        passwordHash,
+        salt,
+        PBKDF2_ITERATIONS,
+        nowTs(),
+        workEmail,
+        city,
+        firstName,
+        lastName,
+        phone
+      );
+    createdId = Number(result.lastInsertRowid || 0);
 
-    const token = createSession(result.lastInsertRowid);
-    setSessionCookie(res, token);
-    return res.status(201).json({ ok: true, email });
+    const delivery = await sendGeneratedCredentialsEmail({
+      workEmail,
+      username,
+      password,
+      city
+    });
+
+    return res.status(201).json({
+      ok: true,
+      message: "Konto skapat. Inloggningsuppgifter har skickats till din e-post.",
+      delivery_mode: delivery.mode
+    });
   } catch (err) {
+    if (createdId) {
+      try {
+        db.prepare("DELETE FROM users WHERE id = ?").run(createdId);
+      } catch (_) {
+      }
+    }
     if (String(err.message).includes("UNIQUE")) {
       return res.status(409).json({ error: "Användarnamnet/e-postadressen är redan registrerad." });
     }
-    return res.status(500).json({ error: "Internt serverfel." });
+    const detail = String(err && err.message ? err.message : "okänt fel");
+    return res.status(500).json({
+      error: `Kunde inte slutföra registreringen eller skicka e-post. Detalj: ${detail}`
+    });
   }
 });
 
@@ -462,7 +896,7 @@ app.post("/api/login", (req, res) => {
   }
 
   const user = db
-    .prepare("SELECT id, email, password_hash, salt, iterations FROM users WHERE email = ?")
+    .prepare("SELECT id, email, password_hash, salt, iterations FROM users WHERE lower(email) = ?")
     .get(email);
 
   if (!user) {
@@ -484,6 +918,54 @@ app.post("/api/login", (req, res) => {
   return res.json({ ok: true, email: user.email });
 });
 
+app.post("/api/password/reset-request", async (req, res) => {
+  const identifier = normalizeEmail(req.body?.identifier || req.body?.email || "");
+  const genericMessage = "Om kontot finns har ett nytt lösenord skickats till din e-post.";
+  if (!identifier || identifier.length < 2) {
+    return res.json({ ok: true, message: genericMessage });
+  }
+
+  const targetUser = db
+    .prepare(
+      `SELECT id, email, contact_email
+       FROM users
+       WHERE lower(email) = ? OR lower(contact_email) = ?
+       LIMIT 1`
+    )
+    .get(identifier, identifier);
+
+  if (!targetUser) {
+    return res.json({ ok: true, message: genericMessage });
+  }
+
+  const recipientEmail = normalizeEmail(targetUser.contact_email || "");
+  if (!recipientEmail || !recipientEmail.endsWith(REGISTER_ALLOWED_DOMAIN)) {
+    return res.json({ ok: true, message: genericMessage });
+  }
+
+  const newPassword = makeRandomPassword(14);
+  const newSalt = crypto.randomBytes(16).toString("hex");
+  const newHash = hashPassword(newPassword, newSalt, PBKDF2_ITERATIONS);
+
+  try {
+    await sendPasswordResetEmail({
+      recipientEmail: recipientEmail,
+      username: String(targetUser.email || ""),
+      password: newPassword
+    });
+
+    db.prepare(
+      "UPDATE users SET password_hash = ?, salt = ?, iterations = ? WHERE id = ?"
+    ).run(newHash, newSalt, PBKDF2_ITERATIONS, Number(targetUser.id));
+  } catch (err) {
+    return res.status(500).json({
+      error: "Kunde inte återställa lösenord just nu. Försök igen strax."
+    });
+  }
+
+  return res.json({ ok: true, message: genericMessage });
+});
+
 app.post("/api/logout", (req, res) => {
   const token = req.cookies[SESSION_COOKIE];
   if (token) {
@@ -503,6 +985,92 @@ app.get("/api/me", (req, res) => {
     email: user.email,
     created_at: user.created_at,
     is_admin: isAdmin(user)
+  });
+});
+
+app.get("/api/me/profile", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+
+  const row = db
+    .prepare("SELECT id, email, contact_email, city, first_name, last_name, phone FROM users WHERE id = ?")
+    .get(user.id);
+  if (!row) {
+    return res.status(404).json({ error: "Användaren hittades inte." });
+  }
+  return res.json({
+    id: Number(row.id),
+    username: String(row.email || ""),
+    contact_email: String(row.contact_email || ""),
+    city: String(row.city || ""),
+    first_name: String(row.first_name || ""),
+    last_name: String(row.last_name || ""),
+    phone: String(row.phone || "")
+  });
+});
+
+app.put("/api/me/profile", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+
+  const firstName = String(req.body?.first_name || "").trim();
+  const lastName = String(req.body?.last_name || "").trim();
+  const phone = String(req.body?.phone || "").trim();
+  const contactEmail = normalizeEmail(req.body?.contact_email || "");
+  const city = String(req.body?.city || "").trim();
+
+  if (!firstName) return res.status(400).json({ error: "Förnamn krävs." });
+  if (!lastName) return res.status(400).json({ error: "Efternamn krävs." });
+  if (!phone) return res.status(400).json({ error: "Telefonnummer krävs." });
+  if (!contactEmail || !contactEmail.endsWith(REGISTER_ALLOWED_DOMAIN)) {
+    return res.status(400).json({ error: `E-post måste sluta med ${REGISTER_ALLOWED_DOMAIN}.` });
+  }
+  if (!city || !REGISTER_CITIES.includes(city)) {
+    return res.status(400).json({ error: "Välj en giltig ort." });
+  }
+
+  const conflict = db
+    .prepare("SELECT id FROM users WHERE lower(contact_email) = ? AND id != ? LIMIT 1")
+    .get(contactEmail, user.id);
+  if (conflict) {
+    return res.status(409).json({ error: "E-postadressen används redan av en annan användare." });
+  }
+
+  db.prepare(
+    "UPDATE users SET first_name = ?, last_name = ?, phone = ?, contact_email = ?, city = ? WHERE id = ?"
+  ).run(firstName, lastName, phone, contactEmail, city, user.id);
+
+  return res.json({ ok: true });
+});
+
+app.get("/api/settings/public", (_req, res) => {
+  return res.json({
+    allow_registrations: getAllowRegistrations()
+  });
+});
+
+app.get("/api/admin/settings", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+  if (!isAdmin(user)) {
+    return res.status(403).json({ error: "Endast admin har åtkomst." });
+  }
+  return res.json({
+    allow_registrations: getAllowRegistrations()
+  });
+});
+
+app.put("/api/admin/settings/registrations", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+  if (!isAdmin(user)) {
+    return res.status(403).json({ error: "Endast admin kan ändra registreringsinställningen." });
+  }
+  const allow = !!req.body?.allow_registrations;
+  setAllowRegistrations(allow);
+  return res.json({
+    ok: true,
+    allow_registrations: getAllowRegistrations()
   });
 });
 
@@ -536,6 +1104,154 @@ app.get("/api/users", (req, res) => {
       online: !!r.is_online
     }))
   });
+});
+
+app.get("/api/admin/users", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+  if (!isAdmin(user)) {
+    return res.status(403).json({ error: "Endast admin har åtkomst." });
+  }
+
+  const activeSince = nowTs() - ONLINE_WINDOW_SECONDS;
+  const rows = db
+    .prepare(
+      `SELECT u.id, u.email, u.contact_email, u.city, u.first_name, u.last_name, u.phone,
+              CASE
+                WHEN EXISTS (
+                  SELECT 1
+                  FROM sessions s
+                  WHERE s.user_id = u.id
+                    AND s.expires_at > ?
+                    AND s.last_seen_at >= ?
+                ) THEN 1 ELSE 0
+              END AS is_online
+       FROM users u
+       ORDER BY u.email ASC`
+    )
+    .all(nowTs(), activeSince);
+
+  return res.json({
+    users: rows.map((r) => ({
+      id: Number(r.id),
+      email: String(r.email || ""),
+      contact_email: String(r.contact_email || ""),
+      city: String(r.city || ""),
+      first_name: String(r.first_name || ""),
+      last_name: String(r.last_name || ""),
+      phone: String(r.phone || ""),
+      online: !!r.is_online,
+      is_admin: String(r.email || "").toLowerCase() === "admin"
+    }))
+  });
+});
+
+app.put("/api/admin/users/:id", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+  if (!isAdmin(user)) {
+    return res.status(403).json({ error: "Endast admin kan redigera användare." });
+  }
+
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ error: "Ogiltigt användar-id." });
+  }
+  const target = db.prepare("SELECT id, email FROM users WHERE id = ?").get(id);
+  if (!target) {
+    return res.status(404).json({ error: "Användaren hittades inte." });
+  }
+
+  const nextEmail = String(req.body?.email || "").trim().toLowerCase();
+  const nextContactEmail = normalizeEmail(req.body?.contact_email || "");
+  const nextCity = String(req.body?.city || "").trim();
+  const nextFirstName = String(req.body?.first_name || "").trim();
+  const nextLastName = String(req.body?.last_name || "").trim();
+  const nextPhone = String(req.body?.phone || "").trim();
+
+  if (!nextEmail || nextEmail.length < 2) {
+    return res.status(400).json({ error: "Ogiltigt användarnamn." });
+  }
+  if (String(target.email || "").toLowerCase() === "admin" && nextEmail !== "admin") {
+    return res.status(400).json({ error: "Admin-användaren kan inte byta användarnamn." });
+  }
+  if (nextContactEmail && !nextContactEmail.endsWith(REGISTER_ALLOWED_DOMAIN)) {
+    return res.status(400).json({ error: `Kontaktmail måste sluta med ${REGISTER_ALLOWED_DOMAIN}.` });
+  }
+  if (nextCity && !REGISTER_CITIES.includes(nextCity)) {
+    return res.status(400).json({ error: "Ogiltig ort." });
+  }
+
+  try {
+    const result = db
+      .prepare(
+        "UPDATE users SET email = ?, contact_email = ?, city = ?, first_name = ?, last_name = ?, phone = ? WHERE id = ?"
+      )
+      .run(
+        nextEmail,
+        nextContactEmail || null,
+        nextCity || null,
+        nextFirstName || null,
+        nextLastName || null,
+        nextPhone || null,
+        id
+      );
+    if (result.changes === 0) {
+      return res.status(404).json({ error: "Användaren hittades inte." });
+    }
+    return res.json({ ok: true });
+  } catch (err) {
+    if (String(err.message).includes("UNIQUE")) {
+      return res.status(409).json({ error: "Användarnamnet används redan." });
+    }
+    return res.status(500).json({ error: "Kunde inte uppdatera användaren." });
+  }
+});
+
+app.delete("/api/admin/users/:id", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+  if (!isAdmin(user)) {
+    return res.status(403).json({ error: "Endast admin kan ta bort användare." });
+  }
+
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ error: "Ogiltigt användar-id." });
+  }
+  if (id === Number(user.id)) {
+    return res.status(400).json({ error: "Du kan inte ta bort dig själv." });
+  }
+
+  const target = db.prepare("SELECT id, email FROM users WHERE id = ?").get(id);
+  if (!target) {
+    return res.status(404).json({ error: "Användaren hittades inte." });
+  }
+  if (String(target.email || "").toLowerCase() === "admin") {
+    return res.status(400).json({ error: "Admin-användaren kan inte tas bort." });
+  }
+
+  const tx = db.transaction(() => {
+    db.prepare("DELETE FROM sessions WHERE user_id = ?").run(id);
+    db.prepare("DELETE FROM notes WHERE user_id = ?").run(id);
+    db.prepare("DELETE FROM chat_reads WHERE user_id = ?").run(id);
+    db.prepare("DELETE FROM chat_group_reads WHERE user_id = ?").run(id);
+    db.prepare("DELETE FROM chat_group_members WHERE user_id = ?").run(id);
+    db.prepare("DELETE FROM chat_group_invites WHERE inviter_id = ? OR invitee_id = ?").run(id, id);
+    db.prepare("DELETE FROM direct_messages WHERE sender_id = ? OR recipient_id = ?").run(id, id);
+    db.prepare("DELETE FROM chat_messages WHERE user_id = ?").run(id);
+    db.prepare("UPDATE events SET created_by = NULL WHERE created_by = ?").run(id);
+    db.prepare("UPDATE important_messages SET created_by = NULL WHERE created_by = ?").run(id);
+    db.prepare("UPDATE chat_groups SET created_by = ? WHERE created_by = ?").run(Number(user.id), id);
+    db.prepare("DELETE FROM users WHERE id = ?").run(id);
+  });
+
+  try {
+    tx();
+    return res.json({ ok: true });
+  } catch (err) {
+    return res.status(500).json({ error: "Kunde inte ta bort användaren." });
+  }
 });
 
 app.get("/api/messenger/threads", (req, res) => {
@@ -1327,10 +2043,28 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "login.html"));
 });
 
+app.get("/registrera", (req, res) => {
+  if (!getAllowRegistrations()) {
+    return res.redirect("/login.html?register=closed");
+  }
+  return res.sendFile(path.join(__dirname, "registrera.html"));
+});
+
 app.get("/group-invite/:groupId", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Server started on http://localhost:${PORT}`);
+});
+
+server.on("error", (err) => {
+  if (err && err.code === "EADDRINUSE") {
+    console.error(`[startup] Port ${PORT} används redan.`);
+    console.error(`[startup] Stoppa befintlig process eller starta med annan port, t.ex. PORT=${PORT + 1} npm start`);
+    process.exit(1);
+    return;
+  }
+  console.error("[startup] Serverfel:", err);
+  process.exit(1);
 });

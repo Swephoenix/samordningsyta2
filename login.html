@@ -193,7 +193,7 @@
 
             <div class="row" id="loginExtras">
                 <label class="remember"><input type="checkbox"> Kom ihåg mig</label>
-                <span style="color:#94a3b8">Minst 8 tecken</span>
+                <button class="link" id="forgotPasswordBtn" type="button">Glömt lösenord?</button>
             </div>
 
             <button class="btn" id="submitBtn" type="submit">Logga in</button>
@@ -213,6 +213,7 @@
         const title = document.getElementById('title');
         const subtitle = document.getElementById('subtitle');
         const footText = document.getElementById('footText');
+        const forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
 
         function getPostLoginRedirect() {
             const path = String(nextParamRaw || '').trim();
@@ -232,17 +233,20 @@
                 title.textContent = 'Välkommen tillbaka';
                 subtitle.textContent = 'Logga in för att fortsätta till arbetsytan.';
                 submitBtn.textContent = 'Logga in';
-                footText.innerHTML = 'Ingen användare? <button class="link" id="toggleModeBtn" type="button">Skapa konto</button>';
+                footText.innerHTML = 'Ingen användare? <a class="link" href="/registrera">Skapa konto</a>';
             } else {
                 title.textContent = 'Skapa konto';
                 subtitle.textContent = 'Registrera en ny användare.';
                 submitBtn.textContent = 'Skapa konto';
-                footText.innerHTML = 'Har du redan konto? <button class="link" id="toggleModeBtn" type="button">Logga in</button>';
+                footText.innerHTML = 'Har du redan konto? <a class="link" href="/login.html">Logga in</a>';
             }
-            document.getElementById('toggleModeBtn').addEventListener('click', function() {
-                setMode(mode === 'login' ? 'register' : 'login');
-                setNotice('', '');
-            });
+            const toggle = document.getElementById('toggleModeBtn');
+            if (toggle) {
+                toggle.addEventListener('click', function() {
+                    setMode(mode === 'login' ? 'register' : 'login');
+                    setNotice('', '');
+                });
+            }
         }
 
         async function postJson(path, payload) {
@@ -297,7 +301,22 @@
             }
         });
 
+        forgotPasswordBtn.addEventListener('click', async function() {
+            const raw = prompt('Ange användarnamn eller e-post för att få nytt lösenord:');
+            const identifier = String(raw || '').trim().toLowerCase();
+            if (!identifier) return;
+            try {
+                const result = await postJson('/api/password/reset-request', { identifier: identifier });
+                setNotice(result.message || 'Om kontot finns har ett nytt lösenord skickats till din e-post.', 'ok');
+            } catch (err) {
+                setNotice(err.message || 'Kunde inte återställa lösenordet just nu.', 'error');
+            }
+        });
+
         setMode('login');
+        if (new URLSearchParams(window.location.search).get('register') === 'closed') {
+            setNotice('Registrering är avstängd av administratör.', 'error');
+        }
         checkExistingSession();
     </script>
 </body>
