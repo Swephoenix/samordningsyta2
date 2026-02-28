@@ -199,20 +199,15 @@
             <button class="btn" id="submitBtn" type="submit">Logga in</button>
         </form>
 
-        <p class="foot" id="footText">Ingen användare? <button class="link" id="toggleModeBtn" type="button">Skapa konto</button></p>
+        <p class="foot">Ingen användare? <a class="link" href="/registrera">Skapa konto</a></p>
         <p class="notice" id="notice"></p>
     </main>
 
     <script>
-        let mode = 'login';
         const nextParamRaw = new URLSearchParams(window.location.search).get('next') || '';
         const form = document.getElementById('authForm');
         const notice = document.getElementById('notice');
         const submitBtn = document.getElementById('submitBtn');
-        const toggleModeBtn = document.getElementById('toggleModeBtn');
-        const title = document.getElementById('title');
-        const subtitle = document.getElementById('subtitle');
-        const footText = document.getElementById('footText');
         const forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
 
         function getPostLoginRedirect() {
@@ -225,28 +220,6 @@
         function setNotice(msg, kind) {
             notice.className = 'notice ' + (kind || '');
             notice.textContent = msg || '';
-        }
-
-        function setMode(nextMode) {
-            mode = nextMode;
-            if (mode === 'login') {
-                title.textContent = 'Välkommen tillbaka';
-                subtitle.textContent = 'Logga in för att fortsätta till arbetsytan.';
-                submitBtn.textContent = 'Logga in';
-                footText.innerHTML = 'Ingen användare? <a class="link" href="/registrera">Skapa konto</a>';
-            } else {
-                title.textContent = 'Skapa konto';
-                subtitle.textContent = 'Registrera en ny användare.';
-                submitBtn.textContent = 'Skapa konto';
-                footText.innerHTML = 'Har du redan konto? <a class="link" href="/login.html">Logga in</a>';
-            }
-            const toggle = document.getElementById('toggleModeBtn');
-            if (toggle) {
-                toggle.addEventListener('click', function() {
-                    setMode(mode === 'login' ? 'register' : 'login');
-                    setNotice('', '');
-                });
-            }
         }
 
         async function postJson(path, payload) {
@@ -286,13 +259,8 @@
             }
 
             try {
-                if (mode === 'register') {
-                    await postJson('/api/register', { email: email, password: password });
-                    setNotice('Konto skapat. Du är nu inloggad.', 'ok');
-                } else {
-                    await postJson('/api/login', { email: email, password: password });
-                    setNotice('Inloggad.', 'ok');
-                }
+                await postJson('/api/login', { email: email, password: password });
+                setNotice('Inloggad.', 'ok');
                 window.location.href = getPostLoginRedirect();
             } catch (err) {
                 setNotice(err.message, 'error');
@@ -313,7 +281,6 @@
             }
         });
 
-        setMode('login');
         if (new URLSearchParams(window.location.search).get('register') === 'closed') {
             setNotice('Registrering är avstängd av administratör.', 'error');
         }
