@@ -140,6 +140,115 @@
             border-radius: 4px;
             font-size: 0.9em;
         }
+        .important-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .important-admin-btn {
+            display: none;
+            border: 1px solid #c4d5f3;
+            background: #e9f1ff;
+            color: #1f4f9d;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            padding: 5px 8px;
+            cursor: pointer;
+        }
+        .important-admin-btn:hover {
+            background: #dce9ff;
+        }
+        .important-admin-content {
+            background: #242a33;
+            border: 1px solid #364052;
+            width: min(92vw, 560px);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 16px 34px rgba(0,0,0,0.45);
+        }
+        .important-admin-content h3 {
+            margin-bottom: 12px;
+            font-size: 1.02rem;
+            color: #eef3fc;
+        }
+        .important-admin-list {
+            max-height: 240px;
+            overflow-y: auto;
+            border: 1px solid #364052;
+            border-radius: 8px;
+            background: #1f2530;
+            padding: 8px;
+            margin-bottom: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .important-admin-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 7px 8px;
+            border: 1px solid #394557;
+            border-radius: 7px;
+            background: #222a36;
+            color: #dbe7fb;
+            font-size: 0.86rem;
+        }
+        .important-admin-item button {
+            border: 1px solid #4a5b74;
+            border-radius: 6px;
+            background: #2c3646;
+            color: #dbe7fb;
+            padding: 4px 7px;
+            cursor: pointer;
+            font-size: 0.76rem;
+            font-weight: 700;
+        }
+        .important-admin-item button[data-important-delete] {
+            border-color: rgba(231, 76, 60, 0.5);
+            color: #ffd5d0;
+            background: rgba(231, 76, 60, 0.15);
+        }
+        .important-admin-form {
+            display: grid;
+            grid-template-columns: 70px 1fr auto;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .important-admin-form input {
+            border: 1px solid #3c4658;
+            border-radius: 8px;
+            padding: 8px 10px;
+            outline: none;
+            background: #1f2530;
+            color: #edf3ff;
+        }
+        .important-admin-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 6px;
+        }
+        .important-admin-btn-secondary,
+        .important-admin-btn-primary {
+            border: 1px solid #4a5b74;
+            border-radius: 8px;
+            background: #2a3342;
+            color: #dbe6ff;
+            padding: 8px 11px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.82rem;
+        }
+        .important-admin-btn-primary {
+            border-color: #5a85c5;
+            background: #2f61a8;
+            color: #fff;
+        }
         .meeting-item {
             padding: 8px 10px;
             background: rgba(74, 144, 226, 0.12);
@@ -1018,8 +1127,9 @@
             padding: 12px;
         }
         .right-col .placeholders .placeholder-grid {
-            margin-top: auto;
-            padding-bottom: 16px;
+            margin-top: 0;
+            padding-top: 6px;
+            padding-bottom: 10px;
         }
         
         .placeholder-icon {
@@ -1787,10 +1897,12 @@
         <!-- Höger: Viktiga meddelanden & Verktyg -->
         <div class="right-col">
             <div class="panel messages">
-                <div class="panel-header">Viktiga Meddelanden</div>
-                <div class="panel-content">
-                    <div class="msg-item">🚨 Systemuppdatering inatt kl 02:00.</div>
-                    <div class="msg-item">📢 Deadline för Q3-rapporten är på fredag.</div>
+                <div class="panel-header important-header">
+                    <span>Viktiga Meddelanden</span>
+                    <button id="importantAdminBtn" class="important-admin-btn" type="button">Redigera</button>
+                </div>
+                <div class="panel-content" id="importantMessagesList">
+                    <div class="msg-item">Laddar viktiga meddelanden...</div>
                 </div>
             </div>
 
@@ -1914,6 +2026,22 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="importantAdminModal">
+        <div class="important-admin-content">
+            <button class="modal-close" type="button" onclick="closeImportantAdminModal()">✖</button>
+            <h3>Redigera viktiga meddelanden</h3>
+            <div class="important-admin-list" id="importantAdminList"></div>
+            <div class="important-admin-form">
+                <input id="importantIconInput" type="text" maxlength="8" placeholder="📢" aria-label="Ikon">
+                <input id="importantTextInput" type="text" maxlength="500" placeholder="Skriv ett viktigt meddelande..." aria-label="Meddelande">
+                <button id="importantSaveBtn" class="important-admin-btn-primary" type="button">Spara</button>
+            </div>
+            <div class="important-admin-actions">
+                <button class="important-admin-btn-secondary" type="button" onclick="closeImportantAdminModal()">Stäng</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let currentUserEmail = '';
         let currentUserIsAdmin = false;
@@ -1936,6 +2064,7 @@
                 if (userBadge) userBadge.innerText = `Inloggad som: ${currentUserEmail || '-'}`;
                 document.getElementById('adminSettingsIcon').style.display = currentUserIsAdmin ? 'flex' : 'none';
                 document.getElementById('meetingsAdminRow').style.display = currentUserIsAdmin ? 'flex' : 'none';
+                document.getElementById('importantAdminBtn').style.display = currentUserIsAdmin ? 'inline-flex' : 'none';
                 return true;
             } catch (e) {
                 window.location.href = 'login.html';
@@ -1960,6 +2089,10 @@
         const calendarState = { year: now.getFullYear(), month: now.getMonth() };
         let eventsByDate = {};
         let allChatMessages = [];
+        let importantMessages = [];
+        let importantEditingId = null;
+        let importantApiAvailable = false;
+        let importantMessagesLoadError = '';
         let notesSaveTimer = null;
         const chatEmojiSet = [
             "😀","😁","😂","🤣","😊","😍","😎","😉",
@@ -1971,19 +2104,22 @@
             chatMessages: null,
             chatPresence: null,
             todayMeetings: null,
-            messengerUsers: null
+            messengerUsers: null,
+            importantMessages: null
         };
         const pollConfig = {
             chatMessages: { foregroundMs: 5000, backgroundMs: 25000, maxMs: 120000 },
             chatPresence: { foregroundMs: 7000, backgroundMs: 30000, maxMs: 120000 },
             todayMeetings: { foregroundMs: 60000, backgroundMs: 180000, maxMs: 300000 },
-            messengerUsers: { foregroundMs: 3000, backgroundMs: 12000, maxMs: 90000 }
+            messengerUsers: { foregroundMs: 3000, backgroundMs: 12000, maxMs: 90000 },
+            importantMessages: { foregroundMs: 10000, backgroundMs: 30000, maxMs: 120000 }
         };
         const pollState = {
             chatMessages: { timerId: null, running: false, failures: 0 },
             chatPresence: { timerId: null, running: false, failures: 0 },
             todayMeetings: { timerId: null, running: false, failures: 0 },
-            messengerUsers: { timerId: null, running: false, failures: 0 }
+            messengerUsers: { timerId: null, running: false, failures: 0 },
+            importantMessages: { timerId: null, running: false, failures: 0 }
         };
 
         function singleFlightLoad(key, task) {
@@ -2038,12 +2174,14 @@
             schedulePollTask('chatPresence', loadChatPresence, false);
             schedulePollTask('todayMeetings', loadTodayMeetings, false);
             schedulePollTask('messengerUsers', loadMessengerUsers, false);
+            schedulePollTask('importantMessages', loadImportantMessages, false);
         }
 
         function refreshPollingSoon() {
             schedulePollTask('chatMessages', loadChatMessages, true);
             schedulePollTask('chatPresence', loadChatPresence, true);
             schedulePollTask('messengerUsers', loadMessengerUsers, true);
+            schedulePollTask('importantMessages', loadImportantMessages, true);
         }
 
         async function apiGet(url) {
@@ -2526,6 +2664,155 @@
             });
         }
 
+        function renderImportantMessages() {
+            const box = document.getElementById('importantMessagesList');
+            if (!box) return;
+            if (importantMessagesLoadError) {
+                box.innerHTML = `<div class="msg-item">⚠️ ${escapeHtml(importantMessagesLoadError)}</div>`;
+                return;
+            }
+            if (!importantMessages.length) {
+                box.innerHTML = '<div class="msg-item">Inga viktiga meddelanden.</div>';
+                return;
+            }
+            box.innerHTML = importantMessages.map(function(msg) {
+                const icon = String(msg.icon || '📢');
+                const text = String(msg.text || '');
+                return `<div class="msg-item">${escapeHtml(icon)} ${escapeHtml(text)}</div>`;
+            }).join('');
+        }
+
+        function renderImportantAdminList() {
+            const box = document.getElementById('importantAdminList');
+            if (!box) return;
+            if (!importantMessages.length) {
+                box.innerHTML = '<div class="important-admin-item"><span>Inga meddelanden ännu.</span></div>';
+                return;
+            }
+            box.innerHTML = importantMessages.map(function(msg) {
+                return `
+                    <div class="important-admin-item">
+                        <span>${escapeHtml(String(msg.icon || '📢'))} ${escapeHtml(String(msg.text || ''))}</span>
+                        <span>
+                            <button type="button" data-important-edit="${msg.id}">Redigera</button>
+                            <button type="button" data-important-delete="${msg.id}">Ta bort</button>
+                        </span>
+                    </div>
+                `;
+            }).join('');
+
+            box.querySelectorAll('[data-important-edit]').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const id = Number(btn.getAttribute('data-important-edit'));
+                    const item = importantMessages.find(function(x) { return Number(x.id) === id; });
+                    if (!item) return;
+                    importantEditingId = id;
+                    document.getElementById('importantIconInput').value = String(item.icon || '📢');
+                    document.getElementById('importantTextInput').value = String(item.text || '');
+                });
+            });
+
+            box.querySelectorAll('[data-important-delete]').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const id = Number(btn.getAttribute('data-important-delete'));
+                    deleteImportantMessage(id).catch(function(err) {
+                        alert(err.message || 'Kunde inte ta bort meddelandet.');
+                    });
+                });
+            });
+        }
+
+        async function loadImportantMessages() {
+            return singleFlightLoad('importantMessages', async function() {
+                try {
+                    const data = await apiGet('/api/important-messages');
+                    importantApiAvailable = true;
+                    importantMessagesLoadError = '';
+                    importantMessages = (data.messages || []).map(function(m) {
+                        return {
+                            id: Number(m.id),
+                            icon: String(m.icon || '📢'),
+                            text: String(m.text || ''),
+                            sort_order: Number(m.sort_order || 0)
+                        };
+                    });
+                } catch (err) {
+                    importantApiAvailable = false;
+                    importantMessagesLoadError = 'Kunde inte ladda viktiga meddelanden från servern.';
+                }
+                renderImportantMessages();
+                renderImportantAdminList();
+            });
+        }
+
+        function openImportantAdminModal() {
+            if (!currentUserIsAdmin) return;
+            if (!importantApiAvailable) {
+                alert('Kan inte redigera nu eftersom serverkoppling saknas. Försök igen om en stund.');
+                return;
+            }
+            importantEditingId = null;
+            document.getElementById('importantIconInput').value = '';
+            document.getElementById('importantTextInput').value = '';
+            renderImportantAdminList();
+            document.getElementById('importantAdminModal').style.display = 'flex';
+        }
+
+        function closeImportantAdminModal() {
+            document.getElementById('importantAdminModal').style.display = 'none';
+            importantEditingId = null;
+            document.getElementById('importantIconInput').value = '';
+            document.getElementById('importantTextInput').value = '';
+        }
+
+        async function saveImportantMessageFromForm() {
+            if (!currentUserIsAdmin) return;
+            if (!importantApiAvailable) {
+                throw new Error('Serverkoppling saknas. Meddelandet kunde inte sparas.');
+            }
+            const icon = String(document.getElementById('importantIconInput').value || '').trim() || '📢';
+            const text = String(document.getElementById('importantTextInput').value || '').trim();
+            if (!text) {
+                alert('Meddelandetext krävs.');
+                return;
+            }
+
+            if (importantEditingId) {
+                const current = importantMessages.find(function(x) { return Number(x.id) === Number(importantEditingId); });
+                await apiSend(`/api/important-messages/${importantEditingId}`, 'PUT', {
+                    icon: icon,
+                    text: text,
+                    sort_order: current ? Number(current.sort_order || 0) : 0
+                });
+            } else {
+                await apiSend('/api/important-messages', 'POST', {
+                    icon: icon,
+                    text: text
+                });
+            }
+
+            importantEditingId = null;
+            document.getElementById('importantIconInput').value = '';
+            document.getElementById('importantTextInput').value = '';
+            await loadImportantMessages();
+        }
+
+        async function deleteImportantMessage(id) {
+            if (!currentUserIsAdmin) return;
+            if (!importantApiAvailable) {
+                throw new Error('Serverkoppling saknas. Meddelandet kunde inte tas bort.');
+            }
+            const ok = window.confirm('Vill du ta bort detta viktiga meddelande?');
+            if (!ok) return;
+            await apiSend(`/api/important-messages/${id}`, 'DELETE');
+            if (Number(importantEditingId) === Number(id)) {
+                importantEditingId = null;
+                document.getElementById('importantIconInput').value = '';
+                document.getElementById('importantTextInput').value = '';
+            }
+            await loadImportantMessages();
+        }
+
         async function loadTodayMeetings() {
             return singleFlightLoad('todayMeetings', async function() {
                 const data = await apiGet('/api/meetings/today');
@@ -2977,6 +3264,7 @@
         }
 
         function fsCanModifyItem(item, itemPathParts) {
+            if (currentUserIsAdmin) return true;
             const inheritedSharePermission = fsGetInheritedSharePermission(itemPathParts);
             if (inheritedSharePermission) {
                 return inheritedSharePermission === 'edit';
@@ -2984,7 +3272,6 @@
             if (item && item.shared_link) {
                 return String(item.share_permission || 'read') === 'edit';
             }
-            if (currentUserIsAdmin) return true;
             if (fsIsAdminCreated(item)) return false;
             if (fsIsSharedPath(itemPathParts)) return true;
             return true;
@@ -4369,6 +4656,20 @@
         document.getElementById('eventEditorModal').addEventListener('click', function(e) {
             if (e.target === this) closeEventEditor();
         });
+        document.getElementById('importantAdminBtn').addEventListener('click', function() {
+            openImportantAdminModal();
+        });
+        document.getElementById('adminSettingsIcon').addEventListener('click', function() {
+            openImportantAdminModal();
+        });
+        document.getElementById('importantSaveBtn').addEventListener('click', function() {
+            saveImportantMessageFromForm().catch(function(err) {
+                alert(err.message || 'Kunde inte spara viktigt meddelande.');
+            });
+        });
+        document.getElementById('importantAdminModal').addEventListener('click', function(e) {
+            if (e.target === this) closeImportantAdminModal();
+        });
 
         document.getElementById('prevMonthBtn').addEventListener('click', function() {
             changeMonth(-1).catch(function() {});
@@ -4397,6 +4698,7 @@
             await Promise.allSettled([
                 loadMonthEvents(),
                 loadTodayMeetings(),
+                loadImportantMessages(),
                 loadChatMessages(),
                 loadChatPresence(),
                 loadNotes(),

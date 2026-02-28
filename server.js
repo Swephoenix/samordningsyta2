@@ -133,6 +133,17 @@ CREATE TABLE IF NOT EXISTS events (
   FOREIGN KEY(created_by) REFERENCES users(id)
 );
 
+CREATE TABLE IF NOT EXISTS important_messages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  icon TEXT NOT NULL DEFAULT '📢',
+  text TEXT NOT NULL,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_by INTEGER,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  FOREIGN KEY(created_by) REFERENCES users(id)
+);
+
 CREATE TABLE IF NOT EXISTS app_data (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL,
@@ -210,6 +221,33 @@ function seedEventsIfEmpty() {
   ins.run(todayKey, "Designreview", "https://zoom.us/j/24680", null, nowTs());
   ins.run(extraDate, "Projektgenomgång", "https://zoom.us/j/11111", null, nowTs());
   ins.run(extraDate2, "Månadsavslut", "https://zoom.us/j/22222", null, nowTs());
+}
+
+function seedImportantMessagesIfEmpty() {
+  const now = nowTs();
+  const demoMessages = [
+    { icon: "🚨", text: "Systemuppdatering inatt kl 02:00." },
+    { icon: "📢", text: "Deadline för Q3-rapporten är på fredag." },
+    { icon: "🛠️", text: "Planerat underhåll av filsystemet söndag 09:00-10:00." },
+    { icon: "✅", text: "Nya rutiner för delade mappar är nu aktiva." },
+    { icon: "🔒", text: "Säkerhetsgranskning genomförs den här veckan." },
+    { icon: "🎯", text: "Mål: 100% uppdaterade kundcase innan månadsskifte." }
+  ];
+
+  const findByText = db.prepare("SELECT id FROM important_messages WHERE text = ? LIMIT 1");
+  const nextSortOrderStmt = db.prepare(
+    "SELECT COALESCE(MAX(sort_order), -1) + 1 AS next_order FROM important_messages"
+  );
+  const insStmt = db.prepare(
+    "INSERT INTO important_messages(icon, text, sort_order, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)"
+  );
+  demoMessages.forEach((msg, idx) => {
+    const exists = findByText.get(msg.text);
+    if (exists) return;
+    const nextOrder = Number(nextSortOrderStmt.get().next_order);
+    const sortOrder = Number.isInteger(nextOrder) ? nextOrder : idx;
+    insStmt.run(msg.icon, msg.text, sortOrder, null, now, now);
+  });
 }
 
 function ensureColumn(table, column, ddl) {
@@ -308,6 +346,7 @@ ensureDefaultUser("admin", "admin");
 ensureDefaultUser("user1", "user1");
 ensureDefaultUser("user2", "user2");
 seedEventsIfEmpty();
+seedImportantMessagesIfEmpty();
 ensureFsState();
 
 app.use(express.json({ limit: "15mb" }));
@@ -1180,6 +1219,106 @@ app.put("/api/events/:id", (req, res) => {
 
   if (result.changes === 0) {
     return res.status(404).json({ error: "Mötet hittades inte." });
+  }
+  return res.json({ ok: true });
+});
+
+app.get("/api/important-messages", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+
+  const rows = db
+    .prepare(
+      `SELECT id, icon, text, sort_order, created_at, updated_at
+       FROM important_messages
+       ORDER BY sort_order ASC, id ASC`
+    )
+    .all();
+
+  return res.json({ messages: rows });
+});
+
+app.post("/api/important-messages", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+  if (!isAdmin(user)) {
+    return res.status(403).json({ error: "Endast admin kan skapa viktiga meddelanden." });
+  }
+
+  const icon = String(req.body?.icon || "📢").trim().slice(0, 8) || "📢";
+  const text = String(req.body?.text || "").trim();
+  const sortOrderRaw = Number(req.body?.sort_order);
+
+  if (!text) return res.status(400).json({ error: "Text krävs." });
+  if (text.length > 500) return res.status(400).json({ error: "Texten är för lång (max 500 tecken)." });
+
+  const fallbackOrder = Number(
+    db.prepare("SELECT COALESCE(MAX(sort_order), -1) + 1 AS next_order FROM important_messages").get().next_order
+  );
+  const sortOrder = Number.isInteger(sortOrderRaw) ? sortOrderRaw : fallbackOrder;
+  const now = nowTs();
+
+  const result = db
+    .prepare(
+      "INSERT INTO important_messages(icon, text, sort_order, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)"
+    )
+    .run(icon, text, sortOrder, user.id, now, now);
+
+  return res.status(201).json({ ok: true, id: result.lastInsertRowid });
+});
+
+app.put("/api/important-messages/:id", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+  if (!isAdmin(user)) {
+    return res.status(403).json({ error: "Endast admin kan redigera viktiga meddelanden." });
+  }
+
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ error: "Ogiltigt id." });
+  }
+
+  const icon = String(req.body?.icon || "📢").trim().slice(0, 8) || "📢";
+  const text = String(req.body?.text || "").trim();
+  const sortOrderRaw = Number(req.body?.sort_order);
+  const sortOrder = Number.isInteger(sortOrderRaw) ? sortOrderRaw : null;
+
+  if (!text) return res.status(400).json({ error: "Text krävs." });
+  if (text.length > 500) return res.status(400).json({ error: "Texten är för lång (max 500 tecken)." });
+
+  const now = nowTs();
+  let result;
+  if (sortOrder === null) {
+    result = db
+      .prepare("UPDATE important_messages SET icon = ?, text = ?, updated_at = ? WHERE id = ?")
+      .run(icon, text, now, id);
+  } else {
+    result = db
+      .prepare("UPDATE important_messages SET icon = ?, text = ?, sort_order = ?, updated_at = ? WHERE id = ?")
+      .run(icon, text, sortOrder, now, id);
+  }
+
+  if (result.changes === 0) {
+    return res.status(404).json({ error: "Meddelandet hittades inte." });
+  }
+  return res.json({ ok: true });
+});
+
+app.delete("/api/important-messages/:id", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+  if (!isAdmin(user)) {
+    return res.status(403).json({ error: "Endast admin kan ta bort viktiga meddelanden." });
+  }
+
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ error: "Ogiltigt id." });
+  }
+  const result = db.prepare("DELETE FROM important_messages WHERE id = ?").run(id);
+  if (result.changes === 0) {
+    return res.status(404).json({ error: "Meddelandet hittades inte." });
   }
   return res.json({ ok: true });
 });
