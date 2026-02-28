@@ -1797,7 +1797,9 @@
             <div class="panel placeholders">
                 <div class="panel-header">Verktyg</div>
                 <div class="placeholder-grid">
-                    <div class="placeholder-icon" title="Facebook Marketing Academy">🎓</div>
+                    <div class="placeholder-icon" title="Facebook Marketing Academy">
+                        <img src="fbacademy.png" alt="Facebook Academy" class="tool-icon-svg">
+                    </div>
                     <div class="placeholder-icon" title="Idébank">💡</div>
                     <div class="placeholder-icon" title="Statistik">📊</div>
                     <div class="placeholder-icon" title="Inställningar">⚙️</div>
@@ -2287,6 +2289,7 @@
                 const seenText = isMine && seenBy.length
                     ? `<div class=\"chat-post-seen\">Sett av: ${escapeHtml(seenBy.join(', '))}</div>`
                     : '';
+                const attachmentHtml = parsed.attachment ? renderAttachmentHtml(parsed.attachment) : '';
                 const replyPreview = parsed.replyTo
                     ? `<div class=\"chat-reply-preview\">Svar på ${escapeHtml(parsed.replyTo.author || 'okänd')}: ${escapeHtml(parsed.replyTo.snippet || '')}</div>`
                     : '';
@@ -2301,6 +2304,7 @@
                         </span>
                     </div>
                     ${replyPreview}
+                    ${attachmentHtml}
                     <p>${escapeHtml(parsed.body)}</p>
                     ${replyBtn}
                     ${seenText}
@@ -2313,6 +2317,13 @@
                             author: msg.email,
                             snippet: String(parsed.body || '').slice(0, 80)
                         });
+                    });
+                }
+                const attachmentEl = post.querySelector('[data-attachment-preview="1"]');
+                if (attachmentEl && parsed.attachment) {
+                    attachmentEl.addEventListener('dblclick', function(e) {
+                        e.preventDefault();
+                        openChatPreview(parsed.attachment);
                     });
                 }
                 feed.appendChild(post);
@@ -2490,26 +2501,10 @@
             const thread = getThreadById(activeId);
             if (!thread) return;
             const payloadMessage = buildReplyPayload(message, activeReply);
-
-            if (activeId === MESSENGER_GROUP_THREAD_ID) {
-                await apiSend('/api/chat/messages', 'POST', { message: payloadMessage });
-            } else if (thread.isGroup) {
-                await apiSend(`/api/messenger/groups/${thread.id}/messages`, 'POST', { message: payloadMessage });
-            } else {
-                await apiSend('/api/messenger/messages', 'POST', {
-                    recipient_id: Number(thread.id),
-                    message: payloadMessage
-                });
-            }
+            await sendPayloadToCurrentThread(payloadMessage, thread);
             input.value = '';
             setActiveReply(null);
-            if (activeId === MESSENGER_GROUP_THREAD_ID) {
-                await loadChatMessages();
-            } else {
-                await loadActiveMessengerThreadMessages();
-                renderActiveThreadInMainChat();
-            }
-            await loadMessengerUsers();
+            await refreshAfterThreadSend(activeId);
         }
 
         async function loadNotes() {
@@ -2584,7 +2579,93 @@
             document.getElementById('chatSearchText').addEventListener('input', applyChatFilters);
             document.getElementById('chatFromDate').addEventListener('change', applyChatFilters);
             document.getElementById('chatToDate').addEventListener('change', applyChatFilters);
+            const attachBtn = document.getElementById('chatAttachBtn');
+            const imageBtn = document.getElementById('chatImageBtn');
+            const fileInput = document.getElementById('chatFileInput');
+            const imageInput = document.getElementById('chatImageInput');
+            const previewModal = document.getElementById('chatPreviewModal');
+            const previewClose = document.getElementById('chatPreviewCloseBtn');
+
+            if (attachBtn && fileInput) {
+                attachBtn.addEventListener('click', function() { fileInput.click(); });
+            }
+            if (imageBtn && imageInput) {
+                imageBtn.addEventListener('click', function() { imageInput.click(); });
+            }
+            if (fileInput) {
+                fileInput.addEventListener('change', function() {
+                    const file = fileInput.files && fileInput.files[0];
+                    if (!file) return;
+                    handleAttachmentSelection(file).catch(function(err) {
+                        alert(err.message || 'Kunde inte bifoga filen.');
+                    }).finally(function() {
+                        fileInput.value = '';
+                    });
+                });
+            }
+            if (imageInput) {
+                imageInput.addEventListener('change', function() {
+                    const file = imageInput.files && imageInput.files[0];
+                    if (!file) return;
+                    handleAttachmentSelection(file).catch(function(err) {
+                        alert(err.message || 'Kunde inte bifoga bilden.');
+                    }).finally(function() {
+                        imageInput.value = '';
+                    });
+                });
+            }
+            if (previewClose) previewClose.addEventListener('click', closeChatPreview);
+            if (previewModal) {
+                previewModal.addEventListener('click', function(e) {
+                    if (e.target === previewModal) closeChatPreview();
+                });
+            }
             initEmojiPicker();
+        }
+
+        async function sendPayloadToCurrentThread(payloadMessage, thread) {
+            const activeId = messengerState.activeThreadId || MESSENGER_GROUP_THREAD_ID;
+            const targetThread = thread || getThreadById(activeId);
+            if (!targetThread) return;
+            if (activeId === MESSENGER_GROUP_THREAD_ID) {
+                await apiSend('/api/chat/messages', 'POST', { message: payloadMessage });
+                return;
+            }
+            if (targetThread.isGroup) {
+                await apiSend(`/api/messenger/groups/${targetThread.id}/messages`, 'POST', { message: payloadMessage });
+                return;
+            }
+            await apiSend('/api/messenger/messages', 'POST', {
+                recipient_id: Number(targetThread.id),
+                message: payloadMessage
+            });
+        }
+
+        async function refreshAfterThreadSend(activeId) {
+            if (activeId === MESSENGER_GROUP_THREAD_ID) {
+                await loadChatMessages();
+            } else {
+                await loadActiveMessengerThreadMessages();
+                renderActiveThreadInMainChat();
+            }
+            await loadMessengerUsers();
+        }
+
+        async function handleAttachmentSelection(file) {
+            if (composeState.active) {
+                throw new Error('Bifogning i Ny chatt-läget stöds inte ännu.');
+            }
+            const activeId = messengerState.activeThreadId || MESSENGER_GROUP_THREAD_ID;
+            const thread = getThreadById(activeId);
+            if (!thread) throw new Error('Ingen aktiv chatt vald.');
+
+            const attachment = await uploadAttachmentWithPreview(file);
+            const caption = String(document.getElementById('groupChatInput').value || '').trim();
+            const payload = buildReplyPayload(caption, activeReply, attachment);
+            await sendPayloadToCurrentThread(payload, thread);
+            document.getElementById('groupChatInput').value = '';
+            setActiveReply(null);
+            await refreshAfterThreadSend(activeId);
         }
 
         function initEmojiPicker() {
@@ -3408,24 +3489,59 @@
         }
 
         function parseReplyPayload(text) {
-            const raw = String(text || '');
-            const match = raw.match(/^\[reply\|([^\]|]*)\|([^\]]*)\]\n?([\s\S]*)$/);
-            if (!match) return { body: raw, replyTo: null };
-            return {
-                body: match[3] || '',
-                replyTo: {
-                    author: match[1] || '',
-                    snippet: match[2] || ''
+            let rest = String(text || '');
+            let replyTo = null;
+            let attachment = null;
+
+            const replyMatch = rest.match(/^\[reply\|([^\]|]*)\|([^\]]*)\]\n?/);
+            if (replyMatch) {
+                replyTo = {
+                    author: replyMatch[1] || '',
+                    snippet: replyMatch[2] || ''
+                };
+                rest = rest.slice(replyMatch[0].length);
+            }
+
+            const attachmentMatch = rest.match(/^\[attachment\|([A-Za-z0-9+/=]+)\]\n?/);
+            if (attachmentMatch) {
+                try {
+                    const json = atob(attachmentMatch[1]);
+                    const parsed = JSON.parse(json);
+                    if (parsed && typeof parsed === 'object') {
+                        attachment = {
+                            name: String(parsed.name || ''),
+                            mime: String(parsed.mime || ''),
+                            url: String(parsed.url || ''),
+                            preview_url: String(parsed.preview_url || '')
+                        };
+                    }
+                } catch (e) {
                 }
-            };
+                rest = rest.slice(attachmentMatch[0].length);
+            }
+
+            return { body: rest, replyTo: replyTo, attachment: attachment };
         }
 
-        function buildReplyPayload(body, replyMeta) {
+        function buildReplyPayload(body, replyMeta, attachmentMeta) {
             const cleanBody = String(body || '').trim();
-            if (!replyMeta) return cleanBody;
-            const author = String(replyMeta.author || '').replace(/\|/g, '/');
-            const snippet = String(replyMeta.snippet || '').replace(/\|/g, '/');
-            return `[reply|${author}|${snippet}]\n${cleanBody}`;
+            const parts = [];
+            if (replyMeta) {
+                const author = String(replyMeta.author || '').replace(/\|/g, '/');
+                const snippet = String(replyMeta.snippet || '').replace(/\|/g, '/');
+                parts.push(`[reply|${author}|${snippet}]`);
+            }
+            if (attachmentMeta && attachmentMeta.url) {
+                const cleanAttachment = {
+                    name: String(attachmentMeta.name || ''),
+                    mime: String(attachmentMeta.mime || ''),
+                    url: String(attachmentMeta.url || ''),
+                    preview_url: String(attachmentMeta.preview_url || '')
+                };
+                parts.push(`[attachment|${btoa(JSON.stringify(cleanAttachment))}]`);
+            }
+            parts.push(cleanBody);
+            return parts.join('\n');
         }
 
         function setActiveReply(replyMeta) {
