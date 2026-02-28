@@ -453,6 +453,7 @@
             align-items: center;
             gap: 10px;
             background: #242a33;
+            position: relative;
         }
         .chat-reply-bar {
             display: none;
@@ -531,6 +532,36 @@
             width: 34px;
             height: 34px;
             background: #303848;
+        }
+        .chat-emoji-picker {
+            position: absolute;
+            bottom: 54px;
+            left: 52px;
+            width: 250px;
+            max-height: 210px;
+            overflow-y: auto;
+            border: 1px solid #3a4353;
+            border-radius: 10px;
+            background: #1f2633;
+            box-shadow: 0 14px 28px rgba(0,0,0,0.35);
+            padding: 8px;
+            display: none;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 6px;
+            z-index: 3;
+        }
+        .chat-emoji-btn {
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: #e9f1ff;
+            font-size: 1.05rem;
+            cursor: pointer;
+            height: 28px;
+            line-height: 1;
+        }
+        .chat-emoji-btn:hover {
+            background: #2f3a4a;
         }
         .chat-thread-sidebar {
             min-width: 0;
@@ -867,8 +898,9 @@
             cursor: pointer;
             font-size: 1.1em;
             line-height: 1;
+            color: #9aa8bc;
         }
-        .calendar-nav:hover { background: #e9ecef; }
+        .calendar-nav:hover { background: rgba(255,255,255,0.08); }
         .calendar-title { font-weight: 600; }
         .cal-day-header { font-size: 0.8em; color: var(--text-muted); font-weight: bold; }
         .cal-day {
@@ -880,6 +912,12 @@
         }
         .cal-day:hover { background: var(--bg-color); }
         .cal-day.has-event { font-weight: bold; color: var(--accent); }
+        .cal-day.today {
+            background: #fff;
+            color: #111;
+            font-weight: 700;
+        }
+        .cal-day.today.has-event { color: #1f5da9; }
         .cal-day.has-event::after {
             content: '';
             position: absolute;
@@ -1650,11 +1688,12 @@
                     <div class="chat-input-area">
                         <button class="btn-icon" title="Bifoga fil">📎</button>
                         <div class="chat-input-tools">
-                            <button class="btn-icon" title="Emoji">🙂</button>
+                            <button class="btn-icon" id="chatEmojiToggleBtn" title="Emoji">🙂</button>
                             <button class="btn-icon" title="Bild">🖼️</button>
                         </div>
                         <input id="groupChatInput" type="text" placeholder="Skriv ett inlägg eller ladda upp fil...">
                         <button id="groupChatSendBtn" class="chat-send-btn" title="Skicka">➤</button>
+                        <div class="chat-emoji-picker" id="chatEmojiPicker"></div>
                     </div>
                 </div>
             </div>
@@ -1828,6 +1867,12 @@
         let eventsByDate = {};
         let allChatMessages = [];
         let notesSaveTimer = null;
+        const chatEmojiSet = [
+            "😀","😁","😂","🤣","😊","😍","😎","😉",
+            "🤔","🙌","👏","👍","👎","🙏","🔥","🎉",
+            "💯","❤️","✨","💡","📌","✅","⚡","🚀",
+            "📣","📎","📷","🧠","📝","🕒","🤝","😅"
+        ];
         const loadInFlight = {
             chatMessages: null,
             chatPresence: null,
@@ -1947,6 +1992,8 @@
             const title = document.getElementById('calendarTitle');
             const grid = document.getElementById('calendarGrid');
             title.innerText = `Kalender - ${monthNames[calendarState.month]} ${calendarState.year}`;
+            const now = new Date();
+            const todayKey = formatDateKey(now.getFullYear(), now.getMonth(), now.getDate());
 
             grid.innerHTML = `
                 <div class="cal-day-header">M</div><div class="cal-day-header">T</div><div class="cal-day-header">O</div>
@@ -1969,7 +2016,10 @@
                 const events = eventsByDate[dateKey] || [];
                 const event = events[0];
                 const dayElement = document.createElement('div');
-                dayElement.className = events.length ? 'cal-day has-event' : 'cal-day';
+                const classes = ['cal-day'];
+                if (events.length) classes.push('has-event');
+                if (dateKey === todayKey) classes.push('today');
+                dayElement.className = classes.join(' ');
                 dayElement.innerText = day;
 
                 if (events.length) {
@@ -2336,6 +2386,39 @@
             document.getElementById('chatSearchText').addEventListener('input', applyChatFilters);
             document.getElementById('chatFromDate').addEventListener('change', applyChatFilters);
             document.getElementById('chatToDate').addEventListener('change', applyChatFilters);
+            initEmojiPicker();
+        }
+
+        function initEmojiPicker() {
+            const picker = document.getElementById('chatEmojiPicker');
+            const toggleBtn = document.getElementById('chatEmojiToggleBtn');
+            const input = document.getElementById('groupChatInput');
+            if (!picker || !toggleBtn || !input) return;
+
+            picker.innerHTML = chatEmojiSet.map(function(e) {
+                return `<button class="chat-emoji-btn" type="button" data-emoji="${e}">${e}</button>`;
+            }).join('');
+
+            toggleBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                picker.style.display = picker.style.display === 'grid' ? 'none' : 'grid';
+            });
+
+            picker.addEventListener('click', function(e) {
+                const btn = e.target.closest('[data-emoji]');
+                if (!btn) return;
+                const emoji = btn.getAttribute('data-emoji') || '';
+                input.value += emoji;
+                input.focus();
+                picker.style.display = 'none';
+            });
+
+            document.addEventListener('click', function(e) {
+                if (picker.style.display !== 'grid') return;
+                if (picker.contains(e.target)) return;
+                if (e.target === toggleBtn || toggleBtn.contains(e.target)) return;
+                picker.style.display = 'none';
+            });
         }
 
         // JS för kalender modal

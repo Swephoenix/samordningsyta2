@@ -1,4 +1,5 @@
 const path = require("path");
+const fs = require("fs");
 const crypto = require("crypto");
 const express = require("express");
 const cookieParser = require("cookie-parser");
@@ -11,6 +12,10 @@ const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
 const ONLINE_WINDOW_SECONDS = 20;
 const PBKDF2_ITERATIONS = 240000;
 const SESSION_COOKIE = "session_token";
+const UPLOAD_DIR = path.join(__dirname, "uploads", "chat");
+const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+
+fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 const db = new Database(DB_PATH);
 db.pragma("journal_mode = WAL");
@@ -305,7 +310,7 @@ ensureDefaultUser("user2", "user2");
 seedEventsIfEmpty();
 ensureFsState();
 
-app.use(express.json({ limit: "1mb" }));
+app.use(express.json({ limit: "15mb" }));
 app.use(cookieParser());
 app.use(express.static(__dirname));
 
@@ -943,6 +948,50 @@ app.put("/api/fs/state", (req, res) => {
   }
   setAppDataJson("fs_state_v1", state);
   return res.json({ ok: true });
+});
+
+app.post("/api/files/upload", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+
+  const nameRaw = String(req.body?.name || "").trim();
+  const mimeRaw = String(req.body?.mime || "").trim();
+  const dataBase64 = String(req.body?.data_base64 || "").trim();
+
+  if (!nameRaw || !dataBase64) {
+    return res.status(400).json({ error: "Filnamn och filinnehåll krävs." });
+  }
+
+  let buffer;
+  try {
+    buffer = Buffer.from(dataBase64, "base64");
+  } catch (_) {
+    return res.status(400).json({ error: "Ogiltig fildata." });
+  }
+  if (!buffer || !buffer.length) {
+    return res.status(400).json({ error: "Tom fil." });
+  }
+  if (buffer.length > MAX_UPLOAD_BYTES) {
+    return res.status(400).json({ error: "Filen är för stor (max 10 MB)." });
+  }
+
+  const safeName = nameRaw.replace(/[^a-zA-Z0-9._-]+/g, "_").slice(0, 120) || "file.bin";
+  const ext = path.extname(safeName) || "";
+  const base = path.basename(safeName, ext);
+  const fileName = `${Date.now()}_${crypto.randomBytes(6).toString("hex")}_${base}${ext}`;
+  const targetPath = path.join(UPLOAD_DIR, fileName);
+  fs.writeFileSync(targetPath, buffer);
+
+  const publicUrl = `/uploads/chat/${fileName}`;
+  return res.status(201).json({
+    ok: true,
+    file: {
+      name: nameRaw,
+      mime: mimeRaw || "application/octet-stream",
+      size: buffer.length,
+      url: publicUrl
+    }
+  });
 });
 
 app.get("/api/chat/messages", (req, res) => {
