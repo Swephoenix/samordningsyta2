@@ -35,6 +35,11 @@ const app = express();
 const PORT = Number(process.env.PORT || 8000);
 const DB_PATH = path.join(__dirname, "app.db");
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
+const PASSWORD_RESET_TTL_SECONDS = 60 * 30;
+const PASSWORD_RESET_RATE_LIMIT_WINDOW_SECONDS = 60 * 10;
+const PASSWORD_RESET_RATE_LIMIT_MAX_ATTEMPTS = 5;
+const LOGIN_RATE_LIMIT_WINDOW_SECONDS = 60 * 10;
+const LOGIN_RATE_LIMIT_MAX_ATTEMPTS = 10;
 const ONLINE_WINDOW_SECONDS = 20;
 const PBKDF2_ITERATIONS = 240000;
 const SESSION_COOKIE = "session_token";
@@ -42,6 +47,8 @@ const UPLOAD_DIR = path.join(__dirname, "uploads", "chat");
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 const REGISTER_ALLOWED_DOMAIN = "@ambitionsverige.se";
 const FORCED_SMTP_IDENTITY = "mail@ambitionsverige.se";
+const passwordResetRateLimit = new Map();
+const loginRateLimit = new Map();
 const REGISTER_ANIMAL_NAMES = [
   "Räven",
   "Ugglan",
@@ -301,6 +308,16 @@ CREATE TABLE IF NOT EXISTS idea_bank_ideas (
   updated_at INTEGER NOT NULL,
   FOREIGN KEY(user_id) REFERENCES users(id)
 );
+
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  token_hash TEXT UNIQUE NOT NULL,
+  expires_at INTEGER NOT NULL,
+  used_at INTEGER,
+  created_at INTEGER NOT NULL,
+  FOREIGN KEY(user_id) REFERENCES users(id)
+);
 `);
 
 db.exec(`
@@ -333,6 +350,9 @@ CREATE INDEX IF NOT EXISTS idx_qna_answers_question_created
 
 CREATE INDEX IF NOT EXISTS idx_idea_bank_ideas_created
   ON idea_bank_ideas(created_at DESC, id DESC);
+
+CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user_exp
+  ON password_reset_tokens(user_id, expires_at);
 `);
 
 function nowTs() {
@@ -350,6 +370,10 @@ function hashPassword(password, saltHex, iterations) {
   return crypto
     .pbkdf2Sync(password, Buffer.from(saltHex, "hex"), iterations, 32, "sha256")
     .toString("hex");
+}
+
+function hashResetToken(token) {
+  return crypto.createHash("sha256").update(String(token || "")).digest("hex");
 }
 
 function ensureDefaultUser(email, password) {
@@ -668,9 +692,11 @@ ensureColumn("users", "phone", "phone TEXT");
 ensureColumn("qna_questions", "image_url", "image_url TEXT");
 ensureColumn("qna_answers", "image_url", "image_url TEXT");
 
-ensureDefaultUser("admin", "admin");
-ensureDefaultUser("user1", "user1");
-ensureDefaultUser("user2", "user2");
+if (String(process.env.NODE_ENV || "").toLowerCase() !== "production") {
+  ensureDefaultUser("admin", "admin");
+  ensureDefaultUser("user1", "user1");
+  ensureDefaultUser("user2", "user2");
+}
 seedEventsIfEmpty();
 removeLegacySeededDemoEvents();
 seedImportantMessagesIfEmpty();
@@ -680,7 +706,43 @@ ensureRegistrationSetting();
 
 app.use(express.json({ limit: "15mb" }));
 app.use(cookieParser());
-app.use(express.static(__dirname));
+app.set("trust proxy", 1);
+
+const PUBLIC_FILE_ROUTES = new Set([
+  "index.html",
+  "login.html",
+  "registrera.html",
+  "medlemshantering.html",
+  "messenger.html",
+  "folder-system.html",
+  "facebook.png",
+  "fbacademy.png",
+  "newgroup.png",
+  "qna.png",
+  "folder.svg",
+  "pdf.svg",
+  "text-file.svg"
+]);
+
+app.get("/uploads/chat/:fileName", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+  const fileName = String(req.params.fileName || "").trim();
+  if (!/^[a-zA-Z0-9._-]+$/.test(fileName)) {
+    return res.status(400).json({ error: "Ogiltigt filnamn." });
+  }
+  const filePath = path.join(UPLOAD_DIR, fileName);
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: "Filen hittades inte." });
+  }
+  return res.sendFile(filePath);
+});
+
+app.get("/:publicFile", (req, res, next) => {
+  const publicFile = String(req.params.publicFile || "").trim();
+  if (!PUBLIC_FILE_ROUTES.has(publicFile)) return next();
+  return res.sendFile(path.join(__dirname, publicFile));
+});
 
 function createSession(userId) {
   const token = crypto.randomBytes(48).toString("base64url");
@@ -723,6 +785,7 @@ function setSessionCookie(res, token) {
     maxAge: SESSION_TTL_SECONDS * 1000,
     httpOnly: true,
     sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
     path: "/"
   });
 }
@@ -946,18 +1009,22 @@ async function sendGeneratedCredentialsEmail({ workEmail, username, password, ci
   });
 }
 
-async function sendPasswordResetEmail({ recipientEmail, username, password }) {
-  const subject = "Nytt lösenord - Ambition Sverige";
+async function sendPasswordResetEmail({ recipientEmail, username, resetCode }) {
+  const subject = "Återställ lösenord - Ambition Sverige";
   const text = [
     "Hej!",
     "",
-    "Du har begärt ett nytt randomiserat lösenord.",
+    "Du har begärt återställning av lösenord.",
     "",
-    "Nya inloggningsuppgifter:",
+    "Kontouppgifter:",
     `Användarnamn: ${username}`,
-    `Lösenord: ${password}`,
     "",
-    "Logga in och byt lösenord så snart som möjligt.",
+    "Använd denna kod för att sätta ett nytt lösenord:",
+    `${resetCode}`,
+    "",
+    `Koden gäller i ${Math.floor(PASSWORD_RESET_TTL_SECONDS / 60)} minuter.`,
+    "",
+    "Om du inte begärde detta kan du ignorera mailet.",
     "",
     "Vänliga hälsningar,",
     "Ambition Sverige"
@@ -1074,6 +1141,19 @@ app.post("/api/register", async (req, res) => {
 app.post("/api/login", (req, res) => {
   const email = String(req.body?.email || "").trim().toLowerCase();
   const password = String(req.body?.password || "");
+  const ip = String(req.ip || "unknown");
+  const rateKey = `login:${email || "empty"}:${ip}`;
+  const now = nowTs();
+  const rate = loginRateLimit.get(rateKey) || { count: 0, reset_at: now + LOGIN_RATE_LIMIT_WINDOW_SECONDS };
+  if (rate.reset_at <= now) {
+    rate.count = 0;
+    rate.reset_at = now + LOGIN_RATE_LIMIT_WINDOW_SECONDS;
+  }
+  rate.count += 1;
+  loginRateLimit.set(rateKey, rate);
+  if (rate.count > LOGIN_RATE_LIMIT_MAX_ATTEMPTS) {
+    return res.status(429).json({ error: "För många inloggningsförsök. Vänta en stund och försök igen." });
+  }
 
   if (!email || !password) {
     return res.status(400).json({ error: "Användarnamn/e-post och lösenord krävs." });
@@ -1097,6 +1177,7 @@ app.post("/api/login", (req, res) => {
     return res.status(401).json({ error: "Fel användarnamn/e-post eller lösenord." });
   }
 
+  loginRateLimit.delete(rateKey);
   const token = createSession(user.id);
   setSessionCookie(res, token);
   return res.json({ ok: true, email: user.email });
@@ -1104,8 +1185,21 @@ app.post("/api/login", (req, res) => {
 
 app.post("/api/password/reset-request", async (req, res) => {
   const identifier = normalizeEmail(req.body?.identifier || req.body?.email || "");
-  const genericMessage = "Om kontot finns har ett nytt lösenord skickats till din e-post.";
+  const genericMessage = "Om kontot finns har återställningsinstruktioner skickats till din e-post.";
   if (!identifier || identifier.length < 2) {
+    return res.json({ ok: true, message: genericMessage });
+  }
+
+  const rateKey = `pwreset:${identifier}`;
+  const now = nowTs();
+  const rate = passwordResetRateLimit.get(rateKey) || { count: 0, reset_at: now + PASSWORD_RESET_RATE_LIMIT_WINDOW_SECONDS };
+  if (rate.reset_at <= now) {
+    rate.count = 0;
+    rate.reset_at = now + PASSWORD_RESET_RATE_LIMIT_WINDOW_SECONDS;
+  }
+  rate.count += 1;
+  passwordResetRateLimit.set(rateKey, rate);
+  if (rate.count > PASSWORD_RESET_RATE_LIMIT_MAX_ATTEMPTS) {
     return res.json({ ok: true, message: genericMessage });
   }
 
@@ -1127,20 +1221,24 @@ app.post("/api/password/reset-request", async (req, res) => {
     return res.json({ ok: true, message: genericMessage });
   }
 
-  const newPassword = makeRandomPassword(14);
-  const newSalt = crypto.randomBytes(16).toString("hex");
-  const newHash = hashPassword(newPassword, newSalt, PBKDF2_ITERATIONS);
+  const rawToken = crypto.randomBytes(24).toString("base64url");
+  const tokenHash = hashResetToken(rawToken);
+  const expiresAt = now + PASSWORD_RESET_TTL_SECONDS;
 
   try {
+    db.prepare(
+      "DELETE FROM password_reset_tokens WHERE user_id = ? OR expires_at <= ? OR used_at IS NOT NULL"
+    ).run(Number(targetUser.id), now);
+    db.prepare(
+      `INSERT INTO password_reset_tokens(user_id, token_hash, expires_at, used_at, created_at)
+       VALUES (?, ?, ?, NULL, ?)`
+    ).run(Number(targetUser.id), tokenHash, expiresAt, now);
+
     await sendPasswordResetEmail({
       recipientEmail: recipientEmail,
       username: String(targetUser.email || ""),
-      password: newPassword
+      resetCode: rawToken
     });
-
-    db.prepare(
-      "UPDATE users SET password_hash = ?, salt = ?, iterations = ? WHERE id = ?"
-    ).run(newHash, newSalt, PBKDF2_ITERATIONS, Number(targetUser.id));
   } catch (err) {
     return res.status(500).json({
       error: "Kunde inte återställa lösenord just nu. Försök igen strax."
@@ -1148,6 +1246,43 @@ app.post("/api/password/reset-request", async (req, res) => {
   }
 
   return res.json({ ok: true, message: genericMessage });
+});
+
+app.post("/api/password/reset-confirm", (req, res) => {
+  const token = String(req.body?.token || "").trim();
+  const newPassword = String(req.body?.new_password || req.body?.password || "");
+  if (!token || !newPassword || newPassword.length < 10) {
+    return res.status(400).json({ error: "Ogiltig kod eller för kort lösenord (minst 10 tecken)." });
+  }
+
+  const tokenHash = hashResetToken(token);
+  const row = db
+    .prepare(
+      `SELECT id, user_id, expires_at, used_at
+       FROM password_reset_tokens
+       WHERE token_hash = ?
+       LIMIT 1`
+    )
+    .get(tokenHash);
+
+  if (!row || Number(row.used_at || 0) > 0 || Number(row.expires_at || 0) <= nowTs()) {
+    return res.status(400).json({ error: "Koden är ogiltig eller har gått ut." });
+  }
+
+  const salt = crypto.randomBytes(16).toString("hex");
+  const passwordHash = hashPassword(newPassword, salt, PBKDF2_ITERATIONS);
+  const now = nowTs();
+  const tx = db.transaction(() => {
+    db.prepare("UPDATE users SET password_hash = ?, salt = ?, iterations = ? WHERE id = ?")
+      .run(passwordHash, salt, PBKDF2_ITERATIONS, Number(row.user_id));
+    db.prepare("UPDATE password_reset_tokens SET used_at = ? WHERE id = ?")
+      .run(now, Number(row.id));
+    db.prepare("DELETE FROM sessions WHERE user_id = ?")
+      .run(Number(row.user_id));
+  });
+  tx();
+
+  return res.json({ ok: true });
 });
 
 app.post("/api/logout", (req, res) => {

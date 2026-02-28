@@ -120,10 +120,20 @@
         .meetings { flex: 1.25; min-height: 250px; }
         .notes { flex: 1.2; }
         .left-col .placeholders { flex: 1.35; min-height: 300px; }
+        .notes .panel-content {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .notes .meetings-logout-wrap {
+            border-top-color: var(--border-color);
+        }
         
         textarea.note-area {
             width: 100%;
-            height: 100%;
+            height: auto;
+            flex: 1;
+            min-height: 140px;
             border: none;
             resize: none;
             outline: none;
@@ -1656,50 +1666,99 @@
             color: #fff;
             border: none;
         }
+        #eventEditorModal {
+            backdrop-filter: blur(4px);
+            background: rgba(8, 12, 18, 0.66);
+        }
         .event-editor-content {
-            background: #fff;
-            width: min(92vw, 420px);
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 12px 30px rgba(0,0,0,0.2);
+            background: linear-gradient(180deg, rgba(39, 49, 64, 0.98), rgba(30, 38, 50, 0.98));
+            width: min(92vw, 500px);
+            border-radius: 14px;
+            border: 1px solid #415069;
+            box-shadow: 0 22px 46px rgba(0,0,0,0.52);
             padding: 18px;
+            color: #eaf1fc;
+            position: relative;
+        }
+        .event-editor-content .modal-close {
+            float: none;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 30px;
+            height: 30px;
+            border: 1px solid #4b5c77;
+            border-radius: 8px;
+            background: #273246;
+            color: #deebff;
+            font-size: 0.95rem;
+            cursor: pointer;
         }
         .event-editor-content h3 {
-            margin-bottom: 10px;
+            margin: 0 34px 6px 0;
+            font-size: 1.08rem;
+            letter-spacing: 0.01em;
+        }
+        .event-editor-subtitle {
+            color: #adc0dc;
+            font-size: 0.82rem;
+            margin-bottom: 12px;
         }
         .event-editor-row {
             margin-bottom: 10px;
         }
         .event-editor-row label {
             display: block;
-            font-size: 0.82rem;
+            font-size: 0.79rem;
             font-weight: 700;
-            margin-bottom: 4px;
+            color: #c9d9ef;
+            margin-bottom: 6px;
+            letter-spacing: 0.01em;
         }
         .event-editor-row input {
             width: 100%;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 8px 10px;
+            border: 1px solid #415069;
+            border-radius: 9px;
+            padding: 9px 11px;
+            background: #1f2735;
+            color: #edf4ff;
+            outline: none;
+        }
+        .event-editor-row input::placeholder {
+            color: #8ea2bf;
+        }
+        .event-editor-row input:focus {
+            border-color: #6ea3ea;
+            box-shadow: 0 0 0 2px rgba(110, 163, 234, 0.25);
         }
         .event-editor-actions {
             display: flex;
             justify-content: flex-end;
             gap: 8px;
-            margin-top: 12px;
+            margin-top: 14px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(192, 208, 228, 0.2);
         }
         .event-editor-btn {
-            border: 1px solid var(--border-color);
+            border: 1px solid #4b5c77;
             border-radius: 8px;
-            background: #fff;
-            padding: 7px 10px;
+            background: #2a3548;
+            color: #e3eeff;
+            padding: 8px 12px;
             cursor: pointer;
+            font-weight: 700;
+        }
+        .event-editor-btn:hover {
+            background: #32415b;
         }
         .event-editor-btn.primary {
-            background: var(--accent);
-            border-color: var(--accent);
+            background: linear-gradient(180deg, #4f93ef, #3f78cf);
+            border-color: #5d97ea;
             color: #fff;
             font-weight: 700;
+        }
+        .event-editor-btn.primary:hover {
+            background: linear-gradient(180deg, #68a4f3, #467dce);
         }
         .profile-modal-content {
             background: #242a33;
@@ -2676,15 +2735,15 @@
                 <div class="panel-header">Dagens möten</div>
                 <div class="panel-content">
                     <div class="meetings-list" id="meetingsList"></div>
-                    <div class="meetings-logout-wrap">
-                        <button class="auth-logout" type="button" onclick="logout()">Logga ut</button>
-                    </div>
                 </div>
             </div>
             <div class="panel notes">
                 <div class="panel-header">Mina Anteckningar</div>
                 <div class="panel-content">
                     <textarea id="notesArea" class="note-area" placeholder="Skriv dina tankar här... Spara sker automatiskt."></textarea>
+                    <div class="meetings-logout-wrap">
+                        <button class="auth-logout" type="button" onclick="logout()">Logga ut</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2875,13 +2934,22 @@
         <div class="event-editor-content">
             <button class="modal-close" onclick="closeEventEditor()">✖</button>
             <h3 id="eventEditorTitle">Nytt möte</h3>
+            <div class="event-editor-subtitle">Skapa eller uppdatera mötesinformation för kalendern.</div>
             <div class="event-editor-row">
                 <label for="eventEditorDate">Datum</label>
                 <input id="eventEditorDate" type="date">
             </div>
             <div class="event-editor-row">
-                <label for="eventEditorText">Titel (inkl. tid, t.ex. 10:00 - Veckomöte)</label>
-                <input id="eventEditorText" type="text" placeholder="10:00 - Veckomöte Team Alpha">
+                <label for="eventEditorStartTime">Starttid</label>
+                <input id="eventEditorStartTime" type="text" inputmode="numeric" maxlength="5" placeholder="HH:MM">
+            </div>
+            <div class="event-editor-row">
+                <label for="eventEditorEndTime">Sluttid</label>
+                <input id="eventEditorEndTime" type="text" inputmode="numeric" maxlength="5" placeholder="HH:MM">
+            </div>
+            <div class="event-editor-row">
+                <label for="eventEditorText">Titel</label>
+                <input id="eventEditorText" type="text" placeholder="Veckomöte Team Alpha">
             </div>
             <div class="event-editor-row">
                 <label for="eventEditorLink">Möteslänk</label>
@@ -4370,13 +4438,14 @@
             }
             list.innerHTML = rows.map(function(idea) {
                 const img = String(idea.img || '');
+                const safeImg = escapeHtml(img || 'https://via.placeholder.com/400x200?text=Ingen+bild');
                 const safeTitle = escapeHtml(String(idea.title || 'Untitled'));
                 const descText = String(idea.desc || '');
                 const preview = escapeHtml(descText.length > 90 ? descText.slice(0, 90) + '...' : descText);
                 const tag = escapeHtml(String(idea.tag || 'Idé'));
                 return `
                     <article class="idea-bank-card" data-idea-bank-open="${Number(idea.id)}">
-                        <img src="${img || 'https://via.placeholder.com/400x200?text=Ingen+bild'}" alt="Idébild">
+                        <img src="${safeImg}" alt="Idébild">
                         <h4>${safeTitle}</h4>
                         <p>${preview}</p>
                         <span class="idea-bank-tag">${tag}</span>
@@ -4550,6 +4619,7 @@
             const actions = document.getElementById('ideaBankMainActions');
             if (!detail || !detailContent || !list || !actions) return;
             const img = String(idea.img || '');
+            const safeImg = escapeHtml(img || 'https://via.placeholder.com/400x200?text=Ingen+bild');
             const canManage = currentUserIsAdmin || String(idea.user_email || '').toLowerCase() === String(currentUserEmail || '').toLowerCase();
             const manageActions = canManage
                 ? `<div class="idea-bank-detail-actions">
@@ -4558,7 +4628,7 @@
                    </div>`
                 : '';
             detailContent.innerHTML = `
-                <img class="idea-bank-detail-image" src="${img || 'https://via.placeholder.com/400x200?text=Ingen+bild'}" alt="Idébild">
+                <img class="idea-bank-detail-image" src="${safeImg}" alt="Idébild">
                 <h3>${escapeHtml(String(idea.title || 'Untitled'))}</h3>
                 <span class="idea-bank-tag">${escapeHtml(String(idea.tag || 'Idé'))}</span>
                 <p>${escapeHtml(String(idea.desc || ''))}</p>
@@ -5027,16 +5097,76 @@
             if(e.target === this) closeModal();
         });
 
+        function addMinutesToTime(value, minutesToAdd) {
+            const m = String(value || '').match(/^([01]\d|2[0-3]):([0-5]\d)$/);
+            if (!m) return '00:00';
+            const base = (Number(m[1]) * 60) + Number(m[2]);
+            const total = (base + Number(minutesToAdd || 0) + 1440) % 1440;
+            const hh = String(Math.floor(total / 60)).padStart(2, '0');
+            const mm = String(total % 60).padStart(2, '0');
+            return `${hh}:${mm}`;
+        }
+
+        function isValidTime24(value) {
+            return /^([01]\d|2[0-3]):([0-5]\d)$/.test(String(value || ''));
+        }
+
+        function applyDefaultEndTimeFromStart(force) {
+            const startInput = document.getElementById('eventEditorStartTime');
+            const endInput = document.getElementById('eventEditorEndTime');
+            if (!startInput || !endInput) return;
+            if (!isValidTime24(startInput.value)) return;
+            const suggested = addMinutesToTime(startInput.value, 15);
+            const previousAuto = String(endInput.dataset.autoEnd || '');
+            const shouldApply = !!force || !endInput.value || endInput.value === previousAuto;
+            endInput.dataset.autoEnd = suggested;
+            if (shouldApply) {
+                endInput.value = suggested;
+            }
+        }
+
+        function extractTimesAndTitle(rawTitle) {
+            const text = String(rawTitle || '').trim();
+            const rangeMatch = text.match(/^(\d{1,2})[:.](\d{2})\s*[-–]\s*(\d{1,2})[:.](\d{2})\s*[-–]\s*(.+)$/);
+            if (rangeMatch) {
+                const startH = String(Number(rangeMatch[1])).padStart(2, '0');
+                const startM = String(rangeMatch[2]).padStart(2, '0');
+                const endH = String(Number(rangeMatch[3])).padStart(2, '0');
+                const endM = String(rangeMatch[4]).padStart(2, '0');
+                return {
+                    start: `${startH}:${startM}`,
+                    end: `${endH}:${endM}`,
+                    title: String(rangeMatch[5] || '').trim()
+                };
+            }
+            const singleMatch = text.match(/^(\d{1,2})[:.](\d{2})\s*[-–]\s*(.+)$/);
+            if (!singleMatch) return { start: '', end: '', title: text };
+            const hh = String(Number(singleMatch[1])).padStart(2, '0');
+            const mm = String(singleMatch[2]).padStart(2, '0');
+            const start = `${hh}:${mm}`;
+            return {
+                start: start,
+                end: addMinutesToTime(start, 60),
+                title: String(singleMatch[3] || '').trim()
+            };
+        }
+
         function openEventEditorCreate() {
             eventEditorMode = 'create';
             editingEventId = null;
             document.getElementById('eventEditorTitle').innerText = 'Nytt möte';
             const today = new Date();
             const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+            const startDefault = `${String(today.getHours()).padStart(2, '0')}:${String(today.getMinutes()).padStart(2, '0')}`;
+            const endDefault = addMinutesToTime(startDefault, 15);
             document.getElementById('eventEditorDate').value = todayKey;
+            document.getElementById('eventEditorStartTime').value = startDefault;
+            document.getElementById('eventEditorEndTime').value = endDefault;
+            document.getElementById('eventEditorEndTime').dataset.autoEnd = endDefault;
             document.getElementById('eventEditorText').value = '';
             document.getElementById('eventEditorLink').value = '';
             document.getElementById('eventEditorModal').style.display = 'flex';
+            applyDefaultEndTimeFromStart(true);
         }
 
         function openEventEditorEdit(eventObj) {
@@ -5045,7 +5175,15 @@
             editingEventId = eventObj.id;
             document.getElementById('eventEditorTitle').innerText = 'Redigera möte';
             document.getElementById('eventEditorDate').value = eventObj.date_key;
-            document.getElementById('eventEditorText').value = eventObj.title || '';
+            const parsed = extractTimesAndTitle(eventObj.title || '');
+            document.getElementById('eventEditorStartTime').value = parsed.start || '';
+            document.getElementById('eventEditorEndTime').value = parsed.end || '';
+            if (isValidTime24(parsed.start || '')) {
+                document.getElementById('eventEditorEndTime').dataset.autoEnd = addMinutesToTime(parsed.start, 15);
+            } else {
+                document.getElementById('eventEditorEndTime').dataset.autoEnd = '';
+            }
+            document.getElementById('eventEditorText').value = parsed.title || '';
             document.getElementById('eventEditorLink').value = eventObj.link || '';
             document.getElementById('eventEditorModal').style.display = 'flex';
         }
@@ -5056,16 +5194,29 @@
 
         async function saveEventFromEditor() {
             const dateKey = document.getElementById('eventEditorDate').value;
+            const startTime = document.getElementById('eventEditorStartTime').value;
+            const endTime = document.getElementById('eventEditorEndTime').value;
             const title = document.getElementById('eventEditorText').value.trim();
             const link = document.getElementById('eventEditorLink').value.trim();
-            if (!dateKey || !title) {
-                alert('Datum och titel krävs.');
+            if (!dateKey || !startTime || !endTime || !title) {
+                alert('Datum, starttid, sluttid och titel krävs.');
                 return;
             }
             if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) {
                 alert('Datum måste vara i formatet YYYY-MM-DD.');
                 return;
             }
+            if (!isValidTime24(startTime) || !isValidTime24(endTime)) {
+                alert('Starttid och sluttid måste vara i 24h-format HH:MM (00:00–23:59).');
+                return;
+            }
+            const startMinutes = (Number(startTime.slice(0, 2)) * 60) + Number(startTime.slice(3, 5));
+            const endMinutes = (Number(endTime.slice(0, 2)) * 60) + Number(endTime.slice(3, 5));
+            if (endMinutes <= startMinutes) {
+                alert('Sluttid måste vara senare än starttid.');
+                return;
+            }
+            const fullTitle = `${startTime}-${endTime} - ${title}`;
 
             const [yearStr, monthStr] = dateKey.split('-');
             const eventsForMonth = await apiGet(`/api/events?year=${Number(yearStr)}&month=${Number(monthStr)}`);
@@ -5086,13 +5237,13 @@
             if (eventEditorMode === 'edit' && editingEventId) {
                 await apiSend(`/api/events/${editingEventId}`, 'PUT', {
                     date_key: dateKey,
-                    title: title,
+                    title: fullTitle,
                     link: link
                 });
             } else {
                 await apiSend('/api/events', 'POST', {
                     date_key: dateKey,
-                    title: title,
+                    title: fullTitle,
                     link: link
                 });
             }
@@ -5942,8 +6093,20 @@
                 composeState.query = input.value;
                 renderComposeSuggestions();
             });
+            input.addEventListener('focus', function() {
+                renderComposeSuggestions();
+            });
+            input.addEventListener('click', function() {
+                renderComposeSuggestions();
+            });
+            input.addEventListener('blur', function() {
+                setTimeout(function() {
+                    hideComposeSuggestions();
+                }, 120);
+            });
             input.addEventListener('keydown', function(e) {
-                if (e.key === 'Backspace' && !composeState.query && composeState.selectedIds.length) {
+                const caretAtStart = (input.selectionStart || 0) === 0 && (input.selectionEnd || 0) === 0;
+                if (e.key === 'Backspace' && !composeState.query && caretAtStart && composeState.selectedIds.length) {
                     composeState.selectedIds.pop();
                     renderComposeBar();
                     renderComposeSuggestions();
@@ -6019,7 +6182,7 @@
             const box = document.getElementById('chatComposeSuggestions');
             if (!box || !composeState.active) return;
             const filtered = filterComposeCandidates();
-            if (!composeState.query.trim() || !filtered.length) {
+            if (!filtered.length) {
                 box.style.display = 'none';
                 box.innerHTML = '';
                 return;
@@ -6299,7 +6462,7 @@
                 const unread = thread.unread > 0 ? '<span class="msgp-unread">' + thread.unread + '</span>' : '';
                 return `
                     <button class="msgp-item${activeClass}" type="button" data-thread-id="${thread.id}">
-                        <div class="msgp-avatar"><img src="${thread.avatar}" alt="${escapeHtml(thread.name)}"></div>
+                        <div class="msgp-avatar"><img src="${escapeHtml(thread.avatar)}" alt="${escapeHtml(thread.name)}"></div>
                         <div class="msgp-text">
                             <strong>${escapeHtml(thread.name)}</strong>
                             <span>${escapeHtml(previewClipped)}</span>
@@ -6359,7 +6522,7 @@
                 return `
                     <button class="chat-thread-row${active}" type="button" data-main-thread-id="${thread.id}">
                         <div class="chat-thread-avatar">
-                            <img src="${thread.avatar}" alt="${escapeHtml(thread.name)}">
+                            <img src="${escapeHtml(thread.avatar)}" alt="${escapeHtml(thread.name)}">
                             ${statusDot}
                         </div>
                         <div class="chat-thread-text">
@@ -6711,6 +6874,15 @@
                 alert(err.message || 'Kunde inte spara mötet.');
             });
         });
+        const eventEditorStartTimeInput = document.getElementById('eventEditorStartTime');
+        if (eventEditorStartTimeInput) {
+            eventEditorStartTimeInput.addEventListener('change', function() {
+                applyDefaultEndTimeFromStart(false);
+            });
+            eventEditorStartTimeInput.addEventListener('blur', function() {
+                applyDefaultEndTimeFromStart(false);
+            });
+        }
         document.getElementById('eventEditorModal').addEventListener('click', function(e) {
             if (e.target === this) closeEventEditor();
         });
