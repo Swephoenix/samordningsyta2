@@ -391,13 +391,12 @@ function getConfiguredAdminIdentifier() {
   const fromUsername = String(process.env.ADMIN_USERNAME || "").trim().toLowerCase();
   if (fromEmail) return fromEmail;
   if (fromUsername) return fromUsername;
-  return "admin";
+  return "";
 }
 
 function getConfiguredAdminPassword() {
   const fromEnv = String(process.env.ADMIN_PASSWORD || "");
-  if (fromEnv) return fromEnv;
-  return "admin";
+  return fromEnv;
 }
 
 function seedEventsIfEmpty() {
@@ -706,8 +705,14 @@ ensureColumn("users", "phone", "phone TEXT");
 ensureColumn("qna_questions", "image_url", "image_url TEXT");
 ensureColumn("qna_answers", "image_url", "image_url TEXT");
 
-if (String(process.env.NODE_ENV || "").toLowerCase() !== "production") {
-  ensureDefaultUser(getConfiguredAdminIdentifier(), getConfiguredAdminPassword());
+const isProduction = String(process.env.NODE_ENV || "").toLowerCase() === "production";
+const configuredAdminIdentifier = getConfiguredAdminIdentifier();
+const configuredAdminPassword = getConfiguredAdminPassword();
+if (configuredAdminIdentifier && configuredAdminPassword) {
+  ensureDefaultUser(configuredAdminIdentifier, configuredAdminPassword);
+}
+
+if (!isProduction) {
   ensureDefaultUser("user1", "user1");
   ensureDefaultUser("user2", "user2");
 }
