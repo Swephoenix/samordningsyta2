@@ -386,6 +386,20 @@ function ensureDefaultUser(email, password) {
   ).run(email, passwordHash, salt, PBKDF2_ITERATIONS, nowTs());
 }
 
+function getConfiguredAdminIdentifier() {
+  const fromEmail = String(process.env.ADMIN_EMAIL || "").trim().toLowerCase();
+  const fromUsername = String(process.env.ADMIN_USERNAME || "").trim().toLowerCase();
+  if (fromEmail) return fromEmail;
+  if (fromUsername) return fromUsername;
+  return "admin";
+}
+
+function getConfiguredAdminPassword() {
+  const fromEnv = String(process.env.ADMIN_PASSWORD || "");
+  if (fromEnv) return fromEnv;
+  return "admin";
+}
+
 function seedEventsIfEmpty() {
   // Seed endast om det uttryckligen aktiverats.
   if (String(process.env.SEED_DEMO_EVENTS || "") !== "1") return;
@@ -693,7 +707,7 @@ ensureColumn("qna_questions", "image_url", "image_url TEXT");
 ensureColumn("qna_answers", "image_url", "image_url TEXT");
 
 if (String(process.env.NODE_ENV || "").toLowerCase() !== "production") {
-  ensureDefaultUser("admin", "admin");
+  ensureDefaultUser(getConfiguredAdminIdentifier(), getConfiguredAdminPassword());
   ensureDefaultUser("user1", "user1");
   ensureDefaultUser("user2", "user2");
 }
