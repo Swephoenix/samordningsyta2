@@ -18,15 +18,21 @@ mkdir -p "${PERSISTENT_DATA_ROOT}/samordningsyta2/uploads"
 
 # Set correct ownership (matching Docker container user 1000:1000)
 echo "Setting directory permissions..."
-chown 1000:1000 "${PERSISTENT_DATA_ROOT}/samordningsyta2/data"
-chown 1000:1000 "${PERSISTENT_DATA_ROOT}/samordningsyta2/uploads"
+sudo chown 1000:1000 "${PERSISTENT_DATA_ROOT}/samordningsyta2/data"
+sudo chown 1000:1000 "${PERSISTENT_DATA_ROOT}/samordningsyta2/uploads"
 
 # Set correct permissions on existing database files if they exist
 if [ -f "${PERSISTENT_DATA_ROOT}/samordningsyta2/data/app.db" ]; then
     echo "Setting permissions on existing database files..."
-    chown 1000:1000 "${PERSISTENT_DATA_ROOT}/samordningsyta2/data/app.db"
-    chown 1000:1000 "${PERSISTENT_DATA_ROOT}/samordningsyta2/data/app.db-shm" 2>/dev/null || true
-    chown 1000:1000 "${PERSISTENT_DATA_ROOT}/samordningsyta2/data/app.db-wal" 2>/dev/null || true
+    sudo chown 1000:1000 "${PERSISTENT_DATA_ROOT}/samordningsyta2/data/app.db"
+    sudo chown 1000:1000 "${PERSISTENT_DATA_ROOT}/samordningsyta2/data/app.db-shm" 2>/dev/null || true
+    sudo chown 1000:1000 "${PERSISTENT_DATA_ROOT}/samordningsyta2/data/app.db-wal" 2>/dev/null || true
+fi
+
+# Set correct permissions on existing uploads subdirectories
+if [ -d "${PERSISTENT_DATA_ROOT}/samordningsyta2/uploads" ]; then
+    echo "Setting permissions on uploads directory..."
+    sudo chown -R 1000:1000 "${PERSISTENT_DATA_ROOT}/samordningsyta2/uploads"
 fi
 
 echo ""
