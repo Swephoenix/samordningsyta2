@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workspace</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f8fb;
+    --surface: rgba(255,255,255,0.94);
+    --surface2: rgba(234,243,251,0.90);
+    --border: #c8d8e7;
+    --text: #143852;
+    --text-muted: #4f6b83;
+    --accent: #1b6199;
+    --accent-light: #eaf3fb;
+    --accent2: #143852;
+    --warning: #1b6199;
+    --warning-bg: #eaf3fb;
+    --today: #1b6199;
+    --shadow: 0 2px 12px rgba(0,0,0,0.07);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.10);
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: 
+      radial-gradient(ellipse at 0% 0%, rgba(20,56,82,0.14) 0%, transparent 56%),
+      radial-gradient(ellipse at 100% 0%, rgba(27,97,153,0.16) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 100%, rgba(27,97,153,0.10) 0%, transparent 55%),
+      var(--bg);
+    background-attachment: fixed;
+    background-size: 300% 300%;
+    animation: gradientShift 12s ease infinite;
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* TOP NAV */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1b6199, #143852);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+  }
+
+  .online-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .online-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #4f6b83;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .badge-pill {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .icon-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.15s;
+    font-size: 15px;
+  }
+  .icon-btn:hover { background: var(--surface2); color: var(--text); }
+
+  /* LAYOUT */
+  .layout {
+    display: grid;
+    grid-template-columns: 260px 1fr 300px;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* LEFT PANEL */
+  .left-panel {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .calendar-section {
+    padding: 20px 16px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .cal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .cal-header h2 {
+    font-family: 'Lora', serif;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .cal-nav {
+    display: flex;
+    gap: 4px;
+  }
+
+  .cal-nav button {
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 13px;
+    transition: all 0.15s;
+  }
+  .cal-nav button:hover { background: var(--surface2); }
+
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+  }
+
+  .cal-day-label {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    padding: 4px 0 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .cal-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.15s;
+  }
+  .cal-day:hover { background: var(--surface2); color: var(--text); }
+  .cal-day.today {
+    background: var(--today);
+    color: white;
+    font-weight: 600;
+  }
+  .cal-day.has-event::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--accent2);
+  }
+  .cal-day { position: relative; }
+
+  .new-meeting-btn {
+    margin: 16px;
+    padding: 10px 16px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.15s;
+    box-shadow: 0 2px 8px rgba(46,125,214,0.25);
+  }
+  .new-meeting-btn:hover { background: #0f568e; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(27,97,153,0.35); }
+
+  .meetings-section {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+
+  .empty-state {
+    background: var(--surface2);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    font-size: 13px;
+    color: var(--text-muted);
+    border-left: 3px solid var(--border);
+  }
+
+  .notes-section {
+    padding: 16px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .notes-area {
+    flex: 1;
+    min-height: 100px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--surface2);
+    resize: none;
+    outline: none;
+    line-height: 1.6;
+    transition: border-color 0.15s;
+  }
+  .notes-area::placeholder { color: var(--text-muted); }
+  .notes-area:focus { border-color: var(--accent); background: white; }
+
+  .logout-btn {
+    margin: 0 16px 16px;
+    padding: 10px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .logout-btn:hover { background: #eaf3fb; border-color: #c8d8e7; color: #1b6199; }
+
+  /* CENTER PANEL */
+  .center-panel {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .chat-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .chat-header h3 {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .search-bar {
+    margin: 12px 16px;
+    position: relative;
+  }
+
+  .search-bar input {
+    width: 100%;
+    padding: 9px 14px 9px 36px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    background: var(--surface);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .search-bar input::placeholder { color: var(--text-muted); }
+  .search-bar input:focus { border-color: var(--accent); }
+  .search-icon {
+    position: absolute;
+    left: 11px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .chat-empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: var(--text-muted);
+  }
+  .chat-empty .icon { font-size: 40px; opacity: 0.3; }
+  .chat-empty p { font-size: 14px; }
+
+  .message-bubble {
+    max-width: 65%;
+    padding: 10px 14px;
+    border-radius: 16px;
+    font-size: 14px;
+    line-height: 1.5;
+    animation: slideIn 0.2s ease;
+  }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  .message-bubble.incoming {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+  }
+
+  .message-bubble.outgoing {
+    background: var(--accent);
+    color: white;
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+  }
+
+  .chat-input-area {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .chat-actions {
+    display: flex;
+    gap: 6px;
+  }
+
+  .chat-action-btn {
+    width: 34px;
+    height: 34px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: var(--text-muted);
+    transition: all 0.15s;
+  }
+  .chat-action-btn:hover { background: var(--surface2); color: var(--text); }
+
+  .chat-input {
+    flex: 1;
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    padding: 9px 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    outline: none;
+    background: var(--surface2);
+    color: var(--text);
+    transition: all 0.15s;
+  }
+  .chat-input::placeholder { color: var(--text-muted); }
+  .chat-input:focus { border-color: var(--accent); background: white; }
+
+  .send-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: none;
+    background: var(--accent);
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+    transition: all 0.15s;
+    box-shadow: 0 2px 8px rgba(46,125,214,0.30);
+  }
+  .send-btn:hover { background: #0f568e; transform: scale(1.05); }
+
+  /* RIGHT PANEL */
+  .right-panel {
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .right-section {
+    padding: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .right-section h3 {
+    font-family: 'Lora', serif;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 14px;
+    color: var(--text);
+  }
+
+  .alert-card {
+    background: var(--warning-bg);
+    border: 1px solid #c8d8e7;
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .alert-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+  .alert-text { font-size: 13px; color: #4f6b83; line-height: 1.5; }
+
+  .tools-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+
+  .tool-btn {
+    aspect-ratio: 1;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 22px;
+  }
+  .tool-btn:hover { background: var(--accent-light); border-color: var(--accent); transform: translateY(-2px); box-shadow: var(--shadow); }
+  .tool-btn span { font-size: 11px; color: var(--text-muted); font-weight: 500; }
+
+  @keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  /* Glassmorphism on panels */
+  header, .left-panel, .right-panel, .chat-header, .chat-input-area {
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    background: rgba(255,255,255,0.75) !important;
+  }
+
+  .left-panel, .right-panel {
+    border-color: rgba(255,255,255,0.6) !important;
+  }
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-left">
+    <div class="avatar">TA</div>
+    <div class="online-badge">
+      <span class="online-dot"></span>
+      0 online
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="badge-pill">Inloggad som: admin</span>
+    <button class="icon-btn" title="Min profil">👤</button>
+    <button class="icon-btn" title="Inställningar">⚙️</button>
+    <button class="icon-btn" title="Info">ℹ️</button>
+  </div>
+</header>
+
+<!-- MAIN LAYOUT -->
+<div class="layout">
+
+  <!-- LEFT: Calendar + Meetings + Notes -->
+  <aside class="left-panel">
+    <div class="calendar-section">
+      <div class="cal-header">
+        <h2>Mars 2026</h2>
+        <div class="cal-nav">
+          <button>&#8249;</button>
+          <button>&#8250;</button>
+        </div>
+      </div>
+      <div class="cal-grid">
+        <div class="cal-day-label">M</div>
+        <div class="cal-day-label">T</div>
+        <div class="cal-day-label">O</div>
+        <div class="cal-day-label">T</div>
+        <div class="cal-day-label">F</div>
+        <div class="cal-day-label">L</div>
+        <div class="cal-day-label">S</div>
+
+        <!-- Week 1: starts on Sunday (7th col) -->
+        <div class="cal-day" style="grid-column:7">1</div>
+        <div class="cal-day">2</div>
+        <div class="cal-day">3</div>
+        <div class="cal-day">4</div>
+        <div class="cal-day">5</div>
+        <div class="cal-day">6</div>
+        <div class="cal-day">7</div>
+        <div class="cal-day">8</div>
+        <div class="cal-day">9</div>
+        <div class="cal-day">10</div>
+        <div class="cal-day">11</div>
+        <div class="cal-day">12</div>
+        <div class="cal-day">13</div>
+        <div class="cal-day">14</div>
+        <div class="cal-day">15</div>
+        <div class="cal-day">16</div>
+        <div class="cal-day">17</div>
+        <div class="cal-day">18</div>
+        <div class="cal-day">19</div>
+        <div class="cal-day">20</div>
+        <div class="cal-day">21</div>
+        <div class="cal-day">22</div>
+        <div class="cal-day today">1</div>
+        <div class="cal-day">24</div>
+        <div class="cal-day">25</div>
+        <div class="cal-day">26</div>
+        <div class="cal-day">27</div>
+        <div class="cal-day">28</div>
+        <div class="cal-day">29</div>
+        <div class="cal-day">30</div>
+        <div class="cal-day">31</div>
+      </div>
+    </div>
+
+    <button class="new-meeting-btn">＋ Nytt möte</button>
+
+    <div class="meetings-section">
+      <div class="section-title">Dagens möten</div>
+      <div class="empty-state">Inga möten planerade idag</div>
+    </div>
+
+    <div class="notes-section">
+      <div class="section-title">Mina anteckningar</div>
+      <textarea class="notes-area" placeholder="Skriv dina tankar här… Sparas automatiskt."></textarea>
+    </div>
+
+    <button class="logout-btn">Logga ut</button>
+  </aside>
+
+  <!-- CENTER: Chat -->
+  <main class="center-panel">
+    <div class="chat-header">
+      <h3>Chattar</h3>
+      <button class="icon-btn">📌</button>
+    </div>
+
+    <div class="search-bar">
+      <span class="search-icon">🔍</span>
+      <input type="text" placeholder="Sök chattar och användare…">
+    </div>
+
+    <div class="chat-messages chat-empty" id="chatMessages">
+      <div class="icon">💬</div>
+      <p>Välj en konversation för att börja chatta</p>
+    </div>
+
+    <div class="chat-input-area">
+      <div class="chat-actions">
+        <button class="chat-action-btn" title="Bifoga fil">📎</button>
+        <button class="chat-action-btn" title="Emoji">😊</button>
+        <button class="chat-action-btn" title="Bild">🖼️</button>
+      </div>
+      <input class="chat-input" id="msgInput" type="text" placeholder="Skriv ett inlägg eller ladda upp fil…" onkeydown="sendMsg(event)">
+      <button class="send-btn" onclick="sendMsg()">➤</button>
+    </div>
+  </main>
+
+  <!-- RIGHT: Notifications + Tools -->
+  <aside class="right-panel">
+    <div class="right-section">
+      <h3>Viktiga meddelanden</h3>
+      <div class="alert-card">
+        <span class="alert-icon">⚠️</span>
+        <div class="alert-text">Kunde inte ladda viktiga meddelanden från servern.</div>
+      </div>
+    </div>
+
+    <div class="right-section">
+      <h3>Verktyg</h3>
+      <div class="tools-grid">
+        <button class="tool-btn">🤝<span>Möten</span></button>
+        <button class="tool-btn">💡<span>Idéer</span></button>
+        <button class="tool-btn">📊<span>Statistik</span></button>
+        <button class="tool-btn">⚙️<span>Inställn.</span></button>
+        <button class="tool-btn">🌐<span>Översätt</span></button>
+        <button class="tool-btn">👤<span>Kontakter</span></button>
+        <button class="tool-btn">📋<span>Uppgifter</span></button>
+      </div>
+    </div>
+  </aside>
+
+</div>
+
+<script>
+  function sendMsg(event) {
+    if (event && event.key !== 'Enter') return;
+    const input = document.getElementById('msgInput');
+    const text = input.value.trim();
+    if (!text) return;
+
+    const container = document.getElementById('chatMessages');
+    if (container.classList.contains('chat-empty')) {
+      container.classList.remove('chat-empty');
+      container.innerHTML = '';
+    }
+
+    const bubble = document.createElement('div');
+    bubble.className = 'message-bubble outgoing';
+    bubble.textContent = text;
+    container.appendChild(bubble);
+    container.scrollTop = container.scrollHeight;
+    input.value = '';
+  }
+</script>
+</body>
+</html>

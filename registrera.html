@@ -6,15 +6,15 @@
     <title>Registrera</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Bangers&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --card: linear-gradient(180deg, #ffffff 0%, #eef6ff 100%);
-            --text: #12253c;
-            --muted: #4c6581;
-            --line: #0e223b;
-            --accent: #6ba5ff;
-            --accent-hover: #4c8fee;
+            --card: rgba(255, 255, 255, 0.92);
+            --text: #143852;
+            --muted: #4f6b83;
+            --line: #c8d8e7;
+            --accent: #1b6199;
+            --accent-hover: #0f568e;
             --danger: #d13636;
             --ok: #11885f;
         }
@@ -24,103 +24,94 @@
             display: grid;
             place-items: center;
             padding: 24px;
-            font-family: "Baloo 2", "Trebuchet MS", sans-serif;
+            font-family: "DM Sans", "Segoe UI", sans-serif;
             color: var(--text);
-            background-color: #d7edff;
-            background-image:
-                radial-gradient(circle at 15% 20%, #f8fcff 0%, rgba(248, 252, 255, 0) 40%),
-                radial-gradient(circle at 84% 11%, #c7e3ff 0%, rgba(199, 227, 255, 0) 35%),
-                linear-gradient(180deg, #e5f3ff 0%, #cde4fd 100%);
-            position: relative;
-        }
-        body::before {
-            content: "";
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            background: radial-gradient(circle, rgba(255, 255, 255, 0.8) 1px, transparent 1px);
-            background-size: 22px 22px;
-            opacity: 0.4;
-        }
-        body::after {
-            content: "";
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
             background:
-                radial-gradient(ellipse at 11% 86%, rgba(255,255,255,0.9) 0 12%, rgba(255,255,255,0) 14%),
-                radial-gradient(ellipse at 21% 88%, rgba(255,255,255,0.86) 0 9%, rgba(255,255,255,0) 11%),
-                radial-gradient(ellipse at 82% 12%, rgba(255,255,255,0.86) 0 10%, rgba(255,255,255,0) 12%);
+                radial-gradient(ellipse at 0% 0%, rgba(20, 56, 82, 0.14) 0%, transparent 56%),
+                radial-gradient(ellipse at 100% 0%, rgba(27, 97, 153, 0.16) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 100%, rgba(27, 97, 153, 0.10) 0%, transparent 55%),
+                #f4f8fb;
+            background-attachment: fixed;
+            background-size: 300% 300%;
+            animation: gradientShift 12s ease infinite;
+            position: relative;
         }
         .card {
             width: 100%;
             max-width: 430px;
             background: var(--card);
-            border: 3px solid var(--line);
-            border-radius: 22px;
+            border: 1px solid var(--line);
+            border-radius: 14px;
             padding: 28px;
-            box-shadow: 10px 10px 0 rgba(11, 28, 51, 0.9);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             position: relative;
             z-index: 1;
-            transform: rotate(-0.7deg);
+            transform: none;
         }
         .card::before {
             content: "NEW USER";
             position: absolute;
             top: -18px;
             right: 18px;
-            background: #ffe17a;
-            color: #10213a;
-            border: 2px solid #0e223b;
+            background: rgba(255, 255, 255, 0.95);
+            color: var(--text);
+            border: 1px solid var(--line);
             border-radius: 999px;
             padding: 4px 12px;
-            font-family: "Bangers", "Trebuchet MS", sans-serif;
-            font-size: 1rem;
-            letter-spacing: 1px;
-            box-shadow: 3px 3px 0 rgba(11, 28, 51, 0.85);
+            font-family: "DM Sans", "Segoe UI", sans-serif;
+            font-size: 0.82rem;
+            letter-spacing: 0.3px;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         }
         h1 {
-            font-family: "Bangers", "Trebuchet MS", sans-serif;
-            letter-spacing: 1.5px;
-            font-size: 2.4rem;
+            font-family: "Lora", serif;
+            letter-spacing: 0.2px;
+            font-size: 2.1rem;
             line-height: 1.05;
             margin-bottom: 6px;
-            text-shadow: 2px 2px 0 rgba(16, 39, 68, 0.2);
+            color: var(--text);
         }
         .subtitle { color: var(--muted); margin-bottom: 20px; font-size: 0.95rem; }
         .field { margin-bottom: 14px; }
         label { display: block; font-size: 0.86rem; font-weight: 700; margin-bottom: 6px; }
         input[type="text"], input[type="email"], input[type="password"], input[type="tel"], select {
             width: 100%;
-            border: 2px solid var(--line);
-            border-radius: 12px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
             height: 44px;
             padding: 0 12px;
             font: inherit;
             outline: none;
-            background: #ffffff;
+            background: rgba(235, 245, 255, 0.5);
             color: var(--text);
         }
-        input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(107, 165, 255, 0.32); }
-        input::placeholder { color: #7691ad; }
+        input:focus, select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(27, 97, 153, 0.22);
+            background: #fff;
+        }
+        input::placeholder { color: #4f6b83; }
         .hint { margin: 2px 0 16px; color: var(--muted); font-size: 0.86rem; }
         .btn {
             width: 100%;
             height: 46px;
-            border: 2px solid var(--line);
-            border-radius: 12px;
+            border: 1px solid var(--accent);
+            border-radius: 8px;
             background: var(--accent);
-            color: #0f2036;
+            color: #fff;
             font: inherit;
-            font-weight: 800;
+            font-weight: 600;
             cursor: pointer;
-            box-shadow: 4px 4px 0 rgba(11, 28, 51, 0.88);
+            box-shadow: 0 2px 8px rgba(27, 97, 153, 0.28);
             transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.15s ease;
         }
         .btn:hover {
             background: var(--accent-hover);
             transform: translateY(-1px);
-            box-shadow: 5px 5px 0 rgba(11, 28, 51, 0.92);
+            box-shadow: 0 4px 12px rgba(27, 97, 153, 0.38);
         }
         .btn[disabled] { opacity: 0.7; cursor: wait; }
         .foot { margin-top: 14px; text-align: center; font-size: 0.9rem; color: var(--muted); }
@@ -140,6 +131,11 @@
                 font-size: 0.9rem;
             }
             h1 { font-size: 2rem; }
+        }
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
     </style>
 </head>

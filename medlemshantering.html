@@ -3,17 +3,38 @@
 <head>
 <meta charset="UTF-8">
 <title>Medlemshantering</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  :root {
+    --bg: #f4f8fb;
+    --surface: rgba(255, 255, 255, 0.94);
+    --surface-2: #eaf3fb;
+    --text: #143852;
+    --muted: #4f6b83;
+    --border: #c8d8e7;
+    --accent: #1b6199;
+    --accent-hover: #0f568e;
+    --danger: #d33;
+    --danger-bg: #fff1f1;
+  }
+
   body {
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-    background: #ffffff;
-    color: #111;
+    font-family: "DM Sans", "Segoe UI", system-ui, sans-serif;
+    background:
+      radial-gradient(ellipse at 0% 0%, rgba(20,56,82,0.14) 0%, transparent 56%),
+      radial-gradient(ellipse at 100% 0%, rgba(27,97,153,0.16) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 100%, rgba(27,97,153,0.10) 0%, transparent 55%),
+      var(--bg);
+    color: var(--text);
     margin: 0;
     padding: 32px;
   }
 
   h1 {
     margin-bottom: 16px;
+    font-family: "Lora", serif;
   }
 
   .top-bar {
@@ -36,7 +57,9 @@
 
   input[type="text"] {
     padding: 8px 10px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
     border-radius: 6px;
     min-width: 260px;
   }
@@ -53,15 +76,17 @@
     align-items: center;
     gap: 16px;
     padding: 12px;
-    border: 1px solid #e5e5e5;
+    border: 1px solid var(--border);
     border-radius: 10px;
+    background: var(--surface);
+    box-shadow: 0 4px 12px rgba(20, 56, 82, 0.06);
   }
 
   .avatar {
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: #eee;
+    background: var(--surface-2);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -76,16 +101,16 @@
 
   .username {
     font-size: 12px;
-    color: #666;
+    color: var(--muted);
   }
 
   .page a {
-    color: #0066cc;
+    color: var(--accent);
     text-decoration: none;
   }
 
   .page span {
-    color: #666;
+    color: var(--muted);
     font-size: 13px;
   }
 
@@ -94,18 +119,18 @@
     align-items: center;
     gap: 6px;
     font-size: 13px;
-    color: #555;
+    color: var(--muted);
   }
 
   .lamp {
     width: 10px;
     height: 10px;
     border-radius: 50%;
-    background: #ccc;
+    background: #4f6b83;
   }
 
   .lamp.online {
-    background: #3cb371;
+    background: #1b6199;
   }
 
   .actions {
@@ -114,16 +139,23 @@
   }
 
   button {
-    background: #fff;
-    border: 1px solid #ccc;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
     border-radius: 6px;
     padding: 6px 10px;
     cursor: pointer;
   }
+  button:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--surface-2);
+  }
 
   button.delete {
-    border-color: #d33;
-    color: #d33;
+    border-color: var(--danger);
+    color: var(--danger);
+    background: var(--danger-bg);
   }
 </style>
 </head>
