@@ -20,6 +20,7 @@ services:
       PORT: 8000
     volumes:
       - ${PERSISTENT_DATA_ROOT}/samordningsyta2/uploads:/app/uploads
+      - ${PERSISTENT_DATA_ROOT}/samordningsyta2/data:/app/data
     networks:
       - samordningsyta_net
 

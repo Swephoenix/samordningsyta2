@@ -33,7 +33,7 @@ loadEnvFromFile(path.join(__dirname, ".env"), true);
 
 const app = express();
 const PORT = Number(process.env.PORT || 8000);
-const DB_PATH = path.join(__dirname, "app.db");
+const DB_PATH = path.join(__dirname, "data", "app.db");
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
 const PASSWORD_RESET_TTL_SECONDS = 60 * 30;
 const PASSWORD_RESET_RATE_LIMIT_WINDOW_SECONDS = 60 * 10;
