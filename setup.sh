@@ -35,11 +35,39 @@ if [ -d "${PERSISTENT_DATA_ROOT}/samordningsyta2/uploads" ]; then
     sudo chown -R 1000:1000 "${PERSISTENT_DATA_ROOT}/samordningsyta2/uploads"
 fi
 
-# Create .env file from .env.example if it doesn't exist
+# Generate .env file if it doesn't exist
 if [ ! -f "${SCRIPT_DIR}/.env" ]; then
-    echo "Creating .env file from .env.example..."
-    cp "${SCRIPT_DIR}/.env.example" "${SCRIPT_DIR}/.env"
+    echo "Generating .env file..."
+    
+    # Generate random session secret (32 characters)
+    SESSION_SECRET=$(openssl rand -hex 16 2>/dev/null || cat /proc/sys/kernel/random/uuid | tr -d '-')
+    
+    cat > "${SCRIPT_DIR}/.env" << EOF
+ADMIN_EMAIL=
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=changeme89
+ADMIN_NAME=Admin
+
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=noreply
+SMTP_PASS=
+MAIL_FROM=
+
+# Persistent storage root (bind mounts)
+PERSISTENT_DATA_ROOT=${PERSISTENT_DATA_ROOT}
+
+# Application
+APP_PORT=8000
+PORT=8000
+NODE_ENV=development
+
+SESSION_SECRET=${SESSION_SECRET}
+EOF
+    
     echo "WARNING: Please review and update ${SCRIPT_DIR}/.env with your settings!"
+    echo "Especially set: ADMIN_EMAIL, SMTP_HOST, SMTP_PASS, MAIL_FROM"
 else
     echo ".env file already exists, skipping creation."
 fi
