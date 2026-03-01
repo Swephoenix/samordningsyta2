@@ -2709,18 +2709,6 @@
         .panel {
             position: relative;
         }
-        .panel::after {
-            content: "";
-            position: absolute;
-            top: 10px;
-            right: 12px;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.85);
-            box-shadow: -18px 6px 0 rgba(255,255,255,0.52), -34px 11px 0 rgba(255,255,255,0.35);
-            pointer-events: none;
-        }
         button, .btn, .auth-logout, .chat-send-btn, .chat-header-btn, .chat-profile-btn,
         .important-admin-btn, .event-editor-btn, .profile-btn, .group-create-btn,
         .academy-btn, .qna-btn, .idea-bank-primary-btn, .idea-bank-secondary-btn,
@@ -2760,7 +2748,6 @@
         @media (max-width: 900px) {
             .panel-header { font-size: 1.08rem; }
             .calendar-title { font-size: 1.16rem; }
-            .panel::after { display: none; }
         }
 
         /* Responsivitet för mindre skärmar */
