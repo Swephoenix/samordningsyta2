@@ -51,7 +51,8 @@
                 radial-gradient(circle at 86% 10%, #eef2ff 0%, rgba(238, 242, 255, 0) 36%),
                 linear-gradient(180deg, #f3f4f6 0%, #f9fafb 52%, #f9fafb 100%);
             color: var(--text-main);
-            height: 100vh;
+            min-height: 100vh;
+            height: 100dvh;
             overflow: hidden; 
             display: flex;
             padding: 20px;
@@ -570,8 +571,11 @@
             display: flex;
             flex-direction: column;
             height: 100%;
+            min-height: 0;
             background: var(--panel-bg);
             border-color: #e5e7eb;
+            padding-bottom: 0;
+            overflow: hidden;
         }
         .chat-panel-title {
             display: flex;
@@ -624,9 +628,9 @@
         }
         .chat-auth-badge {
             font-size: 0.72rem;
-            color: #e5e7eb;
-            background: #f9fafb;
-            border: 1px solid #6b7280;
+            color: #334155;
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
             border-radius: 999px;
             padding: 5px 9px;
             max-width: 220px;
@@ -644,19 +648,19 @@
             cursor: pointer;
             font-size: 0.95rem;
         }
-        .chat-header-btn:hover { background: #6b7280; }
+        .chat-header-btn:hover { background: #eef2ff; }
         .chat-profile-btn {
-            border: 1px solid #e5e7eb;
+            border: 1px solid #cbd5e1;
             border-radius: 999px;
-            background: #f9fafb;
-            color: #f9fafb;
+            background: #ffffff;
+            color: #334155;
             font-size: 0.75rem;
             font-weight: 700;
             padding: 6px 10px;
             cursor: pointer;
             height: 32px;
         }
-        .chat-profile-btn:hover { background: #6b7280; }
+        .chat-profile-btn:hover { background: #f1f5f9; }
         .chat-search-bar {
             padding: 0;
             border: 0;
@@ -687,24 +691,24 @@
         }
         .chat-search-input,
         .chat-date-input {
-            border: 1px solid #e5e7eb;
+            border: 1px solid #d1d5db;
             border-radius: 8px;
             padding: 8px 10px;
             outline: none;
-            background: #f9fafb;
-            color: #e5e7eb;
+            background: #ffffff;
+            color: #1f2937;
         }
         .chat-search-input { min-width: 0; }
         .chat-date-input { width: 145px; }
         .chat-search-btn {
-            border: 1px solid #e5e7eb;
+            border: 1px solid #d1d5db;
             border-radius: 8px;
-            background: #f9fafb;
+            background: #ffffff;
             padding: 8px 12px;
             cursor: pointer;
-            color: #e5e7eb;
+            color: #334155;
         }
-        .chat-search-btn:hover { background: #f9fafb; }
+        .chat-search-btn:hover { background: #f8fafc; }
         .chat-main-shell {
             flex: 1;
             min-height: 0;
@@ -713,14 +717,16 @@
         }
         .chat-main-pane {
             min-width: 0;
+            min-height: 0;
             display: flex;
             flex-direction: column;
             background: var(--panel-bg);
+            padding-bottom: 0;
         }
         .chat-feed {
             flex: 1;
             overflow-y: auto;
-            padding: 18px 16px;
+            padding: 18px 16px 12px;
             background: linear-gradient(180deg, #ffffff 0%, #f9fafb 52%, #f3f4f6 100%);
             display: flex;
             flex-direction: column;
@@ -817,7 +823,7 @@
         .chat-post-seen {
             margin-top: 5px;
             font-size: 0.68rem;
-            color: #e5e7eb;
+            color: #64748b;
             text-align: right;
             opacity: 0.9;
         }
@@ -915,6 +921,10 @@
             gap: 10px;
             background: #ffffff;
             position: relative;
+            flex-shrink: 0;
+            margin: 0 10px 10px;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
         }
         .chat-reply-bar {
             display: none;
@@ -926,6 +936,7 @@
             background: #f8fafc;
             color: #334155;
             font-size: 0.78rem;
+            flex-shrink: 0;
         }
         .chat-reply-text {
             min-width: 0;
@@ -950,6 +961,7 @@
             background: #f8fafc;
             color: #334155;
             font-size: 0.78rem;
+            flex-shrink: 0;
         }
         .chat-attachment-draft-text {
             min-width: 0;
@@ -1742,6 +1754,18 @@
             max-width: 100%;
             max-height: 100%;
         }
+        #facebookAcademyBtn {
+            flex-direction: column;
+            gap: 4px;
+            padding: 6px 4px;
+        }
+        #facebookAcademyBtn .tool-icon-svg {
+            width: 84px;
+            height: 32px;
+            object-fit: contain;
+            max-width: none;
+            max-height: none;
+        }
         .folder-modal-content {
             width: min(92vw, 980px);
             height: min(82vh, 620px);
@@ -2342,6 +2366,25 @@
             font-size:20px;
             color:#1a1a1a;
             margin: 0;
+            display:flex;
+            align-items:center;
+            gap:8px;
+        }
+        #qnaModal .header h2 .header-icon-img {
+            width:22px;
+            height:22px;
+            object-fit:contain;
+            display:inline-block;
+            flex-shrink:0;
+        }
+        #qnaModal .header h2 .header-icon-img.icon-tiktok {
+            width: 64px;
+            height: 34px;
+        }
+        #qnaModal .header h2 .header-icon-emoji {
+            font-size:20px;
+            line-height:1;
+            display:inline-block;
         }
         #qnaModal .close {
             background:none;
@@ -2382,6 +2425,22 @@
         #qnaModal .cat-btn:hover { border-color:#4a9ff5; color:#4a9ff5; }
         #qnaModal .cat-btn.active { border-color:#4a9ff5; background:#eef5ff; color:#2b7de9; }
         #qnaModal .cat-btn .icon { font-size:20px; }
+        #qnaModal .cat-btn .icon-img {
+            width: 26px;
+            height: 26px;
+            object-fit: contain;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+        #qnaModal .cat-btn .icon-img.icon-tiktok {
+            width: 88px;
+            height: 48px;
+        }
+        #qnaModal .cat-btn .icon-img.icon-facebook,
+        #qnaModal .cat-btn .icon-img.icon-x {
+            width: 48px;
+            height: 48px;
+        }
         #qnaModal .search {
             width:100%;
             padding:12px 16px 12px 42px;
@@ -2499,6 +2558,8 @@
             font-weight:600;
         }
         #qnaModal .badge-fb { background:#e7f0ff; color:#1877f2; }
+        #qnaModal .badge-x { background:#e8edf3; color:#111827; }
+        #qnaModal .badge-tiktok { background:#ecfeff; color:#0f766e; }
         #qnaModal .badge-other { background:#f0f0f0; color:#666; }
         #qnaModal .empty { text-align:center; padding:30px; color:#bbb; font-size:14px; }
         #qnaModal .answers-list { margin-top:8px; }
@@ -3266,6 +3327,33 @@
             color: var(--alert-info-text);
             border-left: 4px solid var(--alert-info-text);
         }
+
+        /* Final Chat Contrast Lock: keep these values after theme-lock overrides */
+        .chat-auth-badge {
+            color: #334155;
+            background: #f8fafc;
+            border-color: #cbd5e1;
+        }
+        .chat-profile-btn {
+            background: #ffffff;
+            color: #334155;
+            border-color: #cbd5e1;
+        }
+        .chat-profile-btn:hover { background: #f1f5f9; }
+        .chat-header-btn:hover { background: #eef2ff; }
+        .chat-search-input,
+        .chat-date-input {
+            background: #ffffff;
+            color: #1f2937;
+            border-color: #d1d5db;
+        }
+        .chat-search-btn {
+            background: #ffffff;
+            color: #334155;
+            border-color: #d1d5db;
+        }
+        .chat-search-btn:hover { background: #f8fafc; }
+        .chat-post-seen { color: #64748b; }
     </style>
 </head>
 <body>
@@ -3392,8 +3480,8 @@
             <div class="panel placeholders">
                 <div class="panel-header">Verktyg</div>
                 <div class="placeholder-grid">
-                    <div class="placeholder-icon" id="facebookAcademyBtn" title="Facebook Marketing Academy">
-                        <img src="fbacademy.png" alt="Facebook Academy" class="tool-icon-svg" loading="lazy" decoding="async">
+                    <div class="placeholder-icon" id="facebookAcademyBtn" title="Medieakademin">
+                        <img src="media-academy-logo.png" alt="Medieakademin" class="tool-icon-svg" loading="lazy" decoding="async">
                     </div>
                     <div class="placeholder-icon" id="ideaBankToolIcon" title="Idébank">💡</div>
                     <div class="placeholder-icon" title="Statistik">📊</div>
@@ -3633,7 +3721,7 @@
 
     <div class="modal-overlay" id="facebookAcademyModal">
         <div class="academy-modal-content">
-            <h1>Facebook Academy</h1>
+            <h1>Medieakademin</h1>
             <p class="sub">Utbildningskort med video eller PDF</p>
 
             <div class="actions" id="academyActionsBar">
@@ -3792,6 +3880,12 @@
         let qnaPendingAnswerImageByQuestionId = {};
         let qnaActiveAnswerQuestionId = 0;
         let qnaCurrentCategory = null;
+        const qnaCategoryConfig = {
+            facebook: { label: 'Facebook', badgeClass: 'badge-fb', iconImage: 'facebook-logo.png', iconClass: 'icon-facebook', showLabelInButton: false },
+            x: { label: 'X', badgeClass: 'badge-x', iconImage: 'x-logo.avif', iconClass: 'icon-x', showLabelInButton: false },
+            tiktok: { label: 'TikTok', badgeClass: 'badge-tiktok', iconImage: 'tiktok-logo.svg', iconClass: 'icon-tiktok', showLabelInButton: false, showLabelInHeader: false },
+            other: { label: 'Övrigt', badgeClass: 'badge-other', iconEmoji: '📂', showLabelInButton: true }
+        };
         let ideaBankIdeas = [];
         let ideaBankEditingId = 0;
         let ideaBankPendingImageFile = null;
@@ -4209,6 +4303,10 @@
                 `;
                 const replyBtnEl = post.querySelector('.chat-reply-btn');
                 if (replyBtnEl) {
+                    replyBtnEl.addEventListener('mousedown', function(e) {
+                        e.preventDefault();
+                        focusChatInput();
+                    });
                     replyBtnEl.addEventListener('click', function(e) {
                         e.preventDefault();
                         setActiveReply({
@@ -5008,7 +5106,7 @@
             if (!academyApiAvailable) {
                 throw new Error('Serverkoppling saknas. Länken kunde inte tas bort.');
             }
-            const ok = window.confirm('Vill du ta bort länken från Facebook Academy?');
+            const ok = window.confirm('Vill du ta bort länken från Medieakademin?');
             if (!ok) return;
             await apiSend(`/api/facebook-academy/links/${encodeURIComponent(String(id || ''))}`, 'DELETE');
             if (academyEditingId && String(academyEditingId) === String(id)) {
@@ -5054,9 +5152,35 @@
 
         function qnaInferCategory(item) {
             const explicit = String(item && item.category || '').trim().toLowerCase();
-            if (explicit === 'facebook' || explicit === 'other') return explicit;
+            if (qnaCategoryConfig[explicit]) return explicit;
             const text = String((item && item.question) || '').toLowerCase();
-            return /(facebook|meta|annonser|ads|instagram)/.test(text) ? 'facebook' : 'other';
+            if (/(facebook|meta|annonser|ads|instagram)/.test(text)) return 'facebook';
+            if (/(^|\s)(x|twitter)(\s|$)/.test(text)) return 'x';
+            if (/tiktok/.test(text)) return 'tiktok';
+            return 'other';
+        }
+
+        function qnaGetCategoryMeta(category) {
+            const key = String(category || '').trim().toLowerCase();
+            return qnaCategoryConfig[key] || qnaCategoryConfig.other;
+        }
+
+        function qnaCategoryIconHtml(category, extraClass) {
+            const meta = qnaGetCategoryMeta(category);
+            if (meta.iconImage) {
+                const cls = `icon-img ${meta.iconClass || ''}${extraClass ? ` ${extraClass}` : ''}`.trim();
+                return `<img class="${escapeHtml(cls)}" src="${escapeHtml(meta.iconImage)}" alt="${escapeHtml(meta.label)}">`;
+            }
+            const cls = `icon${extraClass ? ` ${extraClass}` : ''}`.trim();
+            return `<span class="${escapeHtml(cls)}">${escapeHtml(meta.iconEmoji || '📂')}</span>`;
+        }
+
+        function qnaCategoryButtonHtml(category) {
+            const key = String(category || '').trim().toLowerCase();
+            const meta = qnaGetCategoryMeta(key);
+            const icon = qnaCategoryIconHtml(key);
+            const text = meta.showLabelInButton ? escapeHtml(meta.label) : '';
+            return `<button class="cat-btn" type="button" onclick="openQnaCategory('${escapeHtml(key)}')">${icon}${text}</button>`;
         }
 
         function isImageAttachmentUrl(url) {
@@ -5122,10 +5246,9 @@
             if (!items.length) return '<div class="empty">Inga frågor hittades</div>';
             return items.map(function(it) {
                 const split = qnaSplitQuestion(it.question);
-                const isFacebook = qnaInferCategory(it) === 'facebook';
-                const badge = isFacebook
-                    ? '<span class="badge badge-fb">Facebook</span>'
-                    : '<span class="badge badge-other">Övrigt</span>';
+                const category = qnaInferCategory(it);
+                const meta = qnaGetCategoryMeta(category);
+                const badge = `<span class="badge ${escapeHtml(meta.badgeClass)}">${escapeHtml(meta.label)}</span>`;
                 const answers = Array.isArray(it.answers) ? it.answers : [];
                 const ansHtml = answers.map(function(a) {
                     return `<div class="single-answer">${escapeHtml(String(a.answer || ''))}${renderQnaAttachment(String(a.image_url || ''), 'q-image')}<div class="a-meta">${escapeHtml(String(a.user_email || ''))} · ${escapeHtml(formatQnaTime(a.created_at))}</div></div>`;
@@ -5163,17 +5286,20 @@
                 content.innerHTML = `
                     <p style="color:#888;font-size:14px;margin-bottom:16px;text-align:center">Välj en kategori</p>
                     <div class="cats" style="flex-direction:column">
-                        <button class="cat-btn" type="button" onclick="openQnaCategory('facebook')"><span class="icon">📘</span>Facebook</button>
-                        <button class="cat-btn" type="button" onclick="openQnaCategory('other')"><span class="icon">📂</span>Övrigt</button>
+                        ${qnaCategoryButtonHtml('facebook')}
+                        ${qnaCategoryButtonHtml('x')}
+                        ${qnaCategoryButtonHtml('tiktok')}
+                        ${qnaCategoryButtonHtml('other')}
                     </div>
                 `;
                 return;
             }
 
-            const isFacebook = qnaCurrentCategory === 'facebook';
-            const catIcon = isFacebook ? '📘' : '📂';
-            const catLabel = isFacebook ? 'Facebook' : 'Övrigt';
-            headerTitle.textContent = `${catIcon} ${catLabel}`;
+            const catMeta = qnaGetCategoryMeta(qnaCurrentCategory);
+            const catLabel = catMeta.label;
+            const headerIconClass = catMeta.iconImage ? 'header-icon-img' : 'header-icon-emoji';
+            const headerLabel = catMeta.showLabelInHeader === false ? '' : `<span>${escapeHtml(catLabel)}</span>`;
+            headerTitle.innerHTML = `${qnaCategoryIconHtml(qnaCurrentCategory, headerIconClass)}${headerLabel}`;
             closeBtn.textContent = '←';
 
             const base = qnaItems.filter(function(item) {
@@ -5238,7 +5364,8 @@
         }
 
         function openQnaCategory(cat) {
-            qnaCurrentCategory = String(cat || '').trim().toLowerCase() === 'facebook' ? 'facebook' : 'other';
+            const normalized = String(cat || '').trim().toLowerCase();
+            qnaCurrentCategory = qnaCategoryConfig[normalized] ? normalized : 'other';
             qnaSearchQuery = '';
             renderQnaView();
         }
@@ -7154,6 +7281,26 @@
             }
             bar.style.display = 'flex';
             text.innerText = `Svarar på ${activeReply.author}: ${activeReply.snippet}`;
+            focusChatInput();
+        }
+
+        function focusChatInput() {
+            const input = document.getElementById('groupChatInput');
+            if (input) {
+                input.focus();
+                if (typeof input.setSelectionRange === 'function') {
+                    const end = String(input.value || '').length;
+                    input.setSelectionRange(end, end);
+                }
+                // Robust fallback for browsers that may drop focus after click handling.
+                requestAnimationFrame(function() {
+                    input.focus();
+                    if (typeof input.setSelectionRange === 'function') {
+                        const end = String(input.value || '').length;
+                        input.setSelectionRange(end, end);
+                    }
+                });
+            }
         }
 
         function clearPendingChatAttachment() {
@@ -8056,7 +8203,7 @@
         });
         document.getElementById('facebookAcademyBtn').addEventListener('click', function() {
             openFacebookAcademyModal().catch(function(err) {
-                alert(err.message || 'Kunde inte öppna Facebook Academy.');
+                alert(err.message || 'Kunde inte öppna Medieakademin.');
             });
         });
         document.getElementById('ideaBankToolIcon').addEventListener('click', function() {

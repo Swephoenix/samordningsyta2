@@ -886,12 +886,14 @@ const PUBLIC_FILE_ROUTES = new Set([
   "medlemshantering.html",
   "messenger.html",
   "folder-system.html",
-  "facebook.png",
+  "facebook-logo.png",
   "marmor.jpg",
   "marmor2.png",
-  "fbacademy.png",
+  "media-academy-logo.png",
   "newgroup.png",
   "qna.png",
+  "tiktok-logo.svg",
+  "x-logo.avif",
   "folder.svg",
   "pdf.svg",
   "text-file.svg"
@@ -2978,7 +2980,9 @@ app.post("/api/qna/questions", (req, res) => {
 
   const question = String(req.body?.question || "").trim();
   const rawCategory = String(req.body?.category || "").trim().toLowerCase();
-  const category = rawCategory === "facebook" ? "facebook" : "other";
+  const normalizedCategory = rawCategory === "twitter" ? "x" : rawCategory;
+  const allowedCategories = new Set(["facebook", "x", "tiktok", "other"]);
+  const category = allowedCategories.has(normalizedCategory) ? normalizedCategory : "other";
   const imageUrl = String(req.body?.image_url || "").trim();
   if (!question && !imageUrl) {
     return res.status(400).json({ error: "Fråga eller bild krävs." });
