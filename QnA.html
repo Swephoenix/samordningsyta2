@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Q&A</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',sans-serif;background:#f0f0f0;display:flex;justify-content:center;align-items:center;min-height:100vh}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.3);display:flex;justify-content:center;align-items:center;z-index:10}
+.popup{background:#fff;border-radius:16px;width:460px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.15);overflow:hidden}
+.header{padding:24px 24px 16px;border-bottom:1px solid #f0f0f0;display:flex;justify-content:space-between;align-items:center}
+.header h2{font-size:20px;color:#1a1a1a}
+.close{background:none;border:none;font-size:22px;cursor:pointer;color:#999;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.close:hover{background:#f5f5f5;color:#333}
+.body{padding:16px 24px 24px;overflow-y:auto;flex:1}
+.cats{display:flex;gap:10px;margin-bottom:20px}
+.cat-btn{flex:1;padding:14px;border:2px solid #e8e8e8;border-radius:12px;background:#fff;cursor:pointer;font-size:15px;font-weight:600;color:#555;transition:.2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.cat-btn:hover{border-color:#4a9ff5;color:#4a9ff5}
+.cat-btn.active{border-color:#4a9ff5;background:#eef5ff;color:#2b7de9}
+.cat-btn .icon{font-size:20px}
+.search{width:100%;padding:12px 16px 12px 42px;border:2px solid #e8e8e8;border-radius:10px;font-size:14px;outline:none;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='%23aaa' viewBox='0 0 24 24'%3E%3Cpath d='M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z'/%3E%3C/svg%3E") 14px center no-repeat;margin-bottom:16px;transition:.2s}
+.search:focus{border-color:#4a9ff5}
+.q-card{background:#fafafa;border:1px solid #eee;border-radius:12px;padding:16px;margin-bottom:10px;cursor:pointer;transition:.15s}
+.q-card:hover{border-color:#d0d0d0;background:#f5f5f5}
+.q-card.open{background:#fff;border-color:#4a9ff5}
+.q-title{font-weight:600;font-size:14px;color:#1a1a1a;display:flex;justify-content:space-between;align-items:center}
+.q-title .arrow{transition:.3s;color:#aaa;font-size:12px}
+.q-card.open .arrow{transform:rotate(180deg)}
+.q-meta{font-size:12px;color:#999;margin-top:4px}
+.q-answer{margin-top:12px;padding-top:12px;border-top:1px solid #eee;font-size:13px;color:#444;line-height:1.6;display:none}
+.q-card.open .q-answer{display:block}
+.answer-form{margin-top:10px}
+.answer-form textarea{width:100%;padding:10px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px;resize:vertical;min-height:60px;font-family:inherit;outline:none}
+.answer-form textarea:focus{border-color:#4a9ff5}
+.small-btn{padding:8px 16px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;margin-top:6px}
+.btn-primary{background:#4a9ff5;color:#fff}.btn-primary:hover{background:#3b8de0}
+.btn-secondary{background:#f0f0f0;color:#555}.btn-secondary:hover{background:#e4e4e4}
+.new-q-toggle{width:100%;padding:12px;border:2px dashed #ddd;border-radius:12px;background:none;cursor:pointer;font-size:14px;color:#888;font-weight:600;margin-bottom:16px;transition:.2s}
+.new-q-toggle:hover{border-color:#4a9ff5;color:#4a9ff5}
+.new-q-form{background:#f8faff;border:1.5px solid #dce8f8;border-radius:12px;padding:16px;margin-bottom:16px;display:none}
+.new-q-form.show{display:block}
+.new-q-form input,.new-q-form textarea{width:100%;padding:10px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px;font-family:inherit;outline:none;margin-bottom:8px}
+.new-q-form input:focus,.new-q-form textarea:focus{border-color:#4a9ff5}
+.new-q-form textarea{resize:vertical;min-height:60px}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-fb{background:#e7f0ff;color:#1877f2}
+.badge-other{background:#f0f0f0;color:#666}
+.empty{text-align:center;padding:30px;color:#bbb;font-size:14px}
+.answers-list{margin-top:8px}
+.single-answer{background:#f5f7fa;padding:10px 12px;border-radius:8px;margin-top:6px;font-size:13px;color:#444;line-height:1.5}
+.single-answer .a-meta{font-size:11px;color:#aaa;margin-top:4px}
+</style>
+</head>
+<body>
+
+<div class="overlay" id="overlay">
+  <div class="popup">
+    <div class="header">
+      <h2 id="headerTitle">❓ Frågor & Svar</h2>
+      <button class="close" onclick="goBack()" id="closeBtn">✕</button>
+    </div>
+    <div class="body" id="content"></div>
+  </div>
+</div>
+
+<script>
+const data = {
+  facebook: [
+    { id:1, q:"Hur skapar jag en Facebook-sida?", desc:"Steg för att skapa en företagssida", answers:[{text:"Gå till facebook.com/pages/create, välj kategori, fyll i namn och info. Klicka 'Skapa sida'.",time:"2 tim sedan"}]},
+    { id:2, q:"Varför syns inte mina inlägg?", desc:"Problem med räckvidd", answers:[{text:"Kontrollera att sidan är publicerad och att du inte brutit mot riktlinjer. Testa att posta vid andra tider.",time:"5 tim sedan"}]},
+    { id:3, q:"Hur kopplar jag Instagram till Facebook?", desc:"Länka konton", answers:[]},
+    { id:4, q:"Hur annonserar jag på Facebook?", desc:"Kom igång med Meta Ads", answers:[{text:"Öppna Ads Manager via business.facebook.com, skapa en kampanj och välj mål, målgrupp och budget.",time:"1 dag sedan"}]}
+  ],
+  other: [
+    { id:5, q:"Hur ändrar jag mitt lösenord?", desc:"Kontoinställningar", answers:[{text:"Gå till Inställningar → Säkerhet → Ändra lösenord.",time:"3 tim sedan"}]},
+    { id:6, q:"Var hittar jag fakturor?", desc:"Betalning & fakturering", answers:[]},
+    { id:7, q:"Hur kontaktar jag support?", desc:"Hjälp & kontakt", answers:[{text:"Skicka e-post till support@example.com eller ring 08-123 456.",time:"1 dag sedan"}]}
+  ]
+};
+
+let currentCat = null;
+let nextId = 10;
+
+function render() {
+  const c = document.getElementById('content');
+  if (!currentCat) {
+    document.getElementById('headerTitle').textContent = '❓ Frågor & Svar';
+    document.getElementById('closeBtn').textContent = '✕';
+    c.innerHTML = `
+      <p style="color:#888;font-size:14px;margin-bottom:16px;text-align:center">Välj en kategori</p>
+      <div class="cats" style="flex-direction:column">
+        <button class="cat-btn" onclick="openCat('facebook')"><span class="icon">📘</span>Facebook</button>
+        <button class="cat-btn" onclick="openCat('other')"><span class="icon">📂</span>Övrigt</button>
+      </div>`;
+  } else {
+    const label = currentCat === 'facebook' ? 'Facebook' : 'Övrigt';
+    document.getElementById('headerTitle').textContent = (currentCat==='facebook'?'📘':'📂') + ' ' + label;
+    document.getElementById('closeBtn').textContent = '←';
+    const items = data[currentCat];
+    c.innerHTML = `
+      <input class="search" type="text" placeholder="Sök frågor..." oninput="filter(this.value)" id="searchBox">
+      <button class="new-q-toggle" onclick="toggleNew()">＋ Ställ en ny fråga</button>
+      <div class="new-q-form" id="newForm">
+        <input id="newQ" placeholder="Din fråga...">
+        <textarea id="newDesc" placeholder="Beskriv din fråga (valfritt)..."></textarea>
+        <button class="small-btn btn-primary" onclick="addQuestion()">Publicera fråga</button>
+        <button class="small-btn btn-secondary" onclick="toggleNew()" style="margin-left:4px">Avbryt</button>
+      </div>
+      <div id="qList">${renderQuestions(items)}</div>`;
+  }
+}
+
+function renderQuestions(items) {
+  if (!items.length) return '<div class="empty">Inga frågor hittades</div>';
+  return items.map(it => {
+    const badge = currentCat==='facebook' ? '<span class="badge badge-fb">Facebook</span>' : '<span class="badge badge-other">Övrigt</span>';
+    const ansHtml = it.answers.map(a => `<div class="single-answer">${a.text}<div class="a-meta">${a.time}</div></div>`).join('');
+    const ansCount = it.answers.length;
+    return `
+    <div class="q-card" id="qc${it.id}">
+      <div class="q-title" onclick="toggle(${it.id})">
+        <span>${it.q}</span><span class="arrow">▼</span>
+      </div>
+      <div class="q-meta">${badge} · ${it.desc} · ${ansCount} svar</div>
+      <div class="q-answer">
+        <div class="answers-list">${ansHtml || '<em style="color:#bbb">Inga svar ännu</em>'}</div>
+        <div class="answer-form">
+          <textarea id="ans${it.id}" placeholder="Skriv ett svar..."></textarea>
+          <button class="small-btn btn-primary" onclick="addAnswer(${it.id})">Svara</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openCat(cat) { currentCat = cat; render(); }
+
+function goBack() {
+  if (currentCat) { currentCat = null; render(); }
+}
+
+function toggle(id) {
+  document.getElementById('qc'+id).classList.toggle('open');
+}
+
+function filter(val) {
+  const v = val.toLowerCase();
+  const items = data[currentCat].filter(i => i.q.toLowerCase().includes(v) || i.desc.toLowerCase().includes(v));
+  document.getElementById('qList').innerHTML = renderQuestions(items);
+}
+
+function toggleNew() {
+  document.getElementById('newForm').classList.toggle('show');
+}
+
+function addQuestion() {
+  const q = document.getElementById('newQ').value.trim();
+  if (!q) return;
+  const desc = document.getElementById('newDesc').value.trim() || 'Ny fråga';
+  data[currentCat].unshift({ id: nextId++, q, desc, answers: [] });
+  render();
+}
+
+function addAnswer(id) {
+  const txt = document.getElementById('ans'+id).value.trim();
+  if (!txt) return;
+  const list = currentCat==='facebook' ? data.facebook : data.other;
+  const item = list.find(i => i.id === id);
+  item.answers.push({ text: txt, time: 'Just nu' });
+  render();
+  // re-open the card
+  setTimeout(() => document.getElementById('qc'+id)?.classList.add('open'), 0);
+}
+
+render();
+</script>
+</body>
+</html>

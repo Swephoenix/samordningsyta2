@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<title>Facebook Academy</title>
+<style>
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont;
+  background: #f5f7fb;
+  margin: 0;
+  padding: 40px;
+  color: #1f2937;
+}
+
+h1 {
+  margin-bottom: 8px;
+}
+
+p.sub {
+  margin-top: 0;
+  color: #6b7280;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  margin: 24px 0;
+}
+
+button.primary {
+  background: #4f46e5;
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+button.secondary {
+  background: #fff;
+  border: 1px solid #d1d5db;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 16px;
+  position: relative;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.card:hover .card-actions {
+  opacity: 1;
+}
+
+.card-icon {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.card h3 {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+
+.card p {
+  margin: 0;
+  font-size: 14px;
+  color: #4b5563;
+}
+
+.card-actions {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.card-actions button {
+  background: #f3f4f6;
+  border: none;
+  padding: 4px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  background: #fff;
+  width: 420px;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.modal h2 {
+  margin-top: 0;
+}
+
+.modal label {
+  display: block;
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+.modal input,
+.modal textarea {
+  width: 100%;
+  margin-top: 4px;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+}
+
+.modal textarea {
+  resize: vertical;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+</style>
+</head>
+<body>
+
+<h1>Facebook Academy</h1>
+<p class="sub">Utbildningskort med video eller PDF</p>
+
+<div class="actions">
+  <button class="primary" onclick="openPdf()">Lägg till PDF-kort</button>
+  <button class="secondary" onclick="openVideo()">Lägg till videokort</button>
+</div>
+
+<div class="cards">
+  <div class="card">
+    <div class="card-icon">PDF</div>
+    <h3>Grunder i Facebook-sidor</h3>
+    <p>Introduktion till roller, publicering och säkerhet.</p>
+    <div class="card-actions">
+      <button>Redigera</button>
+      <button>Ta bort</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-icon">VIDEO</div>
+    <h3>Så skapar du ett inlägg</h3>
+    <p>Steg-för-steg genomgång av publicering.</p>
+    <div class="card-actions">
+      <button>Redigera</button>
+      <button>Ta bort</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="pdfModal">
+  <div class="modal-content">
+    <h2>Nytt PDF-kort</h2>
+    <label>Välj PDF
+      <input type="file" accept="application/pdf">
+    </label>
+    <label>Rubrik
+      <input type="text">
+    </label>
+    <label>Brödtext
+      <textarea rows="3"></textarea>
+    </label>
+    <div class="modal-footer">
+      <button class="secondary" onclick="closeModals()">Avbryt</button>
+      <button class="primary">Spara</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="videoModal">
+  <div class="modal-content">
+    <h2>Nytt videokort</h2>
+    <label>YouTube-länk
+      <input type="url" placeholder="https://youtube.com/...">
+    </label>
+    <label>Rubrik
+      <input type="text">
+    </label>
+    <label>Brödtext
+      <textarea rows="3"></textarea>
+    </label>
+    <div class="modal-footer">
+      <button class="secondary" onclick="closeModals()">Avbryt</button>
+      <button class="primary">Spara</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function openPdf() {
+  document.getElementById('pdfModal').style.display = 'flex';
+}
+
+function openVideo() {
+  document.getElementById('videoModal').style.display = 'flex';
+}
+
+function closeModals() {
+  document.getElementById('pdfModal').style.display = 'none';
+  document.getElementById('videoModal').style.display = 'none';
+}
+</script>
+
+</body>
+</html>

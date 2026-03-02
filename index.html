@@ -10,14 +10,29 @@
     <title>Minimal Dashboard</title>
     <style>
         :root {
-            --bg-color: #f3f4f6;
-            --panel-bg: #ffffff;
+            --bg-app: #f3f4f6;
+            --bg-surface: #ffffff;
+            --bg-surface-hover: #f9fafb;
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --primary-light: #eef2ff;
             --text-main: #1f2937;
             --text-muted: #6b7280;
-            --border-color: #e5e7eb;
-            --accent: #4f46e5;
-            --accent-hover: #4338ca;
-            --danger: #e74c3c;
+            --border: #e5e7eb;
+            --alert-danger-bg: #fee2e2;
+            --alert-danger-text: #991b1b;
+            --alert-warning-bg: #fef3c7;
+            --alert-warning-text: #92400e;
+            --alert-success-bg: #d1fae5;
+            --alert-success-text: #065f46;
+            --alert-info-bg: #dbeafe;
+            --alert-info-text: #1e40af;
+            --bg-color: var(--bg-app);
+            --panel-bg: var(--bg-surface);
+            --border-color: var(--border);
+            --accent: var(--primary);
+            --accent-hover: var(--primary-hover);
+            --danger: #dc2626;
             --radius: 18px;
         }
 
@@ -404,15 +419,16 @@
             color: #ffffff !important;
         }
         .meeting-item {
-            padding: 8px 10px;
+            padding: 10px 11px;
             background: rgba(74, 144, 226, 0.12);
             border-left: 4px solid var(--accent);
             margin-bottom: 8px;
-            border-radius: 4px;
-            font-size: 0.9em;
+            border-radius: 8px;
+            font-size: 0.92em;
             display: flex;
-            align-items: center;
-            justify-content: space-between;
+            flex-direction: column;
+            align-items: stretch;
+            justify-content: flex-start;
             gap: 10px;
         }
         .meeting-main {
@@ -420,17 +436,20 @@
             flex-direction: column;
             gap: 2px;
             min-width: 0;
+            width: 100%;
+            flex: 1 1 auto;
         }
         .meeting-title {
             color: #f9fafb;
             font-weight: 600;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             line-height: 1.3;
-            word-break: break-word;
+            word-break: normal;
+            overflow-wrap: anywhere;
         }
         .meeting-meta {
             color: #e5e7eb;
-            font-size: 0.76rem;
+            font-size: 0.8rem;
             display: inline-flex;
             align-items: center;
             gap: 8px;
@@ -445,19 +464,19 @@
             border: 1px solid transparent;
         }
         .meeting-status.now {
-            background: rgba(16, 185, 129, 0.2);
-            color: #f9fafb;
-            border-color: rgba(16, 185, 129, 0.45);
+            background: #dcfce7;
+            color: #166534;
+            border-color: #86efac;
         }
         .meeting-status.soon {
-            background: rgba(59, 130, 246, 0.18);
-            color: #f9fafb;
-            border-color: rgba(59, 130, 246, 0.42);
+            background: #dbeafe;
+            color: #1d4ed8;
+            border-color: #93c5fd;
         }
         .meeting-status.past {
-            background: rgba(107, 114, 128, 0.2);
-            color: #e5e7eb;
-            border-color: rgba(107, 114, 128, 0.45);
+            background: #e5e7eb;
+            color: #374151;
+            border-color: #cbd5e1;
         }
         .meetings .panel-content {
             padding: 14px;
@@ -478,19 +497,26 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 30px;
-            height: 30px;
+            min-height: 32px;
             border-radius: 8px;
             text-decoration: none;
-            background: rgba(74, 144, 226, 0.18);
-            color: #f9fafb;
-            border: 1px solid rgba(74, 144, 226, 0.35);
+            background: var(--primary);
+            color: #ffffff;
+            border: 1px solid var(--primary);
+            padding: 0 12px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            white-space: nowrap;
         }
         .meeting-link:hover {
-            background: rgba(74, 144, 226, 0.27);
+            background: var(--primary-hover);
+            border-color: var(--primary-hover);
         }
         .meeting-link.disabled {
-            opacity: 0.55;
+            background: #f3f4f6;
+            border-color: #d1d5db;
+            color: #6b7280;
+            opacity: 1;
             cursor: default;
             pointer-events: none;
         }
@@ -498,18 +524,29 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 30px;
-            height: 30px;
+            min-height: 32px;
             border-radius: 8px;
-            border: 1px solid #e5e7eb;
-            background: #f9fafb;
+            border: 1px solid #cbd5e1;
+            background: #ffffff;
+            color: #334155;
+            padding: 0 12px;
             cursor: pointer;
-            font-size: 0.95rem;
+            font-size: 0.8rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .meeting-edit-btn:hover {
+            background: #f8fafc;
+            border-color: #94a3b8;
         }
         .meeting-actions {
             display: flex;
             align-items: center;
             gap: 6px;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+            justify-content: flex-start;
+            width: 100%;
         }
         .meetings-admin-row {
             display: none;
@@ -532,7 +569,7 @@
             display: flex;
             flex-direction: column;
             height: 100%;
-            background: #1f2937;
+            background: var(--panel-bg);
             border-color: #e5e7eb;
         }
         .chat-panel-title {
@@ -677,12 +714,13 @@
             min-width: 0;
             display: flex;
             flex-direction: column;
+            background: var(--panel-bg);
         }
         .chat-feed {
             flex: 1;
             overflow-y: auto;
             padding: 18px 16px;
-            background: #1f2937;
+            background: linear-gradient(180deg, #ffffff 0%, #f9fafb 52%, #f3f4f6 100%);
             display: flex;
             flex-direction: column;
             gap: 10px;
@@ -694,8 +732,9 @@
             margin: 8px 0 10px;
         }
         .date-divider span {
-            background: #6b7280;
-            color: #6b7280;
+            background: #f9fafb;
+            color: var(--text-muted);
+            border: 1px solid var(--border-color);
             padding: 4px 10px;
             border-radius: 20px;
             font-size: 0.8em;
@@ -707,21 +746,67 @@
             padding: 10px 12px;
             margin-bottom: 2px;
             line-height: 1.35;
-            font-size: 0.92rem;
+            font-size: 1.05rem;
             position: relative;
         }
         .chat-post.mine {
             align-self: flex-end;
-            background: #d8eafc;
-            color: #1f2937;
+            background: #eef2ff;
+            color: #4338ca;
+            border: 1px solid var(--border-color);
             border-bottom-right-radius: 5px;
         }
         .chat-post.theirs {
             align-self: flex-start;
-            background: #f9fafb;
-            color: #f9fafb;
+            background: #ffffff;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
             border-bottom-left-radius: 5px;
             margin-right: 30px;
+        }
+        .chat-post.admin {
+            background: #fef3c7;
+            color: #78350f;
+            border: 1px solid #f59e0b;
+        }
+        .chat-post.admin.mine,
+        .chat-post.admin.theirs {
+            background: #fef3c7;
+            color: #78350f;
+            border-color: #f59e0b;
+        }
+        .chat-post.admin .chat-post-header {
+            color: #92400e;
+        }
+        .chat-post.admin .chat-post-meta {
+            color: #92400e;
+        }
+        .chat-post.admin p {
+            color: #78350f;
+        }
+        .chat-post.admin .chat-reply-preview {
+            background: rgba(245, 158, 11, 0.16);
+            border-left-color: rgba(217, 119, 6, 0.75);
+        }
+        .chat-post.admin .chat-attachment {
+            background: rgba(245, 158, 11, 0.12);
+            border-color: rgba(217, 119, 6, 0.35);
+        }
+        .chat-post.admin .chat-post-seen {
+            color: #92400e;
+            opacity: 0.88;
+        }
+        .chat-post.admin .chat-pin-btn {
+            background: #fffbeb;
+            border-color: #fbbf24;
+            color: #78350f;
+        }
+        .chat-post.admin .chat-pin-btn:hover {
+            background: #fef3c7;
+            border-color: #f59e0b;
+        }
+        .chat-post.pinned {
+            box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.55);
         }
         .chat-post-seen {
             margin-top: 5px;
@@ -770,6 +855,38 @@
             top: 50%;
             transform: translateY(-50%);
         }
+        .chat-pin-btn {
+            border: 1px solid #d1d5db;
+            background: #ffffff;
+            color: #1f2937;
+            border-radius: 999px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            cursor: pointer;
+            line-height: 1.2;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transform: translateY(-2px);
+            transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s ease;
+        }
+        .chat-pin-btn:hover {
+            background: #f8fafc;
+            border-color: #94a3b8;
+        }
+        .chat-pin-btn.is-pinned {
+            border-color: #f59e0b;
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .chat-post:hover .chat-pin-btn,
+        .chat-post:focus-within .chat-pin-btn {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
         .chat-post-header strong {
             font-weight: 700;
             color: inherit;
@@ -790,9 +907,9 @@
             justify-content: space-between;
             gap: 8px;
             padding: 8px 12px;
-            border-top: 1px solid #f9fafb;
-            background: #6b7280;
-            color: #1f2937;
+            border-top: 1px solid #e5e7eb;
+            background: #f8fafc;
+            color: #334155;
             font-size: 0.78rem;
         }
         .chat-reply-text {
@@ -814,9 +931,9 @@
             justify-content: space-between;
             gap: 8px;
             padding: 8px 12px;
-            border-top: 1px solid #f9fafb;
-            background: #6b7280;
-            color: #1f2937;
+            border-top: 1px solid #e5e7eb;
+            background: #f8fafc;
+            color: #334155;
             font-size: 0.78rem;
         }
         .chat-attachment-draft-text {
@@ -879,7 +996,7 @@
         .chat-preview-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.72);
+            background: rgba(243, 244, 246, 0.82);
             display: none;
             align-items: center;
             justify-content: center;
@@ -934,8 +1051,8 @@
             border: 1px solid #e5e7eb;
             border-radius: 20px;
             outline: none;
-            background: #1f2937;
-            color: #f9fafb;
+            background: #ffffff;
+            color: var(--text-main);
         }
         .chat-input-area input::placeholder { color: #6b7280; }
         .chat-input-tools {
@@ -1001,7 +1118,7 @@
         }
         .chat-thread-sidebar {
             min-width: 0;
-            background: #1f2937;
+            background: #f9fafb;
             display: flex;
             flex-direction: column;
             border-right: 1px solid #e5e7eb;
@@ -1017,13 +1134,13 @@
         .chat-thread-search-wrap {
             padding: 8px 10px;
             border-bottom: 1px solid #e5e7eb;
-            background: #1f2937;
+            background: #f9fafb;
         }
         .chat-thread-search {
             width: 100%;
             border: 1px solid #e5e7eb;
             border-radius: 999px;
-            background: #6b7280;
+            background: #ffffff;
             color: #1f2937;
             font-size: 0.82rem;
             padding: 8px 12px;
@@ -1040,20 +1157,20 @@
         .chat-new-group-btn {
             border: 1px solid #e5e7eb;
             border-radius: 8px;
-            background: #f9fafb;
-            color: #f9fafb;
+            background: #ffffff;
+            color: #1f2937;
             font-size: 0.74rem;
             font-weight: 700;
             padding: 5px 8px;
             cursor: pointer;
         }
-        .chat-new-group-btn:hover { background: #6b7280; }
+        .chat-new-group-btn:hover { background: #f3f4f6; }
         .chat-compose-top {
             display: none;
             position: relative;
             padding: 10px 12px;
             border-bottom: 1px solid #f9fafb;
-            background: #6b7280;
+            background: #ffffff;
         }
         .chat-compose-row {
             display: flex;
@@ -1061,7 +1178,7 @@
             gap: 8px;
         }
         .chat-compose-label {
-            color: #e5e7eb;
+            color: #6b7280;
             font-size: 0.9rem;
             padding-top: 4px;
         }
@@ -1097,11 +1214,12 @@
         .chat-compose-input {
             flex: 1 1 180px;
             min-width: 160px;
-            border: none;
-            background: transparent;
-            color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background: #ffffff;
+            color: #1f2937;
             font-size: 0.9rem;
-            padding: 4px 0;
+            padding: 6px 10px;
             outline: none;
         }
         .chat-compose-suggestions {
@@ -1109,8 +1227,8 @@
             left: 44px;
             right: 12px;
             top: calc(100% - 2px);
-            background: #6b7280;
-            border: 1px solid #6b7280;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
             border-radius: 8px;
             max-height: 190px;
             overflow-y: auto;
@@ -1121,13 +1239,13 @@
             width: 100%;
             border: none;
             background: transparent;
-            color: #f9fafb;
+            color: #1f2937;
             text-align: left;
             padding: 8px 10px;
             cursor: pointer;
             font-size: 0.84rem;
         }
-        .chat-compose-suggestion:hover { background: #6b7280; }
+        .chat-compose-suggestion:hover { background: #f3f4f6; }
         .chat-compose-hint {
             margin-top: 8px;
             font-size: 0.74rem;
@@ -1394,8 +1512,9 @@
             gap: 8px;
             align-items: center;
         }
-        .chat-thread-row:hover { background: #6b7280; }
-        .chat-thread-row.active { background: #6b7280; }
+        .chat-thread-row:hover { background: #eef2ff; }
+        .chat-thread-row.active { background: #eef2ff; }
+        .chat-thread-row.is-active { background: #eef2ff; }
         .chat-thread-avatar {
             width: 34px;
             height: 34px;
@@ -1412,13 +1531,17 @@
             width: 10px;
             height: 10px;
             border-radius: 50%;
-            border: 2px solid #1f2937;
+            border: 2px solid #ffffff;
             background: #6b7280;
         }
         .chat-thread-status-dot.online { background: #4f46e5; }
+        .chat-thread-text {
+            min-width: 0;
+            overflow: hidden;
+        }
         .chat-thread-text strong {
             display: block;
-            color: #f9fafb;
+            color: var(--text-main);
             font-size: 0.82rem;
             font-weight: 700;
             white-space: nowrap;
@@ -1505,11 +1628,13 @@
         .cal-day:hover { background: var(--bg-color); }
         .cal-day.has-event { font-weight: bold; color: var(--accent); }
         .cal-day.today {
-            background: #fff;
-            color: #1f2937;
+            background: linear-gradient(180deg, #fef9c3 0%, #fde68a 100%);
+            color: #854d0e;
             font-weight: 700;
+            border: 1px solid #facc15;
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
         }
-        .cal-day.today.has-event { color: #4f46e5; }
+        .cal-day.today.has-event { color: #78350f; }
         .cal-day.has-event::after {
             content: '';
             position: absolute;
@@ -1765,7 +1890,7 @@
         .fs-editor-overlay {
             position: absolute;
             inset: 0;
-            background: rgba(0,0,0,0.4);
+            background: rgba(243, 244, 246, 0.8);
             display: none;
             justify-content: center;
             align-items: center;
@@ -2013,296 +2138,374 @@
             color: #fff !important;
             font-weight: 700;
         }
-        .academy-modal-content {
-            background: #ffffff;
-            border: 1px solid #e5e7eb;
-            width: min(94vw, 900px);
+        #facebookAcademyModal {
+            background: rgba(0,0,0,0.4);
+        }
+        #facebookAcademyModal .academy-modal-content {
+            background: #fff;
+            width: min(94vw, 980px);
             max-height: min(90vh, 760px);
-            border-radius: 12px;
-            padding: 16px;
-            box-shadow: 0 16px 34px rgba(0,0,0,0.45);
-            color: #1f2937;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .academy-modal-head {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 10px;
-        }
-        .academy-modal-head h3 {
-            font-size: 1.08rem;
-            margin: 0;
-        }
-        .academy-list {
-            min-height: 160px;
-            max-height: 580px;
+            border-radius: 8px;
+            padding: 20px;
             overflow-y: auto;
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            grid-auto-rows: 280px;
-            gap: 10px;
-            padding: 4px 2px;
         }
-        .academy-card {
-            border: 1px solid #6b7280;
-            border-radius: 10px;
-            background: #ffffff;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            min-height: 0;
-        }
-        .academy-card-title {
-            font-size: 0.92rem;
-            font-weight: 700;
+        #facebookAcademyModal h1 {
+            margin: 0 0 8px;
+            font-size: 1.4rem;
             color: #1f2937;
-            line-height: 1.35;
         }
-        .academy-card-meta {
-            font-size: 0.75rem;
+        #facebookAcademyModal p.sub {
+            margin: 0;
             color: #6b7280;
         }
-        .academy-preview {
-            border: 1px solid #6b7280;
-            border-radius: 8px;
-            overflow: hidden;
-            background: #6b7280;
-            min-height: 140px;
+        #facebookAcademyModal .actions {
             display: flex;
-            align-items: stretch;
-            justify-content: stretch;
+            gap: 12px;
+            margin: 24px 0;
         }
-        .academy-preview iframe,
-        .academy-preview video {
-            width: 100%;
-            height: 160px;
+        #facebookAcademyModal button.primary {
+            background: #4f46e5;
+            color: #fff;
             border: none;
-            background: #1f2937;
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
         }
-        .academy-card-actions {
+        #facebookAcademyModal button.secondary {
+            background: #fff;
+            border: 1px solid #d1d5db;
+            color: #1f2937;
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        #facebookAcademyModal .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 16px;
+        }
+        #facebookAcademyModal .card {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 16px;
+            position: relative;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            cursor: pointer;
+        }
+        #facebookAcademyModal .card:hover .card-actions {
+            opacity: 1;
+        }
+        #facebookAcademyModal .card-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        #facebookAcademyModal .card h3 {
+            margin: 0 0 6px;
+            font-size: 16px;
+            color: #1f2937;
+        }
+        #facebookAcademyModal .card p {
+            margin: 0;
+            font-size: 14px;
+            color: #4b5563;
+            white-space: pre-wrap;
+        }
+        #facebookAcademyModal .card iframe {
+            width: 100%;
+            height: 150px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            margin-top: 10px;
+            background: #f9fafb;
+        }
+        #facebookAcademyModal .card-actions {
+            position: absolute;
+            top: 10px;
+            right: 10px;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 8px;
-            margin-top: auto;
+            gap: 6px;
+            opacity: 0;
+            transition: opacity 0.15s ease;
         }
-        .academy-open-link {
+        #facebookAcademyModal .card-actions button {
+            background: #f3f4f6;
+            border: none;
+            padding: 4px 6px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #1f2937;
+        }
+        #facebookAcademyModal .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 210;
+        }
+        #facebookAcademyModal .modal-content {
+            background: #fff;
+            width: min(92vw, 420px);
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #e5e7eb;
+        }
+        #facebookAcademyModal .modal h2 {
+            margin-top: 0;
+            color: #1f2937;
+        }
+        #facebookAcademyModal .modal label {
+            display: block;
+            margin-top: 12px;
+            font-size: 14px;
+            color: #1f2937;
+        }
+        #facebookAcademyModal .modal input,
+        #facebookAcademyModal .modal textarea {
+            width: 100%;
+            margin-top: 4px;
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid #d1d5db;
+            font-size: 14px;
+            color: #1f2937;
+            background: #fff;
+        }
+        #facebookAcademyModal .modal textarea {
+            resize: vertical;
+        }
+        #facebookAcademyModal .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        #qnaModal {
+            background: rgba(0,0,0,.3);
+        }
+        #qnaModal .popup {
+            background:#fff;
+            border-radius:16px;
+            width:min(94vw,460px);
+            max-height:85vh;
+            display:flex;
+            flex-direction:column;
+            box-shadow:0 20px 60px rgba(0,0,0,.15);
+            overflow:hidden;
+        }
+        #qnaModal .header {
+            padding:24px 24px 16px;
+            border-bottom:1px solid #f0f0f0;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+        }
+        #qnaModal .header h2 {
+            font-size:20px;
+            color:#1a1a1a;
+            margin: 0;
+        }
+        #qnaModal .close {
+            background:none;
+            border:none;
+            font-size:22px;
+            cursor:pointer;
+            color:#999;
+            width:36px;
+            height:36px;
+            border-radius:50%;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+        }
+        #qnaModal .close:hover { background:#f5f5f5; color:#333; }
+        #qnaModal .body {
+            padding:16px 24px 24px;
+            overflow-y:auto;
+            flex:1;
+        }
+        #qnaModal .cats { display:flex; gap:10px; margin-bottom:20px; }
+        #qnaModal .cat-btn {
+            flex:1;
+            padding:14px;
+            border:2px solid #e8e8e8;
+            border-radius:12px;
+            background:#fff;
+            cursor:pointer;
+            font-size:15px;
+            font-weight:600;
+            color:#555;
+            transition:.2s;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            gap:8px;
+        }
+        #qnaModal .cat-btn:hover { border-color:#4a9ff5; color:#4a9ff5; }
+        #qnaModal .cat-btn.active { border-color:#4a9ff5; background:#eef5ff; color:#2b7de9; }
+        #qnaModal .cat-btn .icon { font-size:20px; }
+        #qnaModal .search {
+            width:100%;
+            padding:12px 16px 12px 42px;
+            border:2px solid #e8e8e8;
+            border-radius:10px;
+            font-size:14px;
+            outline:none;
+            background:
+                url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='%23aaa' viewBox='0 0 24 24'%3E%3Cpath d='M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z'/%3E%3C/svg%3E")
+                14px center no-repeat;
+            margin-bottom:16px;
+            transition:.2s;
+        }
+        #qnaModal .search:focus { border-color:#4a9ff5; }
+        #qnaModal .q-card {
+            background:#fafafa;
+            border:1px solid #eee;
+            border-radius:12px;
+            padding:16px;
+            margin-bottom:10px;
+            transition:.15s;
+        }
+        #qnaModal .q-card:hover { border-color:#d0d0d0; background:#f5f5f5; }
+        #qnaModal .q-card.open { background:#fff; border-color:#4a9ff5; }
+        #qnaModal .q-title {
+            font-weight:600;
+            font-size:14px;
+            color:#1a1a1a;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            cursor: pointer;
+        }
+        #qnaModal .q-title .arrow { transition:.3s; color:#aaa; font-size:12px; }
+        #qnaModal .q-card.open .arrow { transform:rotate(180deg); }
+        #qnaModal .q-meta { font-size:12px; color:#999; margin-top:4px; }
+        #qnaModal .q-answer {
+            margin-top:12px;
+            padding-top:12px;
+            border-top:1px solid #eee;
+            font-size:13px;
+            color:#444;
+            line-height:1.6;
+            display:none;
+        }
+        #qnaModal .q-card.open .q-answer { display:block; }
+        #qnaModal .answer-form { margin-top:10px; }
+        #qnaModal .answer-form textarea {
+            width:100%;
+            padding:10px 12px;
+            border:1.5px solid #e0e0e0;
+            border-radius:8px;
+            font-size:13px;
+            resize:vertical;
+            min-height:60px;
+            font-family:inherit;
+            outline:none;
+        }
+        #qnaModal .answer-form textarea:focus { border-color:#4a9ff5; }
+        #qnaModal .small-btn {
+            padding:8px 16px;
+            border:none;
+            border-radius:8px;
+            font-size:12px;
+            font-weight:600;
+            cursor:pointer;
+            margin-top:6px;
+        }
+        #qnaModal .btn-primary { background:#4a9ff5; color:#fff; }
+        #qnaModal .btn-primary:hover { background:#3b8de0; }
+        #qnaModal .btn-secondary { background:#f0f0f0; color:#555; }
+        #qnaModal .btn-secondary:hover { background:#e4e4e4; }
+        #qnaModal .new-q-toggle {
+            width:100%;
+            padding:12px;
+            border:2px dashed #ddd;
+            border-radius:12px;
+            background:none;
+            cursor:pointer;
+            font-size:14px;
+            color:#888;
+            font-weight:600;
+            margin-bottom:16px;
+            transition:.2s;
+        }
+        #qnaModal .new-q-toggle:hover { border-color:#4a9ff5; color:#4a9ff5; }
+        #qnaModal .new-q-form {
+            background:#f8faff;
+            border:1.5px solid #dce8f8;
+            border-radius:12px;
+            padding:16px;
+            margin-bottom:16px;
+            display:none;
+        }
+        #qnaModal .new-q-form.show { display:block; }
+        #qnaModal .new-q-form input,
+        #qnaModal .new-q-form textarea {
+            width:100%;
+            padding:10px 12px;
+            border:1.5px solid #e0e0e0;
+            border-radius:8px;
+            font-size:13px;
+            font-family:inherit;
+            outline:none;
+            margin-bottom:8px;
+        }
+        #qnaModal .new-q-form input:focus,
+        #qnaModal .new-q-form textarea:focus { border-color:#4a9ff5; }
+        #qnaModal .new-q-form textarea { resize:vertical; min-height:60px; }
+        #qnaModal .badge {
+            display:inline-block;
+            padding:2px 8px;
+            border-radius:20px;
+            font-size:11px;
+            font-weight:600;
+        }
+        #qnaModal .badge-fb { background:#e7f0ff; color:#1877f2; }
+        #qnaModal .badge-other { background:#f0f0f0; color:#666; }
+        #qnaModal .empty { text-align:center; padding:30px; color:#bbb; font-size:14px; }
+        #qnaModal .answers-list { margin-top:8px; }
+        #qnaModal .single-answer {
+            background:#f5f7fa;
+            padding:10px 12px;
+            border-radius:8px;
+            margin-top:6px;
+            font-size:13px;
+            color:#444;
+            line-height:1.5;
+            white-space: pre-wrap;
+        }
+        #qnaModal .single-answer img {
+            margin-top: 8px;
+            max-width: 100%;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            display: block;
+        }
+        #qnaModal .single-answer .a-meta { font-size:11px; color:#aaa; margin-top:4px; }
+        #qnaModal .q-image {
+            margin-top: 10px;
+            max-width: 100%;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            display: block;
+        }
+        #qnaModal .qna-file-link {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            font-size: 0.8rem;
-            color: #f9fafb;
+            margin-top: 8px;
+            color: #2b7de9;
             text-decoration: none;
-            font-weight: 700;
+            font-size: 13px;
+            font-weight: 600;
         }
-        .academy-open-link:hover { text-decoration: underline; }
-        .academy-admin-panel {
-            border-top: 1px solid #e5e7eb;
-            padding-top: 10px;
-            display: none;
-            gap: 8px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        .academy-admin-panel input,
-        .academy-admin-panel select {
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 8px 10px;
-            outline: none;
-            background: #ffffff;
-            color: #1f2937;
-            min-height: 38px;
-        }
-        .academy-title-input { flex: 1 1 220px; }
-        .academy-url-input { flex: 2 1 340px; }
-        .academy-type-input { width: 120px; }
-        .academy-btn {
-            border: 1px solid #6b7280;
-            border-radius: 8px;
-            background: #f9fafb;
-            color: #f9fafb;
-            padding: 7px 10px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            font-weight: 700;
-        }
-        .academy-btn.primary {
-            background: #4f46e5;
-            border-color: #4f46e5;
-            color: #fff;
-        }
-        .academy-btn.is-active {
-            background: #4f46e5;
-            border-color: #4f46e5;
-            color: #fff;
-        }
-        .academy-btn.delete {
-            border-color: rgba(231, 76, 60, 0.5);
-            color: #ffd5d0;
-            background: rgba(231, 76, 60, 0.15);
-        }
-        .academy-admin-hint {
-            width: 100%;
-            font-size: 0.78rem;
-            color: #6b7280;
-        }
-        .qna-modal-content {
-            background: #ffffff;
-            border: 1px solid #e5e7eb;
-            width: min(94vw, 920px);
-            max-height: min(90vh, 760px);
-            border-radius: 12px;
-            padding: 14px;
-            box-shadow: 0 16px 34px rgba(0,0,0,0.45);
-            color: #1f2937;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .qna-modal-head {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-        }
-        .qna-modal-head h3 {
-            margin: 0;
-            font-size: 1.06rem;
-        }
-        .qna-search-row {
-            display: grid;
-            grid-template-columns: 1fr auto;
-            gap: 8px;
-        }
-        .qna-search-row input {
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 9px 10px;
-            outline: none;
-            background: #ffffff;
-            color: #1f2937;
-        }
-        .qna-ask-row {
-            display: grid;
-            grid-template-columns: 1fr auto;
-            gap: 8px;
-        }
-        .qna-ask-actions {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            align-items: stretch;
-        }
-        .qna-ask-row textarea {
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 10px;
-            outline: none;
-            background: #ffffff;
-            color: #1f2937;
-            min-height: 72px;
-            resize: vertical;
-        }
-        .qna-btn {
-            border: 1px solid #6b7280;
-            border-radius: 8px;
-            background: #f9fafb;
-            color: #f9fafb;
-            padding: 8px 11px;
-            cursor: pointer;
-            font-size: 0.82rem;
-            font-weight: 700;
-        }
-        .qna-btn.primary {
-            background: #4f46e5;
-            border-color: #4f46e5;
-            color: #fff;
-        }
-        .qna-list {
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            background: #ffffff;
-            max-height: 470px;
-            overflow-y: auto;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .qna-item {
-            border: 1px solid #6b7280;
-            border-radius: 8px;
-            background: #f9fafb;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        .qna-item-meta {
-            font-size: 0.74rem;
-            color: #6b7280;
-        }
-        .qna-item-question {
-            color: #f9fafb;
-            line-height: 1.45;
-            white-space: pre-wrap;
-            overflow-wrap: anywhere;
-            font-size: 0.92rem;
-        }
-        .qna-answers {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            padding-left: 8px;
-            border-left: 2px solid #6b7280;
-        }
-        .qna-answer {
-            font-size: 0.86rem;
-            color: #f9fafb;
-            white-space: pre-wrap;
-            overflow-wrap: anywhere;
-        }
-        .qna-answer-meta {
-            font-size: 0.72rem;
-            color: #6b7280;
-            margin-bottom: 2px;
-        }
-        .qna-answer-row {
-            display: grid;
-            grid-template-columns: 1fr auto auto;
-            gap: 8px;
-            margin-top: 2px;
-        }
-        .qna-answer-row input {
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 8px 10px;
-            outline: none;
-            background: #ffffff;
-            color: #1f2937;
-        }
-        .qna-empty {
-            font-size: 0.88rem;
-            color: #6b7280;
-            text-align: center;
-            padding: 12px 4px;
-        }
-        .qna-media-hint {
-            font-size: 0.74rem;
-            color: #4f46e5;
-            margin-top: 2px;
-        }
-        .qna-image-preview {
-            margin-top: 6px;
-            max-width: min(360px, 100%);
-            border-radius: 8px;
-            border: 1px solid #6b7280;
-            display: block;
+        #qnaModal .qna-file-link:hover {
+            text-decoration: underline;
         }
         .idea-bank-overlay {
             position: fixed;
@@ -2580,7 +2783,7 @@
         /* Modals & Popups */
         .modal-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.5);
+            background: rgba(243, 244, 246, 0.82);
             display: none; align-items: center; justify-content: center;
             z-index: 100;
         }
@@ -2703,6 +2906,10 @@
             justify-content: center;
         }
         .msgp-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .msgp-text {
+            min-width: 0;
+            overflow: hidden;
+        }
         .msgp-text strong {
             display: block;
             font-size: 0.95rem;
@@ -2883,229 +3090,6 @@
             display: none;
         }
 
-        /* White theme overrides (based on whitetheme.html) */
-        :root {
-            --bg-color: #f3f4f6;
-            --panel-bg: #ffffff;
-            --text-main: #1f2937;
-            --text-muted: #6b7280;
-            --border-color: #e5e7eb;
-            --accent: #4f46e5;
-            --accent-hover: #4338ca;
-            --danger: #dc2626;
-            --radius: 12px;
-        }
-        * {
-            font-family: "DM Sans", "Segoe UI", sans-serif;
-        }
-        body {
-            background: var(--bg-color);
-            background-attachment: fixed;
-            background-size: 100% 100%;
-            color: var(--text-main);
-        }
-        body::before,
-        body::after {
-            display: none;
-        }
-        h1, h2, h3, .panel-header, .calendar-title, .chat-panel-title {
-            font-family: "Lora", serif !important;
-            letter-spacing: 0.2px;
-            text-shadow: none;
-            color: var(--text-main);
-        }
-        .panel {
-            position: relative;
-            background: var(--panel-bg) !important;
-            border: 1px solid var(--border-color) !important;
-            border-radius: var(--radius) !important;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
-            backdrop-filter: none;
-            -webkit-backdrop-filter: none;
-        }
-        .panel-header {
-            border-bottom: 1px solid var(--border-color) !important;
-            background: rgba(255, 255, 255, 0.65) !important;
-            color: var(--text-main) !important;
-            font-size: 1rem;
-            font-weight: 600;
-            line-height: 1.2;
-        }
-        .panel-header.chat-panel-title {
-            background: linear-gradient(135deg, #ffffff 0%, #f9fafb 52%, #eef2ff 100%) !important;
-        }
-        .panel-content,
-        .chat-main-pane,
-        .chat-thread-sidebar,
-        .chat-search-bar,
-        .chat-input-area,
-        .chat-thread-sidebar-header {
-            background: transparent !important;
-            color: var(--text-main) !important;
-        }
-        .chat-thread-row,
-        .chat-compose-chip,
-        .chat-post,
-        .msg-item,
-        .meeting-item {
-            border: 1px solid var(--border-color) !important;
-            border-radius: 10px !important;
-            background: #f9fafb !important;
-            color: var(--text-main) !important;
-            box-shadow: none !important;
-        }
-        .meeting-title,
-        .chat-title-main,
-        .chat-thread-user strong {
-            color: var(--text-main) !important;
-        }
-        .meeting-meta,
-        .chat-presence,
-        .chat-auth-badge,
-        .chat-thread-user span {
-            color: var(--text-muted) !important;
-        }
-        button, .btn, .auth-logout, .chat-send-btn, .chat-header-btn, .chat-profile-btn,
-        .important-admin-btn, .event-editor-btn, .profile-btn, .group-create-btn,
-        .academy-btn, .qna-btn, .idea-bank-primary-btn, .idea-bank-secondary-btn,
-        .chat-new-group-btn, .chat-search-btn, .calendar-nav, .meetings-admin-btn {
-            border: 1px solid var(--border-color) !important;
-            border-radius: 8px !important;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
-            color: var(--text-main) !important;
-        }
-        button:hover, .btn:hover, .auth-logout:hover, .chat-send-btn:hover, .chat-header-btn:hover,
-        .chat-profile-btn:hover, .important-admin-btn:hover, .event-editor-btn:hover,
-        .profile-btn:hover, .group-create-btn:hover, .academy-btn:hover, .qna-btn:hover,
-        .idea-bank-primary-btn:hover, .idea-bank-secondary-btn:hover, .chat-new-group-btn:hover,
-        .chat-search-btn:hover, .calendar-nav:hover, .meetings-admin-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
-        }
-        .chat-send-btn,
-        .meetings-admin-btn,
-        .idea-bank-primary-btn,
-        .qna-btn.primary {
-            background: var(--accent) !important;
-            color: #fff !important;
-            border-color: var(--accent) !important;
-        }
-        .chat-send-btn:hover,
-        .meetings-admin-btn:hover,
-        .idea-bank-primary-btn:hover,
-        .qna-btn.primary:hover {
-            background: var(--accent-hover) !important;
-        }
-        input, textarea, select, .chat-input, .chat-search-input, .chat-compose-input, .note-area, .chat-date-input {
-            border: 1px solid var(--border-color) !important;
-            border-radius: 8px !important;
-            background: rgba(235, 245, 255, 0.5) !important;
-            color: var(--text-main) !important;
-            box-shadow: none !important;
-        }
-        input::placeholder,
-        textarea::placeholder {
-            color: var(--text-muted) !important;
-        }
-        .auth-logout {
-            background: transparent !important;
-            color: var(--text-main) !important;
-        }
-        /* Chat visual fix pass */
-        .panel.chat-container {
-            background: #ffffff !important;
-        }
-        .panel-header.chat-panel-title {
-            background: linear-gradient(135deg, #ffffff 0%, #f9fafb 52%, #eef2ff 100%) !important;
-            padding: 10px 14px !important;
-        }
-        .chat-title-wrap {
-            gap: 8px !important;
-        }
-        .chat-title-avatar {
-            width: 30px !important;
-            height: 30px !important;
-            font-size: 0.86rem !important;
-        }
-        .chat-title-main {
-            font-size: 1.34rem !important;
-            line-height: 1 !important;
-            color: var(--text-main) !important;
-        }
-        .chat-presence {
-            margin-top: 1px !important;
-            font-size: 0.76rem !important;
-            color: var(--text-muted) !important;
-        }
-        .chat-main-shell,
-        .chat-main-pane {
-            background: #ffffff !important;
-        }
-        .chat-feed {
-            background: #ffffff !important;
-            color: #1f2937 !important;
-        }
-        .chat-thread-sidebar,
-        .chat-thread-search-wrap,
-        .chat-thread-sidebar-header,
-        .chat-thread-list {
-            background: #f9fafb !important;
-        }
-        .chat-thread-sidebar-header span,
-        .chat-thread-text strong,
-        .chat-thread-text span,
-        .chat-thread-empty {
-            color: var(--text-main) !important;
-        }
-        .chat-thread-row:hover,
-        .chat-thread-row.active {
-            background: #eef2ff !important;
-        }
-        .chat-thread-status-dot {
-            border-color: #ffffff !important;
-            background: #9ca3af !important;
-        }
-        .chat-thread-status-dot.online {
-            background: var(--accent) !important;
-        }
-        .date-divider span {
-            background: #f9fafb !important;
-            color: var(--text-muted) !important;
-            border: 1px solid var(--border-color) !important;
-        }
-        .chat-post.theirs {
-            background: #ffffff !important;
-            color: var(--text-main) !important;
-        }
-        .chat-post.mine {
-            background: #eef2ff !important;
-            color: #4338ca !important;
-        }
-        .chat-input-area {
-            background: #f9fafb !important;
-            border-top: 1px solid var(--border-color) !important;
-        }
-        .chat-input-area input {
-            background: #ffffff !important;
-            color: var(--text-main) !important;
-            border: 1px solid var(--border-color) !important;
-        }
-        .chat-input-area input::placeholder {
-            color: var(--text-muted) !important;
-        }
-        .calendar-title {
-            font-size: 1.2rem;
-        }
-        @keyframes gradientShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        @media (max-width: 900px) {
-            .panel-header { font-size: 1.08rem; }
-            .calendar-title { font-size: 1.16rem; }
-        }
-
         /* Responsivitet för mindre skärmar */
         @media (max-width: 1200px) {
             .dashboard { grid-template-columns: 250px 1fr 250px; }
@@ -3131,33 +3115,9 @@
         }
 
         /* Theme lock: strict parity with tema.html palette */
-        :root {
-            --bg-app: #f3f4f6;
-            --bg-surface: #ffffff;
-            --bg-surface-hover: #f9fafb;
-            --primary: #4f46e5;
-            --primary-hover: #4338ca;
-            --primary-light: #eef2ff;
-            --text-main: #1f2937;
-            --text-muted: #6b7280;
-            --border: #e5e7eb;
-            --alert-danger-bg: #fee2e2;
-            --alert-danger-text: #991b1b;
-            --alert-warning-bg: #fef3c7;
-            --alert-warning-text: #92400e;
-            --alert-success-bg: #d1fae5;
-            --alert-success-text: #065f46;
-            --alert-info-bg: #dbeafe;
-            --alert-info-text: #1e40af;
-            --bg-color: var(--bg-app);
-            --panel-bg: var(--bg-surface);
-            --border-color: var(--border);
-            --accent: var(--primary);
-            --accent-hover: var(--primary-hover);
-        }
         body {
-            background: var(--bg-app) !important;
-            color: var(--text-main) !important;
+            background: var(--bg-app);
+            color: var(--text-main);
         }
         .panel,
         .modal-content,
@@ -3173,58 +3133,33 @@
         .chat-preview-content,
         .fs-share-modal,
         .fs-editor-container {
-            background: var(--bg-surface) !important;
-            border: 1px solid var(--border) !important;
-            color: var(--text-main) !important;
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            color: var(--text-main);
         }
         .panel-header,
         .chat-panel-title,
         .chat-thread-sidebar-header,
         .academy-modal-head,
         .qna-modal-head {
-            background: var(--bg-surface-hover) !important;
-            border-bottom: 1px solid var(--border) !important;
-            color: var(--text-main) !important;
-        }
-        .chat-main-shell,
-        .chat-main-pane,
-        .chat-feed,
-        .chat-thread-sidebar,
-        .chat-thread-search-wrap,
-        .chat-thread-list,
-        .chat-input-area {
-            background: var(--bg-surface) !important;
-            color: var(--text-main) !important;
-        }
-        .chat-post.theirs {
-            background: var(--bg-surface) !important;
-            color: var(--text-main) !important;
-            border: 1px solid var(--border) !important;
-        }
-        .chat-post.mine {
-            background: var(--primary-light) !important;
-            color: var(--primary-hover) !important;
-            border: 1px solid var(--border) !important;
+            background: var(--bg-surface-hover);
+            border-bottom: 1px solid var(--border);
+            color: var(--text-main);
         }
         .msg-item,
         .meeting-item,
         .chat-thread-row,
         .chat-compose-chip {
-            background: var(--bg-surface-hover) !important;
-            border: 1px solid var(--border) !important;
-            color: var(--text-main) !important;
-        }
-        .date-divider span {
-            background: var(--bg-surface-hover) !important;
-            color: var(--text-muted) !important;
-            border: 1px solid var(--border) !important;
+            background: var(--bg-surface-hover);
+            border: 1px solid var(--border);
+            color: var(--text-main);
         }
         .chat-presence,
         .chat-auth-badge,
         .meeting-meta,
         .chat-thread-text span,
         .chat-thread-empty {
-            color: var(--text-muted) !important;
+            color: var(--text-muted);
         }
         .chat-title-main,
         .meeting-title,
@@ -3232,69 +3167,69 @@
         .profile-modal-content h3,
         .event-editor-content h3,
         .important-admin-content h3 {
-            color: var(--text-main) !important;
+            color: var(--text-main);
         }
         input, textarea, select,
         .chat-input, .chat-search-input, .chat-date-input, .chat-compose-input, .note-area,
         .event-editor-row input, .profile-row input, .profile-row select,
         .important-admin-form input, .member-manage-search, .group-create-row input,
         .qna-input, .qna-answer-input, .academy-title-input, .academy-url-input, .idea-bank-input, .idea-bank-search {
-            background: var(--bg-surface) !important;
-            color: var(--text-main) !important;
-            border: 1px solid var(--border) !important;
+            background: var(--bg-surface);
+            color: var(--text-main);
+            border: 1px solid var(--border);
         }
         input::placeholder, textarea::placeholder {
-            color: var(--text-muted) !important;
+            color: var(--text-muted);
         }
         button, .btn, .auth-logout, .chat-send-btn, .chat-header-btn, .chat-profile-btn,
         .important-admin-btn, .important-admin-btn-secondary, .important-admin-btn-primary,
         .event-editor-btn, .profile-btn, .group-create-btn, .academy-btn, .qna-btn,
         .idea-bank-primary-btn, .idea-bank-secondary-btn, .chat-new-group-btn, .chat-search-btn,
         .calendar-nav, .meetings-admin-btn, .zoom-btn {
-            background: var(--bg-surface) !important;
-            color: var(--text-main) !important;
-            border: 1px solid var(--border) !important;
-            box-shadow: none !important;
+            background: var(--bg-surface);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            box-shadow: none;
         }
         .chat-send-btn, .meetings-admin-btn, .qna-btn.primary, .important-admin-btn-primary,
         .event-editor-btn.primary, .profile-btn.primary, .group-create-btn.primary,
         .academy-btn.primary, .idea-bank-primary-btn, .zoom-btn {
-            background: var(--primary) !important;
-            border-color: var(--primary) !important;
-            color: #ffffff !important;
+            background: var(--primary);
+            border-color: var(--primary);
+            color: #ffffff;
         }
         .chat-send-btn:hover, .meetings-admin-btn:hover, .qna-btn.primary:hover, .important-admin-btn-primary:hover,
         .event-editor-btn.primary:hover, .profile-btn.primary:hover, .group-create-btn.primary:hover,
         .academy-btn.primary:hover, .idea-bank-primary-btn:hover, .zoom-btn:hover {
-            background: var(--primary-hover) !important;
-            border-color: var(--primary-hover) !important;
+            background: var(--primary-hover);
+            border-color: var(--primary-hover);
         }
         .modal-overlay, .chat-preview-overlay, .idea-bank-overlay, .fs-editor-overlay, .fs-share-overlay {
-            background: rgba(17, 24, 39, 0.45) !important;
+            background: rgba(243, 244, 246, 0.82);
         }
-        .alert-danger { background: var(--alert-danger-bg) !important; color: var(--alert-danger-text) !important; }
-        .alert-warning { background: var(--alert-warning-bg) !important; color: var(--alert-warning-text) !important; }
-        .alert-success { background: var(--alert-success-bg) !important; color: var(--alert-success-text) !important; }
-        .alert-info { background: var(--alert-info-bg) !important; color: var(--alert-info-text) !important; }
+        .alert-danger { background: var(--alert-danger-bg); color: var(--alert-danger-text); }
+        .alert-warning { background: var(--alert-warning-bg); color: var(--alert-warning-text); }
+        .alert-success { background: var(--alert-success-bg); color: var(--alert-success-text); }
+        .alert-info { background: var(--alert-info-bg); color: var(--alert-info-text); }
         .msg-item.alert-danger {
-            background: var(--alert-danger-bg) !important;
-            color: var(--alert-danger-text) !important;
-            border-left: 4px solid var(--alert-danger-text) !important;
+            background: var(--alert-danger-bg);
+            color: var(--alert-danger-text);
+            border-left: 4px solid var(--alert-danger-text);
         }
         .msg-item.alert-warning {
-            background: var(--alert-warning-bg) !important;
-            color: var(--alert-warning-text) !important;
-            border-left: 4px solid var(--alert-warning-text) !important;
+            background: var(--alert-warning-bg);
+            color: var(--alert-warning-text);
+            border-left: 4px solid var(--alert-warning-text);
         }
         .msg-item.alert-success {
-            background: var(--alert-success-bg) !important;
-            color: var(--alert-success-text) !important;
-            border-left: 4px solid var(--alert-success-text) !important;
+            background: var(--alert-success-bg);
+            color: var(--alert-success-text);
+            border-left: 4px solid var(--alert-success-text);
         }
         .msg-item.alert-info {
-            background: var(--alert-info-bg) !important;
-            color: var(--alert-info-text) !important;
-            border-left: 4px solid var(--alert-info-text) !important;
+            background: var(--alert-info-bg);
+            color: var(--alert-info-text);
+            border-left: 4px solid var(--alert-info-text);
         }
     </style>
 </head>
@@ -3343,7 +3278,7 @@
                 <div class="chat-title-wrap">
                     <div class="chat-title-avatar">SA</div>
                     <div class="chat-title-text">
-                        <span class="chat-title-main">Samarbetsyta</span>
+                        <span class="chat-title-main">Chatt</span>
                         <span class="chat-presence" id="groupChatPresence">0 online</span>
                     </div>
                     <span class="chat-notify-badge" id="mainChatUnreadBadge">0</span>
@@ -3480,28 +3415,14 @@
     </div>
 
     <div class="modal-overlay" id="qnaModal">
-        <div class="qna-modal-content">
-            <div class="qna-modal-head">
-                <h3>QnA</h3>
-                <button class="modal-close" type="button" onclick="closeQnaModal()">✖</button>
+        <div class="popup">
+            <div class="header">
+                <h2 id="qnaHeaderTitle">❓ Frågor & Svar</h2>
+                <button class="close" type="button" id="qnaCloseBtn" onclick="qnaGoBack()">✕</button>
             </div>
-            <div class="qna-search-row">
-                <input id="qnaSearchInput" type="text" placeholder="Sök i frågor och svar...">
-                <button id="qnaSearchBtn" class="qna-btn" type="button">Sök</button>
-            </div>
-            <div class="qna-ask-row">
-                <textarea id="qnaQuestionInput" maxlength="2000" placeholder="Ställ en fråga till alla..."></textarea>
-                <div class="qna-ask-actions">
-                    <button id="qnaAttachQuestionImageBtn" class="qna-btn" type="button">Bifoga bild</button>
-                    <button id="qnaAskBtn" class="qna-btn primary" type="button">Skapa fråga</button>
-                </div>
-            </div>
-            <div class="qna-media-hint" id="qnaQuestionImageHint">Tips: Lägg gärna med screenshot när det hjälper.</div>
-            <input id="qnaQuestionImageInput" type="file" accept="image/*" style="display:none;">
-            <input id="qnaAnswerImageInput" type="file" accept="image/*" style="display:none;">
-            <div class="qna-list" id="qnaList">
-                <div class="qna-empty">Laddar frågor...</div>
-            </div>
+            <div class="body" id="qnaContent"></div>
+            <input id="qnaQuestionImageInput" type="file" accept="*/*" style="display:none;">
+            <input id="qnaAnswerImageInput" type="file" accept="*/*" style="display:none;">
         </div>
     </div>
 
@@ -3677,22 +3598,58 @@
 
     <div class="modal-overlay" id="facebookAcademyModal">
         <div class="academy-modal-content">
-            <div class="academy-modal-head">
-                <h3>Facebook Academy</h3>
-                <button class="modal-close" type="button" onclick="closeFacebookAcademyModal()">✖</button>
+            <h1>Facebook Academy</h1>
+            <p class="sub">Utbildningskort med video eller PDF</p>
+
+            <div class="actions" id="academyActionsBar">
+              <button id="academyOpenPdfBtn" class="primary" type="button">Lägg till PDF-kort</button>
+              <button id="academyOpenVideoBtn" class="secondary" type="button">Lägg till videokort</button>
             </div>
-            <div class="academy-list" id="academyLinksList">
-                <div class="academy-card"><div class="academy-card-title">Laddar länkar...</div></div>
+
+            <div class="cards" id="academyLinksList">
+              <div class="card">
+                <div class="card-icon">…</div>
+                <h3>Laddar länkar...</h3>
+                <p>Hämtar innehåll från servern.</p>
+              </div>
             </div>
-            <div class="academy-admin-panel" id="academyAdminPanel">
-                <input id="academyTitleInput" class="academy-title-input" type="text" maxlength="140" placeholder="Titel">
-                <input id="academyUrlInput" class="academy-url-input" type="url" maxlength="2000" placeholder="https://...">
-                <button id="academyAddVideoBtn" class="academy-btn" type="button">Lägg till video</button>
-                <button id="academyUploadPdfBtn" class="academy-btn" type="button">Ladda upp PDF</button>
-                <input id="academyPdfInput" type="file" accept="application/pdf" style="display:none;">
-                <button id="academySaveBtn" class="academy-btn primary" type="button">Spara</button>
-                <button id="academyCancelEditBtn" class="academy-btn" type="button">Avbryt redigering</button>
-                <div class="academy-admin-hint" id="academyAdminHint">Kort kan vara text, video/pdf eller text + video/pdf.</div>
+
+            <div class="modal" id="academyPdfModal">
+              <div class="modal-content">
+                <h2>Nytt PDF-kort</h2>
+                <label>Välj PDF
+                  <input id="academyPdfFileInput" type="file" accept="application/pdf">
+                </label>
+                <label>Rubrik
+                  <input id="academyPdfTitleInput" type="text" maxlength="140">
+                </label>
+                <label>Brödtext
+                  <textarea id="academyPdfBodyInput" rows="3" maxlength="1200"></textarea>
+                </label>
+                <div class="modal-footer">
+                  <button id="academyPdfCancelBtn" class="secondary" type="button">Avbryt</button>
+                  <button id="academyPdfSaveBtn" class="primary" type="button">Spara</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="modal" id="academyVideoModal">
+              <div class="modal-content">
+                <h2>Nytt videokort</h2>
+                <label>YouTube-länk
+                  <input id="academyVideoUrlInput" type="url" placeholder="https://youtube.com/...">
+                </label>
+                <label>Rubrik
+                  <input id="academyVideoTitleInput" type="text" maxlength="140">
+                </label>
+                <label>Brödtext
+                  <textarea id="academyVideoBodyInput" rows="3" maxlength="1200"></textarea>
+                </label>
+                <div class="modal-footer">
+                  <button id="academyVideoCancelBtn" class="secondary" type="button">Avbryt</button>
+                  <button id="academyVideoSaveBtn" class="primary" type="button">Spara</button>
+                </div>
+              </div>
             </div>
         </div>
     </div>
@@ -3780,12 +3737,14 @@
         let academyApiAvailable = false;
         let academyLinksLoadError = '';
         let academyEditingId = null;
-        let academySelectedType = '';
+        let academyEditingType = '';
+        let academyEditingUrl = '';
         let qnaItems = [];
         let qnaSearchQuery = '';
         let qnaQuestionImageUrl = '';
         let qnaPendingAnswerImageByQuestionId = {};
         let qnaActiveAnswerQuestionId = 0;
+        let qnaCurrentCategory = null;
         let ideaBankIdeas = [];
         let ideaBankEditingId = 0;
         let ideaBankPendingImageFile = null;
@@ -3896,12 +3855,17 @@
             if (!list.length) return `0|${String(currentUser || '')}`;
             const last = list[list.length - 1] || {};
             const seen = Array.isArray(last.seen_by) ? last.seen_by.join(',') : '';
+            const pinSig = list
+                .filter(function(m) { return !!m.pinned; })
+                .map(function(m) { return `${Number(m.id || 0)}:${Number(m.pinned_at || 0)}`; })
+                .join(',');
             return [
                 String(list.length),
                 String(last.id || ''),
                 String(last.created_at || ''),
                 String(last.email || ''),
                 seen,
+                pinSig,
                 String(currentUser || '')
             ].join('|');
         }
@@ -4128,9 +4092,13 @@
                 return;
             }
 
+            const sorted = messages.slice().sort(function(a, b) {
+                if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
+                return Number(a.created_at || 0) - Number(b.created_at || 0);
+            });
             let currentDateKey = '';
             feed.innerHTML = '';
-            messages.forEach(function(msg) {
+            sorted.forEach(function(msg) {
                 const dt = new Date(msg.created_at * 1000);
                 const dateKey = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
                 if (dateKey !== currentDateKey) {
@@ -4143,7 +4111,11 @@
 
                 const post = document.createElement('div');
                 const isMine = msg.email === currentUserEmail;
-                post.className = 'chat-post ' + (isMine ? 'mine' : 'theirs');
+                const isAdminAuthor = !!msg.author_is_admin || String(msg.email || '').toLowerCase() === 'admin';
+                const classNames = ['chat-post', isMine ? 'mine' : 'theirs'];
+                if (isAdminAuthor) classNames.push('admin');
+                if (msg.pinned) classNames.push('pinned');
+                post.className = classNames.join(' ');
                 const parsed = parseReplyPayload(msg.message);
                 const seenBy = (msg.seen_by || []).filter(function(email) { return email !== msg.email; });
                 const seenText = isMine && seenBy.length
@@ -4156,10 +4128,14 @@
                 const replyBtn = !isMine
                     ? `<button class=\"chat-reply-btn\" type=\"button\" title=\"Svara\">↩</button>`
                     : '';
+                const pinBtn = currentUserIsAdmin
+                    ? `<button class=\"chat-pin-btn ${msg.pinned ? 'is-pinned' : ''}\" type=\"button\" data-chat-pin-id=\"${Number(msg.id)}\" data-chat-pin-next=\"${msg.pinned ? '0' : '1'}\" title=\"${msg.pinned ? 'Lossa inlägget' : 'Pinna inlägget'}\">${msg.pinned ? '📌 Pinnad' : '📌 Pinna'}</button>`
+                    : '';
                 post.innerHTML = `
                     <div class=\"chat-post-header\">
                         <strong>${escapeHtml(msg.email)}</strong>
                         <span class=\"chat-post-meta\">
+                            ${pinBtn}
                             <span>${formatTimeFromUnix(msg.created_at)}</span>
                         </span>
                     </div>
@@ -4186,9 +4162,27 @@
                         openChatPreview(parsed.attachment);
                     });
                 }
+                const pinBtnEl = post.querySelector('[data-chat-pin-id]');
+                if (pinBtnEl) {
+                    pinBtnEl.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const id = Number(pinBtnEl.getAttribute('data-chat-pin-id') || 0);
+                        const nextPinned = pinBtnEl.getAttribute('data-chat-pin-next') === '1';
+                        if (!id) return;
+                        toggleChatMessagePinned(id, nextPinned).catch(function(err) {
+                            alert(err.message || 'Kunde inte uppdatera pinningen.');
+                        });
+                    });
+                }
                 feed.appendChild(post);
             });
             feed.scrollTop = feed.scrollHeight;
+        }
+
+        async function toggleChatMessagePinned(messageId, shouldPin) {
+            if (!currentUserIsAdmin) return;
+            await apiSend(`/api/chat/messages/${Number(messageId)}/pin`, 'PUT', { pinned: !!shouldPin });
+            await loadChatMessages();
         }
 
         function renderActiveThreadInMainChat() {
@@ -4198,7 +4192,7 @@
                 const avatarEl = document.querySelector('.chat-title-avatar');
                 const inputEl = document.getElementById('groupChatInput');
                 const selected = composeState.selectedIds.map(function(id) { return getThreadById(id); }).filter(Boolean);
-                if (titleEl) titleEl.innerText = 'Samarbetsyta';
+                if (titleEl) titleEl.innerText = 'Chatt';
                 if (presenceEl) presenceEl.innerText = 'Välj mottagare';
                 if (avatarEl) avatarEl.innerText = 'SA';
                 if (inputEl) inputEl.placeholder = 'Skriv ett meddelande...';
@@ -4224,7 +4218,7 @@
             const userBadge = document.getElementById('chatCurrentUserBadge');
 
             if (titleEl) {
-                titleEl.innerText = thread.id === MESSENGER_GROUP_THREAD_ID ? 'Samarbetsyta' : thread.name;
+                titleEl.innerText = thread.id === MESSENGER_GROUP_THREAD_ID ? 'Chatt' : thread.name;
             }
             if (presenceEl) {
                 presenceEl.innerText = thread.id === MESSENGER_GROUP_THREAD_ID
@@ -4702,41 +4696,78 @@
             return '<div class="academy-card-meta">Förhandsvisning stöds inte för den här länken.</div>';
         }
 
-        function resetAcademyForm() {
-            academyEditingId = null;
-            academySelectedType = '';
-            const titleInput = document.getElementById('academyTitleInput');
-            const urlInput = document.getElementById('academyUrlInput');
-            const pdfInput = document.getElementById('academyPdfInput');
-            const hint = document.getElementById('academyAdminHint');
-            if (titleInput) titleInput.value = '';
-            if (urlInput) urlInput.value = '';
-            if (pdfInput) pdfInput.value = '';
-            if (hint) hint.textContent = 'Kort kan vara text, video/pdf eller text + video/pdf.';
-            setAcademyMediaType('');
+        function closeAcademyEntryModals() {
+            const pdfModal = document.getElementById('academyPdfModal');
+            const videoModal = document.getElementById('academyVideoModal');
+            if (pdfModal) pdfModal.style.display = 'none';
+            if (videoModal) videoModal.style.display = 'none';
         }
 
-        function setAcademyMediaType(nextType) {
-            const normalized = String(nextType || '').trim().toLowerCase();
-            academySelectedType = normalized === 'video' || normalized === 'pdf' ? normalized : '';
-            const videoBtn = document.getElementById('academyAddVideoBtn');
-            const pdfBtn = document.getElementById('academyUploadPdfBtn');
-            if (videoBtn) videoBtn.classList.toggle('is-active', academySelectedType === 'video');
-            if (pdfBtn) pdfBtn.classList.toggle('is-active', academySelectedType === 'pdf');
+        function resetAcademyForm() {
+            academyEditingId = null;
+            academyEditingType = '';
+            academyEditingUrl = '';
+            const ids = [
+                'academyPdfTitleInput',
+                'academyPdfBodyInput',
+                'academyVideoTitleInput',
+                'academyVideoBodyInput',
+                'academyVideoUrlInput'
+            ];
+            ids.forEach(function(id) {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+            const pdfFileInput = document.getElementById('academyPdfFileInput');
+            if (pdfFileInput) pdfFileInput.value = '';
+            closeAcademyEntryModals();
+        }
+
+        function openAcademyEntryModal(type, item) {
+            const normalized = String(type || '').trim().toLowerCase();
+            const isPdf = normalized === 'pdf';
+            const isVideo = normalized === 'video';
+            if (!isPdf && !isVideo) return;
+
+            closeAcademyEntryModals();
+            academyEditingId = item && item.id ? String(item.id) : null;
+            academyEditingType = normalized;
+            academyEditingUrl = item && item.url ? String(item.url) : '';
+
+            if (isPdf) {
+                const modal = document.getElementById('academyPdfModal');
+                const titleInput = document.getElementById('academyPdfTitleInput');
+                const bodyInput = document.getElementById('academyPdfBodyInput');
+                const fileInput = document.getElementById('academyPdfFileInput');
+                if (titleInput) titleInput.value = String((item && item.title) || '');
+                if (bodyInput) bodyInput.value = '';
+                if (fileInput) fileInput.value = '';
+                if (modal) modal.style.display = 'flex';
+                return;
+            }
+
+            const modal = document.getElementById('academyVideoModal');
+            const titleInput = document.getElementById('academyVideoTitleInput');
+            const bodyInput = document.getElementById('academyVideoBodyInput');
+            const urlInput = document.getElementById('academyVideoUrlInput');
+            if (titleInput) titleInput.value = String((item && item.title) || '');
+            if (bodyInput) bodyInput.value = '';
+            if (urlInput) urlInput.value = String((item && item.url) || '');
+            if (modal) modal.style.display = 'flex';
         }
 
         function renderAcademyLinks() {
             const list = document.getElementById('academyLinksList');
-            const adminPanel = document.getElementById('academyAdminPanel');
-            if (!list || !adminPanel) return;
-            adminPanel.style.display = currentUserIsAdmin ? 'flex' : 'none';
+            const actionsBar = document.getElementById('academyActionsBar');
+            if (!list) return;
+            if (actionsBar) actionsBar.style.display = currentUserIsAdmin ? 'flex' : 'none';
 
             if (academyLinksLoadError) {
-                list.innerHTML = `<div class="academy-card"><div class="academy-card-title">⚠️ ${escapeHtml(academyLinksLoadError)}</div></div>`;
+                list.innerHTML = `<div class="card"><div class="card-icon">⚠️</div><h3>Kunde inte ladda</h3><p>${escapeHtml(academyLinksLoadError)}</p></div>`;
                 return;
             }
             if (!academyLinks.length) {
-                list.innerHTML = '<div class="academy-card"><div class="academy-card-title">Inga länkar ännu.</div><div class="academy-card-meta">Admin kan lägga till video- och PDF-länkar här.</div></div>';
+                list.innerHTML = '<div class="card"><div class="card-icon">📚</div><h3>Inga kort ännu</h3><p>Admin kan lägga till video- och PDF-kort här.</p></div>';
                 return;
             }
 
@@ -4744,24 +4775,41 @@
                 const itemType = String(item.type || academyInferType(item.url) || '').toLowerCase();
                 const titleText = String(item.title || '').trim();
                 const hasUrl = !!String(item.url || '').trim();
+                const icon = itemType === 'pdf' ? 'PDF' : (itemType === 'video' ? 'VIDEO' : 'CARD');
+                const helperText = hasUrl ? `Typ: ${itemType ? itemType.toUpperCase() : 'MEDIA'}` : 'Textkort utan media.';
+                const rawUrl = String(item.url || '');
+                const ytEmbed = itemType === 'video' ? academyYouTubeEmbedUrl(rawUrl) : '';
+                let embedHtml = '';
+                if (itemType === 'pdf' && hasUrl) {
+                    embedHtml = `<iframe src="${escapeHtml(rawUrl)}" title="${escapeHtml(titleText || 'PDF-preview')}"></iframe>`;
+                } else if (ytEmbed) {
+                    embedHtml = `<iframe src="${escapeHtml(ytEmbed)}" title="${escapeHtml(titleText || 'YouTube-video')}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+                }
                 const adminButtons = currentUserIsAdmin
                     ? `
-                        <button class="academy-btn" type="button" data-academy-edit="${escapeHtml(String(item.id))}">Redigera</button>
-                        <button class="academy-btn delete" type="button" data-academy-delete="${escapeHtml(String(item.id))}">Ta bort</button>
+                        <button type="button" data-academy-edit="${escapeHtml(String(item.id))}">Redigera</button>
+                        <button type="button" data-academy-delete="${escapeHtml(String(item.id))}">Ta bort</button>
                       `
                     : '';
                 return `
-                    <article class="academy-card">
-                        ${titleText ? `<div class="academy-card-title">${escapeHtml(titleText)}</div>` : '<div class="academy-card-title">Video/PDF</div>'}
-                        ${hasUrl ? `<div class="academy-preview">${academyBuildPreviewHtml(item)}</div>` : '<div class="academy-card-meta">Textkort (ingen media).</div>'}
-                        <div class="academy-card-meta">${escapeHtml(itemType ? itemType.toUpperCase() : (hasUrl ? 'MEDIA' : 'TEXT'))}</div>
-                        <div class="academy-card-actions">
-                            ${hasUrl ? `<a class="academy-open-link" href="${escapeHtml(String(item.url || '#'))}" target="_blank" rel="noopener">Öppna länk ↗</a>` : '<span></span>'}
-                            <div>${adminButtons}</div>
-                        </div>
+                    <article class="card" ${hasUrl ? `data-academy-open-url="${escapeHtml(String(item.url || ''))}"` : ''}>
+                        <div class="card-icon">${icon}</div>
+                        <h3>${escapeHtml(titleText || 'Video/PDF')}</h3>
+                        <p>${escapeHtml(helperText)}</p>
+                        ${embedHtml}
+                        <div class="card-actions">${adminButtons}</div>
                     </article>
                 `;
             }).join('');
+
+            list.querySelectorAll('[data-academy-open-url]').forEach(function(card) {
+                card.addEventListener('click', function(e) {
+                    if (e.target && e.target.closest('button')) return;
+                    const url = String(card.getAttribute('data-academy-open-url') || '').trim();
+                    if (!url) return;
+                    window.open(url, '_blank', 'noopener');
+                });
+            });
 
             if (!currentUserIsAdmin) return;
             list.querySelectorAll('[data-academy-edit]').forEach(function(btn) {
@@ -4769,11 +4817,8 @@
                     const id = String(btn.getAttribute('data-academy-edit') || '');
                     const item = academyLinks.find(function(x) { return String(x.id) === id; });
                     if (!item) return;
-                    academyEditingId = id;
-                    document.getElementById('academyTitleInput').value = String(item.title || '');
-                    document.getElementById('academyUrlInput').value = String(item.url || '');
-                    setAcademyMediaType(String(item.type || academyInferType(item.url) || ''));
-                    document.getElementById('academyAdminHint').textContent = 'Redigerar befintlig länk.';
+                    const type = String(item.type || academyInferType(item.url) || '').toLowerCase();
+                    openAcademyEntryModal(type || 'video', item);
                 });
             });
             list.querySelectorAll('[data-academy-delete]').forEach(function(btn) {
@@ -4820,22 +4865,23 @@
             });
             const fileInfo = res && res.file ? res.file : null;
             if (!fileInfo || !fileInfo.url) throw new Error('Kunde inte ladda upp PDF.');
-            document.getElementById('academyUrlInput').value = String(fileInfo.url || '');
-            setAcademyMediaType('pdf');
-            document.getElementById('academyAdminHint').textContent = `PDF uppladdad: ${String(fileInfo.name || 'fil.pdf')}`;
+            return {
+                url: String(fileInfo.url || ''),
+                name: String(fileInfo.name || 'fil.pdf')
+            };
         }
 
-        async function saveAcademyLinkFromForm() {
+        async function saveAcademyLink(payload) {
             if (!currentUserIsAdmin) return;
             if (!academyApiAvailable) {
                 throw new Error('Serverkoppling saknas. Försök igen om en stund.');
             }
-            const title = String(document.getElementById('academyTitleInput').value || '').trim();
-            const url = String(document.getElementById('academyUrlInput').value || '').trim();
-            const type = url ? (academySelectedType || academyInferType(url)) : '';
+            const title = String(payload && payload.title ? payload.title : '').trim();
+            const url = String(payload && payload.url ? payload.url : '').trim();
+            const type = String(payload && payload.type ? payload.type : '').trim().toLowerCase();
 
             if (!title && !url) throw new Error('Ange text, länk eller båda.');
-            if (url && !type) throw new Error('Kunde inte avgöra länktyp. Välj video eller pdf.');
+            if (url && !type) throw new Error('Kunde inte avgöra länktyp.');
 
             if (academyEditingId) {
                 await apiSend(`/api/facebook-academy/links/${encodeURIComponent(academyEditingId)}`, 'PUT', {
@@ -4852,6 +4898,37 @@
             }
             resetAcademyForm();
             await loadFacebookAcademyLinks();
+        }
+
+        async function saveAcademyPdfCard() {
+            const title = String(document.getElementById('academyPdfTitleInput').value || '').trim();
+            const body = String(document.getElementById('academyPdfBodyInput').value || '').trim();
+            const fileInput = document.getElementById('academyPdfFileInput');
+            const file = fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
+            let url = academyEditingType === 'pdf' ? academyEditingUrl : '';
+            if (file) {
+                const uploaded = await uploadPdfForAcademy(file);
+                url = String(uploaded.url || '').trim();
+            }
+            await saveAcademyLink({
+                title: title || body,
+                url: url,
+                type: 'pdf'
+            });
+        }
+
+        async function saveAcademyVideoCard() {
+            const title = String(document.getElementById('academyVideoTitleInput').value || '').trim();
+            const body = String(document.getElementById('academyVideoBodyInput').value || '').trim();
+            const typedUrl = String(document.getElementById('academyVideoUrlInput').value || '').trim();
+            let url = typedUrl || (academyEditingType === 'video' ? academyEditingUrl : '');
+            const ytEmbed = academyYouTubeEmbedUrl(url);
+            if (ytEmbed) url = ytEmbed;
+            await saveAcademyLink({
+                title: title || body,
+                url: url,
+                type: 'video'
+            });
         }
 
         async function deleteAcademyLink(id) {
@@ -4890,126 +4967,189 @@
 
         function resetQnaQuestionImage() {
             qnaQuestionImageUrl = '';
-            const hint = document.getElementById('qnaQuestionImageHint');
             const input = document.getElementById('qnaQuestionImageInput');
-            if (hint) hint.textContent = 'Tips: Lägg gärna med screenshot när det hjälper.';
             if (input) input.value = '';
         }
 
         async function uploadQnaImage(file) {
-            if (!file) throw new Error('Ingen bild vald.');
-            const mime = String(file.type || '').toLowerCase();
-            if (!mime.startsWith('image/')) {
-                throw new Error('Endast bilder stöds för QnA.');
-            }
+            if (!file) throw new Error('Ingen fil vald.');
             const uploaded = await uploadFileToChat(file);
             if (!uploaded || !uploaded.url) {
-                throw new Error('Kunde inte ladda upp bilden.');
+                throw new Error('Kunde inte ladda upp filen.');
             }
             return uploaded;
         }
 
-        function renderQnaList() {
-            const list = document.getElementById('qnaList');
-            if (!list) return;
-            if (!Array.isArray(qnaItems) || qnaItems.length === 0) {
-                list.innerHTML = '<div class="qna-empty">Inga frågor ännu.</div>';
-                return;
+        function qnaInferCategory(item) {
+            const explicit = String(item && item.category || '').trim().toLowerCase();
+            if (explicit === 'facebook' || explicit === 'other') return explicit;
+            const text = String((item && item.question) || '').toLowerCase();
+            return /(facebook|meta|annonser|ads|instagram)/.test(text) ? 'facebook' : 'other';
+        }
+
+        function isImageAttachmentUrl(url) {
+            const lower = String(url || '').toLowerCase();
+            return /\.(png|jpe?g|gif|webp|bmp|svg)(?:[?#].*)?$/.test(lower);
+        }
+
+        function qnaAttachmentName(url) {
+            const raw = String(url || '').split('/').pop() || 'Bilaga';
+            try {
+                return decodeURIComponent(raw);
+            } catch (_) {
+                return raw;
             }
-            list.innerHTML = qnaItems.map(function(item) {
-                const answers = Array.isArray(item.answers) ? item.answers : [];
-                const answersHtml = answers.length
-                    ? `<div class="qna-answers">${answers.map(function(ans) {
-                        return `
-                            <div>
-                                <div class="qna-answer-meta">${escapeHtml(String(ans.user_email || ''))} · ${escapeHtml(formatQnaTime(ans.created_at))}</div>
-                                <div class="qna-answer">${escapeHtml(String(ans.answer || ''))}</div>
-                                ${ans.image_url ? `<img class="qna-image-preview" src="${escapeHtml(String(ans.image_url || ''))}" alt="Bilaga till svar">` : ''}
-                            </div>
-                        `;
-                    }).join('')}</div>`
-                    : '<div class="qna-empty">Inga svar ännu.</div>';
-                const pendingAnswerImage = String(qnaPendingAnswerImageByQuestionId[String(item.id)] || '');
+        }
+
+        function qnaPreviewMimeFromUrl(url) {
+            const lower = String(url || '').toLowerCase();
+            if (/\.(png|jpe?g|gif|webp|bmp|svg)(?:[?#].*)?$/.test(lower)) return 'image/*';
+            if (/\.pdf(?:[?#].*)?$/.test(lower)) return 'application/pdf';
+            return '';
+        }
+
+        function qnaPreviewAttachmentFromEvent(event) {
+            if (!event || !event.currentTarget) return;
+            event.preventDefault();
+            event.stopPropagation();
+            const el = event.currentTarget;
+            const url = String(el.getAttribute('data-qna-preview-url') || '').trim();
+            const mime = String(el.getAttribute('data-qna-preview-mime') || qnaPreviewMimeFromUrl(url));
+            if (!url) return;
+            if (!(mime.startsWith('image/') || mime === 'application/pdf')) return;
+            openChatPreview({
+                url: url,
+                mime: mime,
+                name: qnaAttachmentName(url)
+            });
+        }
+
+        function renderQnaAttachment(url, imageClass) {
+            const clean = String(url || '').trim();
+            if (!clean) return '';
+            if (isImageAttachmentUrl(clean)) {
+                return `<img class="${escapeHtml(String(imageClass || 'q-image'))}" src="${escapeHtml(clean)}" alt="Bilaga" data-qna-preview-url="${escapeHtml(clean)}" data-qna-preview-mime="image/*" ondblclick="qnaPreviewAttachmentFromEvent(event)">`;
+            }
+            if (/\.pdf(?:[?#].*)?$/i.test(clean)) {
+                return `<a class="qna-file-link" href="${escapeHtml(clean)}" target="_blank" rel="noopener" data-qna-preview-url="${escapeHtml(clean)}" data-qna-preview-mime="application/pdf" ondblclick="qnaPreviewAttachmentFromEvent(event)">📎 ${escapeHtml(qnaAttachmentName(clean))}</a>`;
+            }
+            return `<a class="qna-file-link" href="${escapeHtml(clean)}" target="_blank" rel="noopener">📎 ${escapeHtml(qnaAttachmentName(clean))}</a>`;
+        }
+
+        function qnaSplitQuestion(raw) {
+            const full = String(raw || '').trim();
+            if (!full) return { title: '', desc: '' };
+            const parts = full.split('\n').map(function(s) { return String(s || '').trim(); }).filter(Boolean);
+            return {
+                title: parts[0] || full,
+                desc: parts.slice(1).join(' ') || 'Ny fråga'
+            };
+        }
+
+        function qnaRenderQuestions(items) {
+            if (!items.length) return '<div class="empty">Inga frågor hittades</div>';
+            return items.map(function(it) {
+                const split = qnaSplitQuestion(it.question);
+                const isFacebook = qnaInferCategory(it) === 'facebook';
+                const badge = isFacebook
+                    ? '<span class="badge badge-fb">Facebook</span>'
+                    : '<span class="badge badge-other">Övrigt</span>';
+                const answers = Array.isArray(it.answers) ? it.answers : [];
+                const ansHtml = answers.map(function(a) {
+                    return `<div class="single-answer">${escapeHtml(String(a.answer || ''))}${renderQnaAttachment(String(a.image_url || ''), 'q-image')}<div class="a-meta">${escapeHtml(String(a.user_email || ''))} · ${escapeHtml(formatQnaTime(a.created_at))}</div></div>`;
+                }).join('');
+                const pendingAnswerAttachment = String(qnaPendingAnswerImageByQuestionId[String(it.id)] || '');
                 return `
-                    <article class="qna-item" data-qna-id="${Number(item.id)}">
-                        <div class="qna-item-meta">${escapeHtml(String(item.user_email || ''))} · ${escapeHtml(formatQnaTime(item.created_at))}</div>
-                        <div class="qna-item-question">${escapeHtml(String(item.question || ''))}</div>
-                        ${item.image_url ? `<img class="qna-image-preview" src="${escapeHtml(String(item.image_url || ''))}" alt="Bilaga till fråga">` : ''}
-                        ${answersHtml}
-                        <div class="qna-answer-row">
-                            <input type="text" maxlength="2000" data-qna-answer-input="${Number(item.id)}" placeholder="Skriv ett svar...">
-                            <button class="qna-btn" type="button" data-qna-answer-image-btn="${Number(item.id)}">Bild</button>
-                            <button class="qna-btn" type="button" data-qna-answer-btn="${Number(item.id)}">Svara</button>
+                    <div class="q-card" id="qc${Number(it.id)}">
+                        <div class="q-title" onclick="qnaToggle(${Number(it.id)})">
+                            <span>${escapeHtml(split.title || 'Fråga')}</span><span class="arrow">▼</span>
                         </div>
-                        <div class="qna-media-hint" data-qna-answer-image-hint="${Number(item.id)}">${pendingAnswerImage ? `Bild vald: ${escapeHtml(pendingAnswerImage.split('/').pop() || 'bild')}` : 'Tips: Lägg gärna med screenshot om det hjälper svaret.'}</div>
-                    </article>
+                        <div class="q-meta">${badge} · ${escapeHtml(split.desc || 'Ny fråga')} · ${answers.length} svar</div>
+                        <div class="q-answer">
+                            ${renderQnaAttachment(String(it.image_url || ''), 'q-image')}
+                            <div class="answers-list">${ansHtml || '<em style="color:#bbb">Inga svar ännu</em>'}</div>
+                            <div class="answer-form">
+                                <textarea id="ans${Number(it.id)}" placeholder="Skriv ett svar..."></textarea>
+                                <button class="small-btn btn-secondary" onclick="qnaAttachAnswerFile(${Number(it.id)})" type="button">Bifoga fil</button>
+                                <button class="small-btn btn-primary" onclick="qnaAddAnswer(${Number(it.id)})">Svara</button>
+                                <div class="a-meta" data-qna-answer-attachment-hint="${Number(it.id)}">${pendingAnswerAttachment ? `Fil vald: ${escapeHtml(qnaAttachmentName(pendingAnswerAttachment))}` : ''}</div>
+                            </div>
+                        </div>
+                    </div>
                 `;
             }).join('');
+        }
 
-            list.querySelectorAll('[data-qna-answer-btn]').forEach(function(btn) {
-                btn.addEventListener('click', function() {
-                    const id = Number(btn.getAttribute('data-qna-answer-btn'));
-                    const input = list.querySelector(`[data-qna-answer-input="${id}"]`);
-                    if (!input) return;
-                    const text = String(input.value || '').trim();
-                    const imageUrl = String(qnaPendingAnswerImageByQuestionId[String(id)] || '');
-                    if (!text && !imageUrl) {
-                        alert('Skriv ett svar eller bifoga en bild.');
-                        return;
-                    }
-                    postQnaAnswer(id, text).then(function() {
-                        input.value = '';
-                    }).catch(function(err) {
-                        alert(err.message || 'Kunde inte spara svaret.');
-                    });
-                });
+        function renderQnaView() {
+            const content = document.getElementById('qnaContent');
+            const headerTitle = document.getElementById('qnaHeaderTitle');
+            const closeBtn = document.getElementById('qnaCloseBtn');
+            if (!content || !headerTitle || !closeBtn) return;
+            if (!qnaCurrentCategory) {
+                headerTitle.textContent = '❓ Frågor & Svar';
+                closeBtn.textContent = '✕';
+                content.innerHTML = `
+                    <p style="color:#888;font-size:14px;margin-bottom:16px;text-align:center">Välj en kategori</p>
+                    <div class="cats" style="flex-direction:column">
+                        <button class="cat-btn" type="button" onclick="openQnaCategory('facebook')"><span class="icon">📘</span>Facebook</button>
+                        <button class="cat-btn" type="button" onclick="openQnaCategory('other')"><span class="icon">📂</span>Övrigt</button>
+                    </div>
+                `;
+                return;
+            }
+
+            const isFacebook = qnaCurrentCategory === 'facebook';
+            const catIcon = isFacebook ? '📘' : '📂';
+            const catLabel = isFacebook ? 'Facebook' : 'Övrigt';
+            headerTitle.textContent = `${catIcon} ${catLabel}`;
+            closeBtn.textContent = '←';
+
+            const base = qnaItems.filter(function(item) {
+                return qnaInferCategory(item) === qnaCurrentCategory;
             });
-            list.querySelectorAll('[data-qna-answer-input]').forEach(function(inputEl) {
-                inputEl.addEventListener('keydown', function(e) {
-                    if (e.key !== 'Enter') return;
-                    e.preventDefault();
-                    const id = Number(inputEl.getAttribute('data-qna-answer-input'));
-                    const text = String(inputEl.value || '').trim();
-                    const imageUrl = String(qnaPendingAnswerImageByQuestionId[String(id)] || '');
-                    if (!text && !imageUrl) return;
-                    postQnaAnswer(id, text).then(function() {
-                        inputEl.value = '';
-                    }).catch(function(err) {
-                        alert(err.message || 'Kunde inte spara svaret.');
-                    });
-                });
-            });
-            list.querySelectorAll('[data-qna-answer-image-btn]').forEach(function(btn) {
-                btn.addEventListener('click', function() {
-                    const id = Number(btn.getAttribute('data-qna-answer-image-btn'));
-                    qnaActiveAnswerQuestionId = id;
-                    const input = document.getElementById('qnaAnswerImageInput');
-                    if (input) input.click();
-                });
-            });
+            const filtered = String(qnaSearchQuery || '').trim()
+                ? base.filter(function(item) {
+                    const split = qnaSplitQuestion(item.question);
+                    const needle = qnaSearchQuery.toLowerCase();
+                    return split.title.toLowerCase().includes(needle) || split.desc.toLowerCase().includes(needle);
+                })
+                : base;
+
+            content.innerHTML = `
+                <input class="search" id="qnaSearchInput" type="text" placeholder="Sök frågor..." value="${escapeHtml(String(qnaSearchQuery || ''))}" oninput="qnaFilter(this.value)">
+                <button class="new-q-toggle" type="button" onclick="qnaToggleNew()">＋ Ställ en ny fråga</button>
+                <div class="new-q-form" id="qnaNewForm">
+                    <input id="qnaNewQuestionInput" placeholder="Din fråga...">
+                    <textarea id="qnaNewDescInput" placeholder="Beskriv din fråga (valfritt)..."></textarea>
+                    <button class="small-btn btn-secondary" type="button" onclick="qnaAttachQuestionFile()">Bifoga fil</button>
+                    <div class="a-meta" id="qnaQuestionAttachmentHint">${qnaQuestionImageUrl ? `Fil vald: ${escapeHtml(qnaAttachmentName(qnaQuestionImageUrl))}` : ''}</div>
+                    <button class="small-btn btn-primary" type="button" onclick="qnaAddQuestion()">Publicera fråga</button>
+                    <button class="small-btn btn-secondary" type="button" onclick="qnaToggleNew()" style="margin-left:4px">Avbryt</button>
+                </div>
+                <div id="qnaList">${qnaRenderQuestions(filtered)}</div>
+            `;
         }
 
         async function loadQna() {
-            const q = String(qnaSearchQuery || '').trim();
-            const suffix = q ? `?q=${encodeURIComponent(q)}` : '';
-            const data = await apiGet(`/api/qna/questions${suffix}`);
+            const data = await apiGet('/api/qna/questions');
             qnaItems = Array.isArray(data.questions) ? data.questions : [];
-            renderQnaList();
+            renderQnaView();
         }
 
-        async function postQnaQuestion() {
-            const input = document.getElementById('qnaQuestionInput');
-            if (!input) return;
-            const question = String(input.value || '').trim();
-            if (!question && !qnaQuestionImageUrl) {
-                alert('Skriv en fråga eller bifoga en bild först.');
-                return;
-            }
+        async function qnaAddQuestion() {
+            const questionInput = document.getElementById('qnaNewQuestionInput');
+            const descInput = document.getElementById('qnaNewDescInput');
+            const title = String(questionInput && questionInput.value || '').trim();
+            const desc = String(descInput && descInput.value || '').trim();
+            if (!title && !qnaQuestionImageUrl) return;
+            const question = desc ? `${title}\n${desc}` : title;
             await apiSend('/api/qna/questions', 'POST', {
                 question: question,
+                category: qnaCurrentCategory || 'other',
                 image_url: qnaQuestionImageUrl || ''
             });
-            input.value = '';
+            if (questionInput) questionInput.value = '';
+            if (descInput) descInput.value = '';
             resetQnaQuestionImage();
             await loadQna();
         }
@@ -5025,10 +5165,73 @@
             await loadQna();
         }
 
+        function openQnaCategory(cat) {
+            qnaCurrentCategory = String(cat || '').trim().toLowerCase() === 'facebook' ? 'facebook' : 'other';
+            qnaSearchQuery = '';
+            renderQnaView();
+        }
+
+        function qnaGoBack() {
+            if (qnaCurrentCategory) {
+                qnaCurrentCategory = null;
+                qnaSearchQuery = '';
+                renderQnaView();
+                return;
+            }
+            closeQnaModal();
+        }
+
+        function qnaFilter(value) {
+            qnaSearchQuery = String(value || '').trim();
+            renderQnaView();
+        }
+
+        function qnaToggle(questionId) {
+            const card = document.getElementById(`qc${Number(questionId)}`);
+            if (!card) return;
+            card.classList.toggle('open');
+        }
+
+        function qnaToggleNew() {
+            const form = document.getElementById('qnaNewForm');
+            if (!form) return;
+            form.classList.toggle('show');
+        }
+
+        function qnaAttachQuestionFile() {
+            const input = document.getElementById('qnaQuestionImageInput');
+            if (input) input.click();
+        }
+
+        function qnaAttachAnswerFile(questionId) {
+            qnaActiveAnswerQuestionId = Number(questionId);
+            const input = document.getElementById('qnaAnswerImageInput');
+            if (input) input.click();
+        }
+
+        function qnaAddAnswer(questionId) {
+            const input = document.getElementById(`ans${Number(questionId)}`);
+            if (!input) return;
+            const text = String(input.value || '').trim();
+            const imageUrl = String(qnaPendingAnswerImageByQuestionId[String(questionId)] || '');
+            if (!text && !imageUrl) return;
+            postQnaAnswer(Number(questionId), text).then(function() {
+                input.value = '';
+                setTimeout(function() {
+                    const card = document.getElementById(`qc${Number(questionId)}`);
+                    if (card) card.classList.add('open');
+                }, 0);
+            }).catch(function(err) {
+                alert(err.message || 'Kunde inte spara svaret.');
+            });
+        }
+
         async function openQnaModal() {
             const modal = document.getElementById('qnaModal');
             if (!modal) return;
             modal.style.display = 'flex';
+            qnaCurrentCategory = null;
+            qnaSearchQuery = '';
             resetQnaQuestionImage();
             qnaPendingAnswerImageByQuestionId = {};
             await loadQna();
@@ -5754,18 +5957,41 @@
                     const link = String(m.link || '').trim();
                     const hasLink = /^https?:\/\//i.test(link);
                     const win = parseMeetingTimeWindow(m.title);
+                    const rawTitle = String(m.title || '').trim();
+                    const cleanedTitle = rawTitle
+                        .replace(/^(\d{1,2}:\d{2}\s*[-–]\s*\d{1,2}:\d{2}|\d{1,2}:\d{2})\s*[-–•]?\s*/i, '')
+                        .trim() || rawTitle || 'Möte';
+                    const pad2 = function(n) { return String(n).padStart(2, '0'); };
+                    const startLabel = win.start === null ? '' : `${pad2(Math.floor(win.start / 60))}:${pad2(win.start % 60)}`;
+                    const endLabel = win.end === null ? '' : `${pad2(Math.floor((win.end % (24 * 60)) / 60))}:${pad2((win.end % (24 * 60)) % 60)}`;
+                    const timeLabel = win.start === null ? 'Tid saknas' : (win.end === null ? startLabel : `${startLabel}-${endLabel}`);
+                    let statusClass = '';
+                    let statusText = '';
+                    if (win.start !== null) {
+                        const endForStatus = win.end !== null ? win.end : win.start + 60;
+                        if (nowMinutes >= win.start && nowMinutes < endForStatus) {
+                            statusClass = 'now';
+                            statusText = 'Pågår';
+                        } else if (win.start - nowMinutes >= 0 && win.start - nowMinutes <= 30) {
+                            statusClass = 'soon';
+                            statusText = 'Snart';
+                        }
+                    }
                     const editBtn = currentUserIsAdmin
-                        ? `<button class=\"meeting-edit-btn\" type=\"button\" data-edit-event-id=\"${m.id}\" title=\"Redigera\">✏️</button>`
+                        ? `<button class=\"meeting-edit-btn\" type=\"button\" data-edit-event-id=\"${m.id}\" title=\"Redigera\">Redigera</button>`
                         : '';
                     const joinBtn = hasLink
-                        ? `<a class=\"meeting-link\" href=\"${link}\" target=\"_blank\" rel=\"noopener\" title=\"Anslut till mötet\">Gå med</a>`
-                        : `<span class=\"meeting-link disabled\" title=\"Ingen möteslänk\">Ingen länk</span>`;
-                    const titleText = win.start === null
-                        ? `${String(m.title || '')}`
-                        : `${String(m.title || '')} • ${String(Math.floor(win.start / 60)).padStart(2, '0')}:${String(win.start % 60).padStart(2, '0')}`;
+                        ? `<a class=\"meeting-link\" href=\"${link}\" target=\"_blank\" rel=\"noopener\" title=\"Anslut till mötet\">Anslut till möte</a>`
+                        : `<span class=\"meeting-link disabled\" title=\"Ingen möteslänk\">Ingen möteslänk</span>`;
                     return `
                         <div class=\"meeting-item\">
-                            <span>${escapeHtml(titleText)}</span>
+                            <span class=\"meeting-main\">
+                                <span class=\"meeting-title\">${escapeHtml(cleanedTitle)}</span>
+                                <span class=\"meeting-meta\">
+                                    ${escapeHtml(timeLabel)}
+                                    ${statusText ? `<span class=\"meeting-status ${statusClass}\">${statusText}</span>` : ''}
+                                </span>
+                            </span>
                             <span class=\"meeting-actions\">
                                 ${joinBtn}
                                 ${editBtn}
@@ -7383,11 +7609,31 @@
         }
 
         function getThreadPreview(thread) {
+            function buildPreviewText(rawText) {
+                const parsed = parseReplyPayload(String(rawText || ''));
+                const body = String(parsed.body || '').replace(/\s+/g, ' ').trim();
+                const attachment = parsed.attachment || null;
+                const mime = String(attachment && attachment.mime || '').toLowerCase();
+                const hasImage = !!attachment && mime.startsWith('image/');
+                if (body && hasImage) return `${body} · 🖼️ Bild`;
+                if (body) return body;
+                if (hasImage) return '🖼️ Bild';
+                return '';
+            }
+
             const lastMessage = (thread.messages || [])[thread.messages.length - 1];
             if (lastMessage && Number(lastMessage.at || 0) > 0) {
-                return (lastMessage.from === 'me' ? 'Du: ' : '') + String(lastMessage.text || '');
+                const clean = buildPreviewText(lastMessage.text || '');
+                if (clean) {
+                    return (lastMessage.from === 'me' ? 'Du: ' : '') + clean;
+                }
             }
-            return String(thread.lastPreview || 'Inga meddelanden än.');
+            const fallbackRaw = String(thread.lastPreview || '');
+            const fallbackMine = /^Du:\s*/.test(fallbackRaw);
+            const fallbackNoPrefix = fallbackRaw.replace(/^Du:\s*/, '');
+            const fallbackClean = buildPreviewText(fallbackNoPrefix) || fallbackNoPrefix.trim();
+            if (!fallbackClean) return 'Inga meddelanden än.';
+            return (fallbackMine ? 'Du: ' : '') + fallbackClean;
         }
 
         function updateMessengerUnreadBadge() {
@@ -7802,31 +8048,37 @@
             if (picker.contains(e.target) || (iconBtn && iconBtn.contains(e.target))) return;
             closeImportantIconPicker();
         });
-        document.getElementById('academySaveBtn').addEventListener('click', function() {
-            saveAcademyLinkFromForm().catch(function(err) {
-                alert(err.message || 'Kunde inte spara länken.');
-            });
+        document.getElementById('academyOpenPdfBtn').addEventListener('click', function() {
+            if (!currentUserIsAdmin) return;
+            openAcademyEntryModal('pdf');
         });
-        document.getElementById('academyAddVideoBtn').addEventListener('click', function() {
-            setAcademyMediaType('video');
-            const urlInput = document.getElementById('academyUrlInput');
-            if (urlInput) urlInput.focus();
-            document.getElementById('academyAdminHint').textContent = 'Klistra in videolänk (YouTube/Vimeo eller direkt videofil).';
+        document.getElementById('academyOpenVideoBtn').addEventListener('click', function() {
+            if (!currentUserIsAdmin) return;
+            openAcademyEntryModal('video');
         });
-        document.getElementById('academyUploadPdfBtn').addEventListener('click', function() {
-            setAcademyMediaType('pdf');
-            const input = document.getElementById('academyPdfInput');
-            if (input) input.click();
-        });
-        document.getElementById('academyPdfInput').addEventListener('change', function(e) {
-            const file = e && e.target && e.target.files && e.target.files[0] ? e.target.files[0] : null;
-            if (!file) return;
-            uploadPdfForAcademy(file).catch(function(err) {
-                alert(err.message || 'Kunde inte ladda upp PDF.');
-            });
-        });
-        document.getElementById('academyCancelEditBtn').addEventListener('click', function() {
+        document.getElementById('academyPdfCancelBtn').addEventListener('click', function() {
+            closeAcademyEntryModals();
             resetAcademyForm();
+        });
+        document.getElementById('academyVideoCancelBtn').addEventListener('click', function() {
+            closeAcademyEntryModals();
+            resetAcademyForm();
+        });
+        document.getElementById('academyPdfSaveBtn').addEventListener('click', function() {
+            saveAcademyPdfCard().catch(function(err) {
+                alert(err.message || 'Kunde inte spara PDF-kortet.');
+            });
+        });
+        document.getElementById('academyVideoSaveBtn').addEventListener('click', function() {
+            saveAcademyVideoCard().catch(function(err) {
+                alert(err.message || 'Kunde inte spara videokortet.');
+            });
+        });
+        document.getElementById('academyPdfModal').addEventListener('click', function(e) {
+            if (e.target === this) closeAcademyEntryModals();
+        });
+        document.getElementById('academyVideoModal').addEventListener('click', function(e) {
+            if (e.target === this) closeAcademyEntryModals();
         });
         document.getElementById('facebookAcademyModal').addEventListener('click', function(e) {
             if (e.target === this) closeFacebookAcademyModal();
@@ -7839,24 +8091,20 @@
         document.getElementById('qnaModal').addEventListener('click', function(e) {
             if (e.target === this) closeQnaModal();
         });
-        document.getElementById('qnaAskBtn').addEventListener('click', function() {
-            postQnaQuestion().catch(function(err) {
-                alert(err.message || 'Kunde inte skapa frågan.');
-            });
-        });
-        document.getElementById('qnaAttachQuestionImageBtn').addEventListener('click', function() {
-            const input = document.getElementById('qnaQuestionImageInput');
-            if (input) input.click();
-        });
         document.getElementById('qnaQuestionImageInput').addEventListener('change', function(e) {
             const file = e && e.target && e.target.files && e.target.files[0] ? e.target.files[0] : null;
             if (!file) return;
             uploadQnaImage(file).then(function(uploaded) {
                 qnaQuestionImageUrl = String(uploaded.url || '');
-                const hint = document.getElementById('qnaQuestionImageHint');
-                if (hint) hint.textContent = `Bild vald: ${String(uploaded.name || 'bild')} (tips: screenshot fungerar bra).`;
+                const hint = document.getElementById('qnaQuestionAttachmentHint');
+                if (hint) {
+                    hint.textContent = qnaQuestionImageUrl ? `Fil vald: ${qnaAttachmentName(qnaQuestionImageUrl)}` : '';
+                }
             }).catch(function(err) {
-                alert(err.message || 'Kunde inte ladda upp bilden.');
+                alert(err.message || 'Kunde inte ladda upp filen.');
+            }).finally(function() {
+                const input = document.getElementById('qnaQuestionImageInput');
+                if (input) input.value = '';
             });
         });
         document.getElementById('qnaAnswerImageInput').addEventListener('change', function(e) {
@@ -7865,35 +8113,17 @@
             const qid = qnaActiveAnswerQuestionId;
             uploadQnaImage(file).then(function(uploaded) {
                 qnaPendingAnswerImageByQuestionId[String(qid)] = String(uploaded.url || '');
-                renderQnaList();
+                const hint = document.querySelector(`[data-qna-answer-attachment-hint="${Number(qid)}"]`);
+                if (hint) {
+                    const pending = String(qnaPendingAnswerImageByQuestionId[String(qid)] || '');
+                    hint.textContent = pending ? `Fil vald: ${qnaAttachmentName(pending)}` : '';
+                }
             }).catch(function(err) {
-                alert(err.message || 'Kunde inte ladda upp bilden.');
+                alert(err.message || 'Kunde inte ladda upp filen.');
             }).finally(function() {
                 qnaActiveAnswerQuestionId = 0;
                 const input = document.getElementById('qnaAnswerImageInput');
                 if (input) input.value = '';
-            });
-        });
-        document.getElementById('qnaSearchBtn').addEventListener('click', function() {
-            const input = document.getElementById('qnaSearchInput');
-            qnaSearchQuery = String(input && input.value || '').trim();
-            loadQna().catch(function(err) {
-                alert(err.message || 'Kunde inte söka i QnA.');
-            });
-        });
-        document.getElementById('qnaSearchInput').addEventListener('keydown', function(e) {
-            if (e.key !== 'Enter') return;
-            e.preventDefault();
-            qnaSearchQuery = String(e.target && e.target.value || '').trim();
-            loadQna().catch(function(err) {
-                alert(err.message || 'Kunde inte söka i QnA.');
-            });
-        });
-        document.getElementById('qnaQuestionInput').addEventListener('keydown', function(e) {
-            if (e.key !== 'Enter' || e.shiftKey) return;
-            e.preventDefault();
-            postQnaQuestion().catch(function(err) {
-                alert(err.message || 'Kunde inte skapa frågan.');
             });
         });
         document.getElementById('importantAdminModal').addEventListener('click', function(e) {

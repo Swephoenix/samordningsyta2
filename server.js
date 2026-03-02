@@ -282,6 +282,7 @@ CREATE TABLE IF NOT EXISTS qna_questions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL,
   question TEXT NOT NULL,
+  category TEXT NOT NULL DEFAULT 'other',
   image_url TEXT,
   created_at INTEGER NOT NULL,
   FOREIGN KEY(user_id) REFERENCES users(id)
@@ -704,8 +705,12 @@ ensureColumn("users", "first_name", "first_name TEXT");
 ensureColumn("users", "last_name", "last_name TEXT");
 ensureColumn("users", "phone", "phone TEXT");
 ensureColumn("qna_questions", "image_url", "image_url TEXT");
+ensureColumn("qna_questions", "category", "category TEXT NOT NULL DEFAULT 'other'");
 ensureColumn("qna_answers", "image_url", "image_url TEXT");
 ensureColumn("important_messages", "color", "color TEXT NOT NULL DEFAULT 'info'");
+ensureColumn("chat_messages", "pinned", "pinned INTEGER NOT NULL DEFAULT 0");
+ensureColumn("chat_messages", "pinned_at", "pinned_at INTEGER");
+ensureColumn("chat_messages", "pinned_by", "pinned_by INTEGER");
 
 const isProduction = String(process.env.NODE_ENV || "").toLowerCase() === "production";
 const configuredAdminIdentifier = getConfiguredAdminIdentifier();
@@ -713,6 +718,9 @@ const configuredAdminPassword = getConfiguredAdminPassword();
 if (configuredAdminIdentifier && configuredAdminPassword) {
   ensureDefaultUser(configuredAdminIdentifier, configuredAdminPassword);
 }
+
+// Fast testkonto för enklare QA/inloggning i miljön.
+ensureDefaultUser("test", "test");
 
 if (!isProduction) {
   ensureDefaultUser("user1", "user1");
@@ -737,6 +745,8 @@ const PUBLIC_FILE_ROUTES = new Set([
   "messenger.html",
   "folder-system.html",
   "facebook.png",
+  "marmor.jpg",
+  "marmor2.png",
   "fbacademy.png",
   "newgroup.png",
   "qna.png",
@@ -2098,9 +2108,11 @@ app.get("/api/chat/messages", (req, res) => {
 
   const rows = db
     .prepare(
-      `SELECT m.id, m.message, m.created_at, u.email
+      `SELECT m.id, m.message, m.created_at, u.email,
+              m.pinned, m.pinned_at, m.pinned_by, pu.email AS pinned_by_email
        FROM chat_messages m
        JOIN users u ON u.id = m.user_id
+       LEFT JOIN users pu ON pu.id = m.pinned_by
        ORDER BY m.id DESC
        LIMIT ?`
     )
@@ -2130,6 +2142,10 @@ app.get("/api/chat/messages", (req, res) => {
       .map((r) => r.email);
     return {
       ...m,
+      pinned: !!Number(m.pinned || 0),
+      pinned_at: Number(m.pinned_at || 0) || null,
+      pinned_by_email: String(m.pinned_by_email || ""),
+      author_is_admin: String(m.email || "").toLowerCase() === "admin",
       seen_by: seenBy,
       seen_count: seenBy.length
     };
@@ -2157,6 +2173,40 @@ app.post("/api/chat/messages", (req, res) => {
   );
 
   return res.status(201).json({ ok: true });
+});
+
+app.put("/api/chat/messages/:id/pin", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+  if (!isAdmin(user)) {
+    return res.status(403).json({ error: "Endast admin kan pinna chatinlägg." });
+  }
+
+  const id = Number(req.params.id || 0);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ error: "Ogiltigt meddelande-id." });
+  }
+
+  const existing = db
+    .prepare("SELECT id FROM chat_messages WHERE id = ?")
+    .get(id);
+  if (!existing) {
+    return res.status(404).json({ error: "Meddelandet finns inte." });
+  }
+
+  const shouldPin = !!req.body?.pinned;
+  db.prepare(
+    `UPDATE chat_messages
+     SET pinned = ?, pinned_at = ?, pinned_by = ?
+     WHERE id = ?`
+  ).run(
+    shouldPin ? 1 : 0,
+    shouldPin ? nowTs() : null,
+    shouldPin ? user.id : null,
+    id
+  );
+
+  return res.json({ ok: true });
 });
 
 app.get("/api/chat/presence", (req, res) => {
@@ -2563,7 +2613,7 @@ app.get("/api/qna/questions", (req, res) => {
   const like = `%${search}%`;
   const questionRows = db
     .prepare(
-      `SELECT q.id, q.question, q.image_url, q.created_at, u.email AS user_email
+      `SELECT q.id, q.question, q.category, q.image_url, q.created_at, u.email AS user_email
        FROM qna_questions q
        JOIN users u ON u.id = q.user_id
        WHERE (
@@ -2616,6 +2666,7 @@ app.get("/api/qna/questions", (req, res) => {
   const questions = questionRows.map((row) => ({
     id: Number(row.id),
     question: String(row.question || ""),
+    category: String(row.category || "other"),
     image_url: String(row.image_url || ""),
     created_at: Number(row.created_at || 0),
     user_email: String(row.user_email || ""),
@@ -2629,6 +2680,8 @@ app.post("/api/qna/questions", (req, res) => {
   if (!user) return;
 
   const question = String(req.body?.question || "").trim();
+  const rawCategory = String(req.body?.category || "").trim().toLowerCase();
+  const category = rawCategory === "facebook" ? "facebook" : "other";
   const imageUrl = String(req.body?.image_url || "").trim();
   if (!question && !imageUrl) {
     return res.status(400).json({ error: "Fråga eller bild krävs." });
@@ -2642,13 +2695,14 @@ app.post("/api/qna/questions", (req, res) => {
 
   const now = nowTs();
   const result = db
-    .prepare("INSERT INTO qna_questions(user_id, question, image_url, created_at) VALUES (?, ?, ?, ?)")
-    .run(user.id, question, imageUrl || null, now);
+    .prepare("INSERT INTO qna_questions(user_id, question, category, image_url, created_at) VALUES (?, ?, ?, ?, ?)")
+    .run(user.id, question, category, imageUrl || null, now);
   return res.status(201).json({
     ok: true,
     question: {
       id: Number(result.lastInsertRowid || 0),
       question: question,
+      category: category,
       image_url: imageUrl || "",
       created_at: now,
       user_email: user.email,

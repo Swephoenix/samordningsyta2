@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UX Redesign - Samarbetsyta</title>
+    <style>
+        /* === BÄTTRE UX FÄRGPALETT (CSS Variabler) === */
+        :root {
+            /* Bakgrunder */
+            --bg-app: #F3F4F6;        /* Mjuk ljusgrå för hela appen */
+            --bg-surface: #FFFFFF;    /* Vitt för kort och paneler */
+            --bg-surface-hover: #F9FAFB; 
+            
+            /* Primärfärg (Call to action) */
+            --primary: #4F46E5;       /* Modern Indigo */
+            --primary-hover: #4338CA;
+            --primary-light: #EEF2FF; /* Mycket ljus indigo för t.ex. egna chattbubblor */
+            
+            /* Textfärger */
+            --text-main: #1F2937;     /* Mörkgrå för bra kontrast men mjukare än svart */
+            --text-muted: #6B7280;    /* Mellangrå för datum, etiketter etc. */
+            
+            /* Linjer och ramar */
+            --border: #E5E7EB;
+            
+            /* Semantiska färger (Viktiga meddelanden) */
+            --alert-danger-bg: #FEE2E2;
+            --alert-danger-text: #991B1B;
+            --alert-warning-bg: #FEF3C7;
+            --alert-warning-text: #92400E;
+            --alert-success-bg: #D1FAE5;
+            --alert-success-text: #065F46;
+            --alert-info-bg: #DBEAFE;
+            --alert-info-text: #1E40AF;
+
+            /* Spacing & Radie */
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            padding: 16px;
+            gap: 16px;
+        }
+
+        /* Layout */
+        .sidebar { width: 300px; display: flex; flex-direction: column; gap: 16px; }
+        .main-content { flex: 1; display: flex; flex-direction: column; background: var(--bg-surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); border: 1px solid var(--border); overflow: hidden; }
+        
+        /* Komponenter - Kort */
+        .card {
+            background: var(--bg-surface);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            padding: 16px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .card-header {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 12px;
+            color: var(--text-main);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Knappar */
+        .btn {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            padding: 8px 12px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-main);
+            transition: all 0.2s;
+        }
+        .btn:hover { background: var(--bg-surface-hover); }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+        }
+        .btn-primary:hover { background: var(--primary-hover); color: white; }
+
+        /* Vänster Meny - Kalender/Möten */
+        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; font-weight: bold;}
+        .empty-state {
+            padding: 12px;
+            background: var(--bg-app);
+            border-radius: var(--radius-md);
+            font-size: 13px;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        /* Mitten - Chatt */
+        .chat-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .chat-title { display: flex; align-items: center; gap: 12px; font-weight: 600; }
+        .avatar {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: bold;
+        }
+        
+        .chat-area { flex: 1; padding: 24px; overflow-y: auto; background: var(--bg-surface); display: flex; flex-direction: column; gap: 16px; }
+        
+        .chat-bubble-container { display: flex; flex-direction: column; align-items: flex-end; }
+        .chat-bubble {
+            background: var(--primary-light);
+            color: var(--primary-hover);
+            padding: 10px 16px;
+            border-radius: 16px 16px 4px 16px;
+            max-width: 70%;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        .chat-meta { font-size: 11px; color: var(--text-muted); }
+
+        .chat-input-area { padding: 16px 24px; border-top: 1px solid var(--border); background: var(--bg-surface-hover); }
+        .input-box {
+            display: flex;
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 4px 4px 4px 16px;
+            align-items: center;
+        }
+        .input-box input { flex: 1; border: none; outline: none; font-size: 14px; background: transparent; }
+        .btn-send {
+            background: var(--primary);
+            color: white;
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            border: none; cursor: pointer;
+        }
+
+        /* Höger Meny - Meddelanden (Semantisk design) */
+        .alert {
+            padding: 12px;
+            border-radius: var(--radius-md);
+            font-size: 13px;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+        .alert-danger { background: var(--alert-danger-bg); color: var(--alert-danger-text); border-left: 4px solid var(--alert-danger-text);}
+        .alert-warning { background: var(--alert-warning-bg); color: var(--alert-warning-text); border-left: 4px solid var(--alert-warning-text);}
+        .alert-success { background: var(--alert-success-bg); color: var(--alert-success-text); border-left: 4px solid var(--alert-success-text);}
+        .alert-info { background: var(--alert-info-bg); color: var(--alert-info-text); border-left: 4px solid var(--alert-info-text);}
+
+        /* Verktyg Grid */
+        .tools-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .tool-btn {
+            background: var(--bg-app);
+            border: 1px solid var(--border);
+            padding: 16px 0;
+            border-radius: var(--radius-md);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+        .tool-btn:hover { background: var(--border); }
+    </style>
+</head>
+<body>
+
+    <!-- VÄNSTER SPALT -->
+    <aside class="sidebar">
+        <div class="card">
+            <div class="calendar-header">
+                <span><</span>
+                <span>Mars 2026</span>
+                <span>></span>
+            </div>
+            <button class="btn btn-primary" style="width: 100%; margin-bottom: 16px;">+ Nytt möte</button>
+            <div class="empty-state">Kalender-vy här...</div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">Dagens möten</div>
+            <div class="empty-state">Inga möten idag</div>
+        </div>
+
+        <div class="card" style="flex: 1; display: flex; flex-direction: column;">
+            <div class="card-header">Mina Anteckningar</div>
+            <textarea style="flex: 1; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 8px; resize: none; width: 100%; font-family: inherit; font-size: 13px;" placeholder="Skriv dina tankar här..."></textarea>
+            <button class="btn" style="width: 100%; margin-top: 12px;">Logga ut</button>
+        </div>
+    </aside>
+
+    <!-- MITTEN - HUVUDYTA -->
+    <main class="main-content">
+        <header class="chat-header">
+            <div class="chat-title">
+                <div class="avatar">SA</div>
+                <div>
+                    <div>Samarbetsyta</div>
+                    <div style="font-size: 12px; color: var(--text-muted); font-weight: normal;">1 online</div>
+                </div>
+            </div>
+            <div>
+                <span style="font-size: 12px; color: var(--text-muted); margin-right: 8px;">Inloggad som: admin</span>
+                <button class="btn">Min profil</button>
+            </div>
+        </header>
+
+        <div class="chat-area">
+            <div style="text-align: center; margin: 16px 0;">
+                <span class="empty-state" style="border-radius: 20px; padding: 4px 12px;">måndag 2 mars</span>
+            </div>
+
+            <div class="chat-bubble-container">
+                <div class="chat-bubble">Hej</div>
+                <div class="chat-meta">admin 11:00</div>
+            </div>
+            <div class="chat-bubble-container">
+                <div class="chat-bubble">Hej</div>
+                <div class="chat-meta">admin 11:05</div>
+            </div>
+        </div>
+
+        <div class="chat-input-area">
+            <div class="input-box">
+                <input type="text" placeholder="Skriv i gruppchatten...">
+                <button class="btn-send">➤</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- HÖGER SPALT -->
+    <aside class="sidebar">
+        <div class="card">
+            <div class="card-header">
+                Viktiga Meddelanden
+                <button class="btn" style="padding: 4px 8px; font-size: 11px;">Redigera</button>
+            </div>
+            <!-- Semantiska notiser istället för röriga ikoner -->
+            <div class="alert alert-danger">
+                <strong>Deadline</strong> för Q3-rapporten är på fredag.
+            </div>
+            <div class="alert alert-warning">
+                <strong>Systemuppdatering</strong> inatt kl 02:00.
+            </div>
+            <div class="alert alert-success">
+                <strong>Nya rutiner</strong> för delade mappar är nu aktiva.
+            </div>
+            <div class="alert alert-info">
+                <strong>Planerat underhåll</strong> av filsystemet söndag 09:00-10:00.
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">Verktyg</div>
+            <div class="tools-grid">
+                <div class="tool-btn">📊</div>
+                <div class="tool-btn">💡</div>
+                <div class="tool-btn">⚙️</div>
+                <div class="tool-btn">💬</div>
+                <div class="tool-btn">👥</div>
+                <div class="tool-btn">📁</div>
+            </div>
+        </div>
+    </aside>
+
+</body>
+</html>
