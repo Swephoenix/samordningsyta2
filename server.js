@@ -40,15 +40,21 @@ const PASSWORD_RESET_RATE_LIMIT_WINDOW_SECONDS = 60 * 10;
 const PASSWORD_RESET_RATE_LIMIT_MAX_ATTEMPTS = 5;
 const LOGIN_RATE_LIMIT_WINDOW_SECONDS = 60 * 10;
 const LOGIN_RATE_LIMIT_MAX_ATTEMPTS = 10;
+const LOGIN_CODE_TTL_SECONDS = 60 * 10;
+const LOGIN_CODE_RATE_LIMIT_WINDOW_SECONDS = 60 * 10;
+const LOGIN_CODE_RATE_LIMIT_MAX_ATTEMPTS = 8;
 const ONLINE_WINDOW_SECONDS = 20;
 const PBKDF2_ITERATIONS = 240000;
 const SESSION_COOKIE = "session_token";
+const CSRF_COOKIE = "csrf_token";
 const UPLOAD_DIR = path.join(__dirname, "uploads", "chat");
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 const REGISTER_ALLOWED_DOMAIN = "@ambitionsverige.se";
 const FORCED_SMTP_IDENTITY = "mail@ambitionsverige.se";
 const passwordResetRateLimit = new Map();
 const loginRateLimit = new Map();
+const loginCodeRequestRateLimit = new Map();
+const loginCodeVerifyRateLimit = new Map();
 const REGISTER_ANIMAL_NAMES = [
   "Räven",
   "Ugglan",
@@ -320,6 +326,16 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
   created_at INTEGER NOT NULL,
   FOREIGN KEY(user_id) REFERENCES users(id)
 );
+
+CREATE TABLE IF NOT EXISTS login_code_tokens (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  code_hash TEXT NOT NULL,
+  expires_at INTEGER NOT NULL,
+  used_at INTEGER,
+  created_at INTEGER NOT NULL,
+  FOREIGN KEY(user_id) REFERENCES users(id)
+);
 `);
 
 db.exec(`
@@ -355,6 +371,9 @@ CREATE INDEX IF NOT EXISTS idx_idea_bank_ideas_created
 
 CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user_exp
   ON password_reset_tokens(user_id, expires_at);
+
+CREATE INDEX IF NOT EXISTS idx_login_code_tokens_user_exp
+  ON login_code_tokens(user_id, expires_at);
 `);
 
 function nowTs() {
@@ -524,6 +543,61 @@ function ensureColumn(table, column, ddl) {
   const cols = db.prepare(`PRAGMA table_info(${table})`).all();
   const exists = cols.some((c) => c.name === column);
   if (!exists) db.exec(`ALTER TABLE ${table} ADD COLUMN ${ddl}`);
+}
+
+function isStateChangingMethod(method) {
+  const m = String(method || "").toUpperCase();
+  return m === "POST" || m === "PUT" || m === "PATCH" || m === "DELETE";
+}
+
+function makeCsrfToken() {
+  return crypto.randomBytes(24).toString("base64url");
+}
+
+const DANGEROUS_UPLOAD_EXTENSIONS = new Set([
+  ".html", ".htm", ".xhtml", ".xml", ".svg", ".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx",
+  ".php", ".phtml", ".pl", ".py", ".rb", ".sh", ".bat", ".cmd", ".ps1", ".exe", ".dll",
+  ".msi", ".com", ".scr", ".jar", ".vbs", ".wsf"
+]);
+
+const ALLOWED_UPLOAD_EXTENSIONS = new Set([
+  ".pdf", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".heic",
+  ".txt", ".csv", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",
+  ".zip", ".rar", ".7z", ".mp4", ".webm", ".mov", ".m4v", ".ogg"
+]);
+
+const ALLOWED_UPLOAD_MIME_EXACT = new Set([
+  "application/pdf",
+  "text/plain",
+  "text/csv",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "application/zip",
+  "application/x-zip-compressed",
+  "application/x-rar-compressed",
+  "application/vnd.rar",
+  "application/x-7z-compressed"
+]);
+
+function isAllowedUploadFile(nameRaw, mimeRaw) {
+  const name = String(nameRaw || "").trim();
+  const mime = String(mimeRaw || "").trim().toLowerCase();
+  const ext = path.extname(name).toLowerCase();
+  if (!name || !ext) return false;
+  if (DANGEROUS_UPLOAD_EXTENSIONS.has(ext)) return false;
+
+  const safeByExt = ALLOWED_UPLOAD_EXTENSIONS.has(ext);
+  const safeByMime =
+    mime.startsWith("image/") ||
+    mime.startsWith("video/") ||
+    ALLOWED_UPLOAD_MIME_EXACT.has(mime);
+
+  if (mime === "application/octet-stream") return safeByExt;
+  return safeByExt || safeByMime;
 }
 
 function defaultFsState() {
@@ -711,6 +785,7 @@ ensureColumn("important_messages", "color", "color TEXT NOT NULL DEFAULT 'info'"
 ensureColumn("chat_messages", "pinned", "pinned INTEGER NOT NULL DEFAULT 0");
 ensureColumn("chat_messages", "pinned_at", "pinned_at INTEGER");
 ensureColumn("chat_messages", "pinned_by", "pinned_by INTEGER");
+ensureColumn("sessions", "csrf_token", "csrf_token TEXT");
 
 const isProduction = String(process.env.NODE_ENV || "").toLowerCase() === "production";
 const configuredAdminIdentifier = getConfiguredAdminIdentifier();
@@ -719,7 +794,7 @@ if (configuredAdminIdentifier && configuredAdminPassword) {
   ensureDefaultUser(configuredAdminIdentifier, configuredAdminPassword);
 }
 
-// Fast testkonto för enklare QA/inloggning i miljön.
+// Fast testkonto (kan tas bort av admin i medlemshantering).
 ensureDefaultUser("test", "test");
 
 if (!isProduction) {
@@ -736,6 +811,27 @@ ensureRegistrationSetting();
 app.use(express.json({ limit: "15mb" }));
 app.use(cookieParser());
 app.set("trust proxy", 1);
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'self'; " +
+      "img-src 'self' data: blob: https:; " +
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+      "font-src 'self' data: https://fonts.gstatic.com; " +
+      "script-src 'self' 'unsafe-inline'; " +
+      "connect-src 'self'; " +
+      "frame-src 'self' blob: data: https:; " +
+      "object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
+  );
+  if (isProduction) {
+    res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  }
+  next();
+});
 
 const PUBLIC_FILE_ROUTES = new Set([
   "index.html",
@@ -777,11 +873,12 @@ app.get("/:publicFile", (req, res, next) => {
 
 function createSession(userId) {
   const token = crypto.randomBytes(48).toString("base64url");
+  const csrfToken = makeCsrfToken();
   const expiresAt = nowTs() + SESSION_TTL_SECONDS;
   db.prepare(
-    "INSERT INTO sessions(token, user_id, expires_at, last_seen_at, created_at) VALUES (?, ?, ?, ?, ?)"
-  ).run(token, userId, expiresAt, nowTs(), nowTs());
-  return token;
+    "INSERT INTO sessions(token, user_id, expires_at, last_seen_at, created_at, csrf_token) VALUES (?, ?, ?, ?, ?, ?)"
+  ).run(token, userId, expiresAt, nowTs(), nowTs(), csrfToken);
+  return { token, csrfToken };
 }
 
 function getUserFromSession(req) {
@@ -790,7 +887,7 @@ function getUserFromSession(req) {
 
   const row = db
     .prepare(
-      `SELECT u.id, u.email, u.created_at, s.expires_at, s.token
+      `SELECT u.id, u.email, u.created_at, s.expires_at, s.token, s.csrf_token
        FROM sessions s
        JOIN users u ON u.id = s.user_id
        WHERE s.token = ?`
@@ -807,7 +904,8 @@ function getUserFromSession(req) {
     id: row.id,
     email: row.email,
     created_at: row.created_at,
-    token: row.token
+    token: row.token,
+    csrfToken: String(row.csrf_token || "")
   };
 }
 
@@ -821,9 +919,24 @@ function setSessionCookie(res, token) {
   });
 }
 
+function setCsrfCookie(res, csrfToken) {
+  res.cookie(CSRF_COOKIE, csrfToken, {
+    maxAge: SESSION_TTL_SECONDS * 1000,
+    httpOnly: false,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/"
+  });
+}
+
 function clearSessionCookie(res) {
   res.clearCookie(SESSION_COOKIE, {
     httpOnly: true,
+    sameSite: "lax",
+    path: "/"
+  });
+  res.clearCookie(CSRF_COOKIE, {
+    httpOnly: false,
     sameSite: "lax",
     path: "/"
   });
@@ -834,6 +947,19 @@ function requireAuth(req, res) {
   if (!user) {
     res.status(401).json({ error: "Inte inloggad." });
     return null;
+  }
+  let csrfToken = String(user.csrfToken || "");
+  if (!csrfToken) {
+    csrfToken = makeCsrfToken();
+    db.prepare("UPDATE sessions SET csrf_token = ? WHERE token = ?").run(csrfToken, user.token);
+  }
+  setCsrfCookie(res, csrfToken);
+  if (isStateChangingMethod(req.method)) {
+    const provided = String(req.get("x-csrf-token") || "");
+    if (!provided || provided !== csrfToken) {
+      res.status(403).json({ error: "Ogiltig CSRF-token." });
+      return null;
+    }
   }
   db.prepare("UPDATE sessions SET last_seen_at = ? WHERE token = ?").run(nowTs(), user.token);
   return user;
@@ -1026,9 +1152,8 @@ async function sendGeneratedCredentialsEmail({ workEmail, username, password, ci
     "",
     "Dina inloggningsuppgifter:",
     `Användarnamn: ${username}`,
-    `Lösenord: ${password}`,
     "",
-    "Logga in på samordningsytan och byt lösenord direkt.",
+    "När du loggar in anger du användarnamn och får en engångskod via e-post.",
     "",
     "Vänliga hälsningar,",
     "Ambition Sverige"
@@ -1054,6 +1179,38 @@ async function sendPasswordResetEmail({ recipientEmail, username, resetCode }) {
     `${resetCode}`,
     "",
     `Koden gäller i ${Math.floor(PASSWORD_RESET_TTL_SECONDS / 60)} minuter.`,
+    "",
+    "Om du inte begärde detta kan du ignorera mailet.",
+    "",
+    "Vänliga hälsningar,",
+    "Ambition Sverige"
+  ].join("\n");
+  return sendMailViaSmtp({
+    toEmail: recipientEmail,
+    subject: subject,
+    text: text
+  });
+}
+
+function makeNumericLoginCode(length = 6) {
+  let out = "";
+  for (let i = 0; i < length; i += 1) {
+    out += String(crypto.randomInt(0, 10));
+  }
+  return out;
+}
+
+async function sendLoginCodeEmail({ recipientEmail, username, code }) {
+  const subject = "Din inloggningskod - Ambition Sverige";
+  const text = [
+    "Hej!",
+    "",
+    "Du har begärt en inloggningskod.",
+    "",
+    `Användarnamn: ${username}`,
+    `Inloggningskod: ${code}`,
+    "",
+    `Koden gäller i ${Math.floor(LOGIN_CODE_TTL_SECONDS / 60)} minuter.`,
     "",
     "Om du inte begärde detta kan du ignorera mailet.",
     "",
@@ -1169,49 +1326,119 @@ app.post("/api/register", async (req, res) => {
   }
 });
 
-app.post("/api/login", (req, res) => {
-  const email = String(req.body?.email || "").trim().toLowerCase();
-  const password = String(req.body?.password || "");
+app.post("/api/login/code/request", async (req, res) => {
+  const identifier = normalizeEmail(req.body?.identifier || req.body?.username || req.body?.email || "");
+  const genericMessage = "Om användaren finns har en inloggningskod skickats till registrerad e-post.";
   const ip = String(req.ip || "unknown");
-  const rateKey = `login:${email || "empty"}:${ip}`;
+  const rateKey = `logincode:req:${identifier || "empty"}:${ip}`;
   const now = nowTs();
-  const rate = loginRateLimit.get(rateKey) || { count: 0, reset_at: now + LOGIN_RATE_LIMIT_WINDOW_SECONDS };
+  const rate = loginCodeRequestRateLimit.get(rateKey) || { count: 0, reset_at: now + LOGIN_CODE_RATE_LIMIT_WINDOW_SECONDS };
   if (rate.reset_at <= now) {
     rate.count = 0;
-    rate.reset_at = now + LOGIN_RATE_LIMIT_WINDOW_SECONDS;
+    rate.reset_at = now + LOGIN_CODE_RATE_LIMIT_WINDOW_SECONDS;
   }
   rate.count += 1;
-  loginRateLimit.set(rateKey, rate);
-  if (rate.count > LOGIN_RATE_LIMIT_MAX_ATTEMPTS) {
-    return res.status(429).json({ error: "För många inloggningsförsök. Vänta en stund och försök igen." });
+  loginCodeRequestRateLimit.set(rateKey, rate);
+  if (rate.count > LOGIN_CODE_RATE_LIMIT_MAX_ATTEMPTS) {
+    return res.status(429).json({ error: "För många försök. Vänta en stund och prova igen." });
   }
 
-  if (!email || !password) {
-    return res.status(400).json({ error: "Användarnamn/e-post och lösenord krävs." });
+  if (!identifier || identifier.length < 2) {
+    return res.json({ ok: true, message: genericMessage });
   }
 
   const user = db
-    .prepare("SELECT id, email, password_hash, salt, iterations FROM users WHERE lower(email) = ?")
-    .get(email);
-
+    .prepare("SELECT id, email, contact_email FROM users WHERE lower(email) = ? LIMIT 1")
+    .get(identifier);
   if (!user) {
-    return res.status(401).json({ error: "Fel användarnamn/e-post eller lösenord." });
+    return res.json({ ok: true, message: genericMessage });
   }
 
-  const candidateHash = hashPassword(password, user.salt, user.iterations);
-  const ok = crypto.timingSafeEqual(
-    Buffer.from(candidateHash, "hex"),
-    Buffer.from(user.password_hash, "hex")
-  );
-
-  if (!ok) {
-    return res.status(401).json({ error: "Fel användarnamn/e-post eller lösenord." });
+  const recipientEmail = normalizeEmail(user.contact_email || "");
+  if (!recipientEmail || !recipientEmail.endsWith(REGISTER_ALLOWED_DOMAIN)) {
+    return res.json({ ok: true, message: genericMessage });
   }
 
-  loginRateLimit.delete(rateKey);
-  const token = createSession(user.id);
-  setSessionCookie(res, token);
+  const code = makeNumericLoginCode(6);
+  const codeHash = hashResetToken(code);
+  const expiresAt = now + LOGIN_CODE_TTL_SECONDS;
+  try {
+    db.prepare(
+      "DELETE FROM login_code_tokens WHERE user_id = ? OR expires_at <= ? OR used_at IS NOT NULL"
+    ).run(Number(user.id), now);
+    db.prepare(
+      `INSERT INTO login_code_tokens(user_id, code_hash, expires_at, used_at, created_at)
+       VALUES (?, ?, ?, NULL, ?)`
+    ).run(Number(user.id), codeHash, expiresAt, now);
+    await sendLoginCodeEmail({
+      recipientEmail: recipientEmail,
+      username: String(user.email || ""),
+      code: code
+    });
+  } catch (_) {
+    return res.status(500).json({ error: "Kunde inte skicka inloggningskod just nu." });
+  }
+
+  return res.json({ ok: true, message: genericMessage });
+});
+
+app.post("/api/login/code/verify", (req, res) => {
+  const identifier = normalizeEmail(req.body?.identifier || req.body?.username || req.body?.email || "");
+  const code = String(req.body?.code || "").trim();
+  const ip = String(req.ip || "unknown");
+  const rateKey = `logincode:verify:${identifier || "empty"}:${ip}`;
+  const now = nowTs();
+  const rate = loginCodeVerifyRateLimit.get(rateKey) || { count: 0, reset_at: now + LOGIN_CODE_RATE_LIMIT_WINDOW_SECONDS };
+  if (rate.reset_at <= now) {
+    rate.count = 0;
+    rate.reset_at = now + LOGIN_CODE_RATE_LIMIT_WINDOW_SECONDS;
+  }
+  rate.count += 1;
+  loginCodeVerifyRateLimit.set(rateKey, rate);
+  if (rate.count > LOGIN_CODE_RATE_LIMIT_MAX_ATTEMPTS) {
+    return res.status(429).json({ error: "För många försök. Vänta en stund och prova igen." });
+  }
+
+  if (!identifier || !/^\d{6}$/.test(code)) {
+    return res.status(400).json({ error: "Ange användarnamn och sexsiffrig kod." });
+  }
+
+  const user = db
+    .prepare("SELECT id, email FROM users WHERE lower(email) = ? LIMIT 1")
+    .get(identifier);
+  if (!user) {
+    return res.status(401).json({ error: "Fel användarnamn eller kod." });
+  }
+
+  const codeHash = hashResetToken(code);
+  const tokenRow = db
+    .prepare(
+      `SELECT id
+       FROM login_code_tokens
+       WHERE user_id = ?
+         AND code_hash = ?
+         AND used_at IS NULL
+         AND expires_at > ?
+       ORDER BY id DESC
+       LIMIT 1`
+    )
+    .get(Number(user.id), codeHash, now);
+  if (!tokenRow) {
+    return res.status(401).json({ error: "Fel användarnamn eller kod." });
+  }
+
+  db.prepare("UPDATE login_code_tokens SET used_at = ? WHERE id = ?").run(now, Number(tokenRow.id));
+  loginCodeVerifyRateLimit.delete(rateKey);
+  const session = createSession(user.id);
+  setSessionCookie(res, session.token);
+  setCsrfCookie(res, session.csrfToken);
   return res.json({ ok: true, email: user.email });
+});
+
+app.post("/api/login", (req, res) => {
+  return res.status(410).json({
+    error: "Lösenordsinloggning är avstängd. Använd inloggning med engångskod via /api/login/code/request och /api/login/code/verify."
+  });
 });
 
 app.post("/api/password/reset-request", async (req, res) => {
@@ -1406,7 +1633,8 @@ app.get("/api/admin/settings", (req, res) => {
     return res.status(403).json({ error: "Endast admin har åtkomst." });
   }
   return res.json({
-    allow_registrations: getAllowRegistrations()
+    allow_registrations: getAllowRegistrations(),
+    is_production: isProduction
   });
 });
 
@@ -2060,11 +2288,14 @@ app.post("/api/files/upload", (req, res) => {
   if (!user) return;
 
   const nameRaw = String(req.body?.name || "").trim();
-  const mimeRaw = String(req.body?.mime || "").trim();
+  const mimeRaw = String(req.body?.mime || "").trim().toLowerCase();
   const dataBase64 = String(req.body?.data_base64 || "").trim();
 
   if (!nameRaw || !dataBase64) {
     return res.status(400).json({ error: "Filnamn och filinnehåll krävs." });
+  }
+  if (!isAllowedUploadFile(nameRaw, mimeRaw)) {
+    return res.status(400).json({ error: "Otillåten filtyp." });
   }
 
   let buffer;

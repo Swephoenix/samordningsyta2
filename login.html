@@ -226,25 +226,25 @@
 <body>
     <main class="login-card">
         <h1 id="title">Välkommen tillbaka</h1>
-        <p class="subtitle" id="subtitle">Logga in för att fortsätta till arbetsytan.</p>
+        <p class="subtitle" id="subtitle">Ange ditt användarnamn så skickas en engångskod till din e-post.</p>
 
         <form id="authForm">
             <div class="field">
-                <label for="email">Användarnamn eller e-post</label>
-                <input id="email" name="email" type="text" placeholder="admin eller namn@exempel.se" required>
+                <label for="username">Användarnamn</label>
+                <input id="username" name="username" type="text" placeholder="t.ex. raven42 eller admin" required>
             </div>
 
-            <div class="field">
-                <label for="password">Lösenord</label>
-                <input id="password" name="password" type="password" placeholder="Skriv ditt lösenord" required>
+            <div class="field" id="codeField" style="display:none;">
+                <label for="loginCode">Inloggningskod</label>
+                <input id="loginCode" name="loginCode" type="text" inputmode="numeric" maxlength="6" placeholder="6-siffrig kod">
             </div>
 
             <div class="row" id="loginExtras">
-                <label class="remember"><input type="checkbox"> Kom ihåg mig</label>
-                <button class="link" id="forgotPasswordBtn" type="button">Glömt lösenord?</button>
+                <span class="remember">Steg 1: Skicka kod</span>
+                <button class="link" id="resendCodeBtn" type="button" style="display:none;">Skicka ny kod</button>
             </div>
 
-            <button class="btn" id="submitBtn" type="submit">Logga in</button>
+            <button class="btn" id="submitBtn" type="submit">Skicka kod</button>
         </form>
 
         <p class="foot">Ingen användare? <a class="link" href="/registrera">Skapa konto</a></p>
@@ -256,7 +256,12 @@
         const form = document.getElementById('authForm');
         const notice = document.getElementById('notice');
         const submitBtn = document.getElementById('submitBtn');
-        const forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
+        const usernameInput = document.getElementById('username');
+        const codeInput = document.getElementById('loginCode');
+        const codeField = document.getElementById('codeField');
+        const resendCodeBtn = document.getElementById('resendCodeBtn');
+        const loginExtras = document.getElementById('loginExtras');
+        let codeRequested = false;
 
         function getPostLoginRedirect() {
             const path = String(nextParamRaw || '').trim();
@@ -284,6 +289,22 @@
             return data;
         }
 
+        function setCodeStep(enabled) {
+            codeRequested = !!enabled;
+            codeField.style.display = codeRequested ? 'block' : 'none';
+            resendCodeBtn.style.display = codeRequested ? 'inline-block' : 'none';
+            submitBtn.textContent = codeRequested ? 'Logga in med kod' : 'Skicka kod';
+            if (codeRequested) {
+                if (loginExtras) {
+                    const text = loginExtras.querySelector('.remember');
+                    if (text) text.textContent = 'Steg 2: Ange kod';
+                }
+                codeInput.focus();
+            } else {
+                codeInput.value = '';
+            }
+        }
+
         async function checkExistingSession() {
             try {
                 const resp = await fetch('/api/me', { credentials: 'include' });
@@ -297,19 +318,28 @@
             setNotice('', '');
             submitBtn.disabled = true;
 
-            const email = document.getElementById('email').value.trim().toLowerCase();
-            const password = document.getElementById('password').value;
+            const username = usernameInput.value.trim().toLowerCase();
+            const code = codeInput.value.trim();
 
-            if (!email || !password) {
+            if (!username) {
                 submitBtn.disabled = false;
-                setNotice('Fyll i användarnamn/e-post och lösenord.', 'error');
+                setNotice('Fyll i användarnamn.', 'error');
                 return;
             }
 
             try {
-                await postJson('/api/login', { email: email, password: password });
-                setNotice('Inloggad.', 'ok');
-                window.location.href = getPostLoginRedirect();
+                if (!codeRequested) {
+                    const result = await postJson('/api/login/code/request', { identifier: username });
+                    setCodeStep(true);
+                    setNotice(result.message || 'Om användaren finns har en kod skickats till din e-post.', 'ok');
+                } else {
+                    if (!/^\d{6}$/.test(code)) {
+                        throw new Error('Ange en giltig 6-siffrig kod.');
+                    }
+                    await postJson('/api/login/code/verify', { identifier: username, code: code });
+                    setNotice('Inloggad.', 'ok');
+                    window.location.href = getPostLoginRedirect();
+                }
             } catch (err) {
                 setNotice(err.message, 'error');
             } finally {
@@ -317,21 +347,24 @@
             }
         });
 
-        forgotPasswordBtn.addEventListener('click', async function() {
-            const raw = prompt('Ange användarnamn eller e-post för att få nytt lösenord:');
-            const identifier = String(raw || '').trim().toLowerCase();
+        resendCodeBtn.addEventListener('click', async function() {
+            const identifier = usernameInput.value.trim().toLowerCase();
             if (!identifier) return;
+            resendCodeBtn.disabled = true;
             try {
-                const result = await postJson('/api/password/reset-request', { identifier: identifier });
-                setNotice(result.message || 'Om kontot finns har ett nytt lösenord skickats till din e-post.', 'ok');
+                const result = await postJson('/api/login/code/request', { identifier: identifier });
+                setNotice(result.message || 'Om användaren finns har en kod skickats till din e-post.', 'ok');
             } catch (err) {
-                setNotice(err.message || 'Kunde inte återställa lösenordet just nu.', 'error');
+                setNotice(err.message || 'Kunde inte skicka kod just nu.', 'error');
+            } finally {
+                resendCodeBtn.disabled = false;
             }
         });
 
         if (new URLSearchParams(window.location.search).get('register') === 'closed') {
             setNotice('Registrering är avstängd av administratör.', 'error');
         }
+        setCodeStep(false);
         checkExistingSession();
     </script>
 </body>

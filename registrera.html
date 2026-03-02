@@ -188,7 +188,7 @@
                 </select>
             </div>
 
-            <div class="hint">Användarnamn och lösenord genereras automatiskt och skickas till din e-post.</div>
+            <div class="hint">Användarnamn genereras automatiskt och skickas till din e-post. Inloggning sker med engångskod via e-post.</div>
             <button class="btn" id="submitBtn" type="submit">Registrera</button>
         </form>
 
@@ -290,7 +290,7 @@
                     work_email: email,
                     city: city
                 });
-                setNotice('Konto skapat. Kontrollera din e-post för användarnamn och lösenord.', 'ok');
+                setNotice('Konto skapat. Kontrollera din e-post för användarnamn. Inloggning sker med engångskod.', 'ok');
                 form.reset();
             } catch (err) {
                 setNotice(err.message, 'error');
