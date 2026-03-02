@@ -897,6 +897,15 @@
             font-weight: 700;
             color: inherit;
         }
+        .chat-author-city {
+            margin-left: 6px;
+            font-weight: 600;
+            opacity: 0.9;
+            color: #6b7280;
+        }
+        .chat-post.admin .chat-author-city {
+            color: #92400e;
+        }
         
         .chat-input-area {
             padding: 12px 14px;
@@ -3710,6 +3719,15 @@
         let eventEditorMode = 'create';
         let editingEventId = null;
 
+        function currentUserTitle() {
+            return currentUserIsAdmin ? 'admin' : (currentUserEmail || '-');
+        }
+
+        function chatAuthorTitle(email, isAdminAuthor) {
+            if (isAdminAuthor) return 'admin';
+            return String(email || 'okänd');
+        }
+
         async function requireAuth() {
             try {
                 const resp = await fetch('/api/me', { credentials: 'include' });
@@ -3723,7 +3741,7 @@
                 currentUserEmail = String(data.email || '');
                 currentUserIsAdmin = !!data.is_admin;
                 const userBadge = document.getElementById('chatCurrentUserBadge');
-                if (userBadge) userBadge.innerText = `Inloggad som: ${currentUserEmail || '-'}`;
+                if (userBadge) userBadge.innerText = `Inloggad som: ${currentUserTitle()}`;
                 document.getElementById('adminSettingsIcon').style.display = currentUserIsAdmin ? 'flex' : 'none';
                 document.getElementById('meetingsAdminRow').style.display = currentUserIsAdmin ? 'flex' : 'none';
                 document.getElementById('importantAdminBtn').style.display = currentUserIsAdmin ? 'inline-flex' : 'none';
@@ -4154,6 +4172,8 @@
                 const post = document.createElement('div');
                 const isMine = msg.email === currentUserEmail;
                 const isAdminAuthor = !!msg.author_is_admin || String(msg.email || '').toLowerCase() === 'admin';
+                const authorLabel = chatAuthorTitle(msg.email, isAdminAuthor);
+                const cityLabel = String(msg.user_city || '').trim();
                 const classNames = ['chat-post', isMine ? 'mine' : 'theirs'];
                 if (isAdminAuthor) classNames.push('admin');
                 if (msg.pinned) classNames.push('pinned');
@@ -4175,7 +4195,7 @@
                     : '';
                 post.innerHTML = `
                     <div class=\"chat-post-header\">
-                        <strong>${escapeHtml(msg.email)}</strong>
+                        <strong>${escapeHtml(authorLabel)}${cityLabel ? ` <span class=\"chat-author-city\">· ${escapeHtml(cityLabel)}</span>` : ''}</strong>
                         <span class=\"chat-post-meta\">
                             ${pinBtn}
                             <span>${formatTimeFromUnix(msg.created_at)}</span>
@@ -4192,7 +4212,7 @@
                     replyBtnEl.addEventListener('click', function(e) {
                         e.preventDefault();
                         setActiveReply({
-                            author: msg.email,
+                            author: authorLabel,
                             snippet: String(parsed.body || '').slice(0, 80)
                         });
                     });
@@ -4278,7 +4298,7 @@
                     : `Skriv till ${thread.name}...`;
             }
             if (userBadge) {
-                userBadge.innerText = `Inloggad som: ${currentUserEmail || '-'}`;
+                userBadge.innerText = `Inloggad som: ${currentUserTitle()}`;
             }
             setActiveReply(null);
             renderComposeBar();

@@ -31,6 +31,16 @@ function loadEnvFromFile(filePath, override) {
 loadEnvFromFile(path.join(__dirname, ".env.example"), false);
 loadEnvFromFile(path.join(__dirname, ".env"), true);
 
+const ENV_IS_PRODUCTION = String(process.env.NODE_ENV || "").toLowerCase() === "production";
+const SESSION_SECRET_FROM_ENV = String(process.env.SESSION_SECRET || "").trim();
+if (ENV_IS_PRODUCTION && !SESSION_SECRET_FROM_ENV) {
+  throw new Error("SESSION_SECRET måste vara satt i production.");
+}
+const EFFECTIVE_SESSION_SECRET = SESSION_SECRET_FROM_ENV || crypto.randomBytes(32).toString("hex");
+if (!SESSION_SECRET_FROM_ENV) {
+  console.warn("SESSION_SECRET saknas - använder tillfällig nyckel (endast lämpligt i dev).");
+}
+
 const app = express();
 const PORT = Number(process.env.PORT || 8000);
 const DB_PATH = path.join(__dirname, "data", "app.db");
@@ -50,7 +60,7 @@ const CSRF_COOKIE = "csrf_token";
 const UPLOAD_DIR = path.join(__dirname, "uploads", "chat");
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 const REGISTER_ALLOWED_DOMAIN = "@ambitionsverige.se";
-const FORCED_SMTP_IDENTITY = "mail@ambitionsverige.se";
+const DEFAULT_SMTP_IDENTITY = "mail@ambitionsverige.se";
 const passwordResetRateLimit = new Map();
 const loginRateLimit = new Map();
 const loginCodeRequestRateLimit = new Map();
@@ -394,7 +404,24 @@ function hashPassword(password, saltHex, iterations) {
 }
 
 function hashResetToken(token) {
-  return crypto.createHash("sha256").update(String(token || "")).digest("hex");
+  return crypto
+    .createHmac("sha256", EFFECTIVE_SESSION_SECRET)
+    .update(`token:${String(token || "")}`)
+    .digest("hex");
+}
+
+function signSessionRaw(raw) {
+  return crypto
+    .createHmac("sha256", EFFECTIVE_SESSION_SECRET)
+    .update(`session:${String(raw || "")}`)
+    .digest("base64url");
+}
+
+function safeEqualText(a, b) {
+  const aa = String(a || "");
+  const bb = String(b || "");
+  if (aa.length !== bb.length) return false;
+  return crypto.timingSafeEqual(Buffer.from(aa, "utf8"), Buffer.from(bb, "utf8"));
 }
 
 function ensureDefaultUser(email, password) {
@@ -410,14 +437,27 @@ function ensureDefaultUser(email, password) {
 function getConfiguredAdminIdentifier() {
   const fromEmail = String(process.env.ADMIN_EMAIL || "").trim().toLowerCase();
   const fromUsername = String(process.env.ADMIN_USERNAME || "").trim().toLowerCase();
-  if (fromEmail) return fromEmail;
   if (fromUsername) return fromUsername;
+  if (fromEmail) return fromEmail;
   return "";
+}
+
+function getConfiguredAdminContactEmail() {
+  return String(process.env.ADMIN_EMAIL || "").trim().toLowerCase();
 }
 
 function getConfiguredAdminPassword() {
   const fromEnv = String(process.env.ADMIN_PASSWORD || "");
   return fromEnv;
+}
+
+function syncConfiguredAdminContactEmail(identifier, contactEmail) {
+  const id = String(identifier || "").trim().toLowerCase();
+  const mail = String(contactEmail || "").trim().toLowerCase();
+  if (!id || !mail) return;
+  db.prepare(
+    "UPDATE users SET contact_email = ? WHERE lower(email) = ?"
+  ).run(mail, id);
 }
 
 function seedEventsIfEmpty() {
@@ -787,11 +827,17 @@ ensureColumn("chat_messages", "pinned_at", "pinned_at INTEGER");
 ensureColumn("chat_messages", "pinned_by", "pinned_by INTEGER");
 ensureColumn("sessions", "csrf_token", "csrf_token TEXT");
 
-const isProduction = String(process.env.NODE_ENV || "").toLowerCase() === "production";
+const isProduction = ENV_IS_PRODUCTION;
 const configuredAdminIdentifier = getConfiguredAdminIdentifier();
-const configuredAdminPassword = getConfiguredAdminPassword();
-if (configuredAdminIdentifier && configuredAdminPassword) {
+const configuredAdminContactEmail = getConfiguredAdminContactEmail();
+let configuredAdminPassword = getConfiguredAdminPassword();
+if (configuredAdminIdentifier) {
+  if (!configuredAdminPassword) {
+    configuredAdminPassword = makeRandomPassword(24);
+    console.warn("ADMIN_PASSWORD saknas - använder internt slumpat bootstrap-losenord.");
+  }
   ensureDefaultUser(configuredAdminIdentifier, configuredAdminPassword);
+  syncConfiguredAdminContactEmail(configuredAdminIdentifier, configuredAdminContactEmail);
 }
 
 // Fast testkonto (kan tas bort av admin i medlemshantering).
@@ -872,7 +918,8 @@ app.get("/:publicFile", (req, res, next) => {
 });
 
 function createSession(userId) {
-  const token = crypto.randomBytes(48).toString("base64url");
+  const rawToken = crypto.randomBytes(48).toString("base64url");
+  const token = `${rawToken}.${signSessionRaw(rawToken)}`;
   const csrfToken = makeCsrfToken();
   const expiresAt = nowTs() + SESSION_TTL_SECONDS;
   db.prepare(
@@ -884,6 +931,13 @@ function createSession(userId) {
 function getUserFromSession(req) {
   const token = req.cookies[SESSION_COOKIE];
   if (!token) return null;
+  const tokenStr = String(token || "");
+  const dotPos = tokenStr.lastIndexOf(".");
+  if (dotPos <= 0) return null;
+  const raw = tokenStr.slice(0, dotPos);
+  const sig = tokenStr.slice(dotPos + 1);
+  const expectedSig = signSessionRaw(raw);
+  if (!safeEqualText(sig, expectedSig)) return null;
 
   const row = db
     .prepare(
@@ -892,7 +946,7 @@ function getUserFromSession(req) {
        JOIN users u ON u.id = s.user_id
        WHERE s.token = ?`
     )
-    .get(token);
+    .get(tokenStr);
 
   if (!row) return null;
   if (row.expires_at <= nowTs()) {
@@ -966,7 +1020,10 @@ function requireAuth(req, res) {
 }
 
 function isAdmin(user) {
-  return String(user.email || "").toLowerCase() === "admin";
+  const userEmail = String(user && user.email || "").toLowerCase();
+  const configured = String(configuredAdminIdentifier || "").toLowerCase();
+  if (configured && userEmail === configured) return true;
+  return userEmail === "admin";
 }
 
 function normalizeEmail(value) {
@@ -1016,14 +1073,16 @@ async function sendMailViaSmtp({ toEmail, subject, text }) {
   const smtpHost = String(process.env.SMTP_HOST || "").trim();
   const smtpPort = Number(process.env.SMTP_PORT || 587);
   const smtpPass = String(process.env.SMTP_PASS || "").trim();
+  const smtpUser = String(process.env.SMTP_USER || DEFAULT_SMTP_IDENTITY).trim();
+  const mailFrom = String(process.env.MAIL_FROM || smtpUser || DEFAULT_SMTP_IDENTITY).trim();
   const smtpSecureRaw = String(process.env.SMTP_SECURE || "").trim().toLowerCase();
-  const smtpFrom = FORCED_SMTP_IDENTITY;
-  const smtpAuthUser = FORCED_SMTP_IDENTITY;
+  const smtpFrom = mailFrom || DEFAULT_SMTP_IDENTITY;
+  const smtpAuthUser = smtpUser || DEFAULT_SMTP_IDENTITY;
   const smtpSecure = smtpSecureRaw
     ? ["1", "true", "yes", "on"].includes(smtpSecureRaw)
     : smtpPort === 465;
 
-  if (!smtpHost || !smtpPass) {
+  if (!smtpHost || !smtpPass || !smtpAuthUser) {
     throw new Error("SMTP-inställningar saknas i .env/.env.example.");
   }
 
@@ -1143,14 +1202,14 @@ async function sendMailViaSmtp({ toEmail, subject, text }) {
   return { mode: "smtp", auth_user: smtpAuthUser };
 }
 
-async function sendGeneratedCredentialsEmail({ workEmail, username, password, city }) {
-  const subject = "Dina inloggningsuppgifter - Ambition Sverige";
+async function sendGeneratedCredentialsEmail({ workEmail, username, city }) {
+  const subject = "Ditt användarnamn - Ambition Sverige";
   const text = [
     "Hej!",
     "",
     `Din registrering för ort: ${city} är klar.`,
     "",
-    "Dina inloggningsuppgifter:",
+    "Ditt användarnamn:",
     `Användarnamn: ${username}`,
     "",
     "När du loggar in anger du användarnamn och får en engångskod via e-post.",
@@ -1271,7 +1330,7 @@ app.post("/api/register", async (req, res) => {
   }
 
   const username = generateUniqueUsername();
-  const password = makeRandomPassword(14);
+  const password = makeRandomPassword(24);
 
   const salt = crypto.randomBytes(16).toString("hex");
   const passwordHash = hashPassword(password, salt, PBKDF2_ITERATIONS);
@@ -1300,13 +1359,12 @@ app.post("/api/register", async (req, res) => {
     const delivery = await sendGeneratedCredentialsEmail({
       workEmail,
       username,
-      password,
       city
     });
 
     return res.status(201).json({
       ok: true,
-      message: "Konto skapat. Inloggningsuppgifter har skickats till din e-post.",
+      message: "Konto skapat. Användarnamn har skickats till din e-post.",
       delivery_mode: delivery.mode
     });
   } catch (err) {
@@ -1354,7 +1412,15 @@ app.post("/api/login/code/request", async (req, res) => {
     return res.json({ ok: true, message: genericMessage });
   }
 
-  const recipientEmail = normalizeEmail(user.contact_email || "");
+  let recipientEmail = normalizeEmail(user.contact_email || "");
+  if (!recipientEmail) {
+    const maybeAdmin = String(user.email || "").toLowerCase() === String(configuredAdminIdentifier || "").toLowerCase();
+    const configuredMail = normalizeEmail(configuredAdminContactEmail || "");
+    if (maybeAdmin && configuredMail) {
+      recipientEmail = configuredMail;
+      db.prepare("UPDATE users SET contact_email = ? WHERE id = ?").run(recipientEmail, Number(user.id));
+    }
+  }
   if (!recipientEmail || !recipientEmail.endsWith(REGISTER_ALLOWED_DOMAIN)) {
     return res.json({ ok: true, message: genericMessage });
   }
@@ -2339,7 +2405,7 @@ app.get("/api/chat/messages", (req, res) => {
 
   const rows = db
     .prepare(
-      `SELECT m.id, m.message, m.created_at, u.email,
+      `SELECT m.id, m.message, m.created_at, u.email, u.city AS user_city,
               m.pinned, m.pinned_at, m.pinned_by, pu.email AS pinned_by_email
        FROM chat_messages m
        JOIN users u ON u.id = m.user_id
@@ -2376,7 +2442,7 @@ app.get("/api/chat/messages", (req, res) => {
       pinned: !!Number(m.pinned || 0),
       pinned_at: Number(m.pinned_at || 0) || null,
       pinned_by_email: String(m.pinned_by_email || ""),
-      author_is_admin: String(m.email || "").toLowerCase() === "admin",
+      author_is_admin: isAdmin({ email: String(m.email || "") }),
       seen_by: seenBy,
       seen_count: seenBy.length
     };
