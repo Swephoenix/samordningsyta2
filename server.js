@@ -327,6 +327,30 @@ CREATE TABLE IF NOT EXISTS idea_bank_ideas (
   FOREIGN KEY(user_id) REFERENCES users(id)
 );
 
+CREATE TABLE IF NOT EXISTS tasks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  image_url TEXT,
+  created_by INTEGER NOT NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  FOREIGN KEY(created_by) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS task_assignments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  task_id INTEGER NOT NULL,
+  user_id INTEGER NOT NULL,
+  assigned_by INTEGER NOT NULL,
+  assigned_at INTEGER NOT NULL,
+  solved_at INTEGER,
+  UNIQUE(task_id, user_id),
+  FOREIGN KEY(task_id) REFERENCES tasks(id) ON DELETE CASCADE,
+  FOREIGN KEY(user_id) REFERENCES users(id),
+  FOREIGN KEY(assigned_by) REFERENCES users(id)
+);
+
 CREATE TABLE IF NOT EXISTS password_reset_tokens (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL,
@@ -378,6 +402,15 @@ CREATE INDEX IF NOT EXISTS idx_qna_answers_question_created
 
 CREATE INDEX IF NOT EXISTS idx_idea_bank_ideas_created
   ON idea_bank_ideas(created_at DESC, id DESC);
+
+CREATE INDEX IF NOT EXISTS idx_tasks_created
+  ON tasks(created_at DESC, id DESC);
+
+CREATE INDEX IF NOT EXISTS idx_task_assignments_user_solved
+  ON task_assignments(user_id, solved_at, assigned_at DESC, id DESC);
+
+CREATE INDEX IF NOT EXISTS idx_task_assignments_task_solved
+  ON task_assignments(task_id, solved_at, assigned_at DESC, id DESC);
 
 CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user_exp
   ON password_reset_tokens(user_id, expires_at);
@@ -890,13 +923,19 @@ const PUBLIC_FILE_ROUTES = new Set([
   "marmor.jpg",
   "marmor2.png",
   "media-academy-logo.png",
+  "idebank-icon.png",
+  "settings.png",
+  "medlemshantering.png",
+  "statistik.png",
   "newgroup.png",
   "qna.png",
+  "cards_icon.png",
   "tiktok-logo.svg",
   "x-logo.avif",
   "folder.svg",
   "pdf.svg",
-  "text-file.svg"
+  "text-file.svg",
+  "ambition-sverige-partibeteckning.svg"
 ]);
 
 app.get("/uploads/chat/:fileName", (req, res) => {
@@ -1030,6 +1069,27 @@ function isAdmin(user) {
 
 function normalizeEmail(value) {
   return String(value || "").trim().toLowerCase();
+}
+
+function normalizeTaskImageUrl(url) {
+  const value = String(url || "").trim();
+  if (!value) return "";
+  if (!isAllowedUploadUrl(value)) return "";
+  return value.slice(0, 2000);
+}
+
+function mapTaskAssignmentRow(row) {
+  return {
+    assignment_id: Number(row.assignment_id || 0),
+    task_id: Number(row.task_id || 0),
+    title: String(row.title || ""),
+    description: String(row.description || ""),
+    image_url: String(row.image_url || ""),
+    assigned_at: Number(row.assigned_at || 0),
+    solved_at: row.solved_at ? Number(row.solved_at) : null,
+    assigned_to_email: String(row.assigned_to_email || ""),
+    assigned_by_email: String(row.assigned_by_email || "")
+  };
 }
 
 function slugify(value) {
@@ -2174,6 +2234,53 @@ app.get("/api/messenger/groups/:groupId/messages", (req, res) => {
   });
 });
 
+app.get("/api/messenger/groups/:groupId/members", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+
+  const groupId = String(req.params.groupId || "").trim();
+  if (!groupId) {
+    return res.status(400).json({ error: "Ogiltigt grupp-id." });
+  }
+
+  const membership = db
+    .prepare("SELECT 1 FROM chat_group_members WHERE group_id = ? AND user_id = ?")
+    .get(groupId, user.id);
+  if (!membership) {
+    return res.status(403).json({ error: "Du är inte medlem i gruppen." });
+  }
+
+  const activeSince = nowTs() - ONLINE_WINDOW_SECONDS;
+  const rows = db
+    .prepare(
+      `SELECT
+         u.id,
+         u.email,
+         CASE
+           WHEN EXISTS (
+             SELECT 1
+             FROM sessions s
+             WHERE s.user_id = u.id
+               AND s.expires_at > ?
+               AND s.last_seen_at >= ?
+           ) THEN 1 ELSE 0
+         END AS is_online
+       FROM chat_group_members gm
+       JOIN users u ON u.id = gm.user_id
+       WHERE gm.group_id = ?
+       ORDER BY lower(u.email) ASC`
+    )
+    .all(nowTs(), activeSince, groupId);
+
+  return res.json({
+    members: rows.map((r) => ({
+      id: Number(r.id || 0),
+      email: String(r.email || ""),
+      online: !!r.is_online
+    }))
+  });
+});
+
 app.post("/api/messenger/groups/:groupId/messages", (req, res) => {
   const user = requireAuth(req, res);
   if (!user) return;
@@ -3212,6 +3319,196 @@ app.delete("/api/idea-bank/ideas/:id", (req, res) => {
 
   db.prepare("DELETE FROM idea_bank_ideas WHERE id = ?").run(id);
   return res.json({ ok: true });
+});
+
+app.get("/api/tasks/my", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+
+  const rows = db
+    .prepare(
+      `SELECT a.id AS assignment_id, a.task_id, a.assigned_at, a.solved_at,
+              t.title, t.description, t.image_url,
+              u.email AS assigned_to_email,
+              ab.email AS assigned_by_email
+       FROM task_assignments a
+       JOIN tasks t ON t.id = a.task_id
+       JOIN users u ON u.id = a.user_id
+       JOIN users ab ON ab.id = a.assigned_by
+       WHERE a.user_id = ?
+       ORDER BY CASE WHEN a.solved_at IS NULL THEN 0 ELSE 1 END ASC,
+                COALESCE(a.solved_at, a.assigned_at) DESC,
+                a.id DESC`
+    )
+    .all(user.id);
+
+  return res.json({
+    tasks: rows.map(mapTaskAssignmentRow)
+  });
+});
+
+app.put("/api/tasks/assignments/:id/solve", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+
+  const assignmentId = Number(req.params.id);
+  if (!Number.isInteger(assignmentId) || assignmentId <= 0) {
+    return res.status(400).json({ error: "Ogiltigt uppdrags-id." });
+  }
+
+  const existing = db
+    .prepare(
+      `SELECT a.id, a.user_id
+       FROM task_assignments a
+       WHERE a.id = ?`
+    )
+    .get(assignmentId);
+  if (!existing) {
+    return res.status(404).json({ error: "Uppdraget hittades inte." });
+  }
+  if (Number(existing.user_id) !== Number(user.id)) {
+    return res.status(403).json({ error: "Du kan bara uppdatera dina egna uppdrag." });
+  }
+
+  const solved = req.body && Object.prototype.hasOwnProperty.call(req.body, "solved")
+    ? !!req.body.solved
+    : true;
+  const solvedAt = solved ? nowTs() : null;
+
+  db.prepare("UPDATE task_assignments SET solved_at = ? WHERE id = ?").run(solvedAt, assignmentId);
+
+  const row = db
+    .prepare(
+      `SELECT a.id AS assignment_id, a.task_id, a.assigned_at, a.solved_at,
+              t.title, t.description, t.image_url,
+              u.email AS assigned_to_email,
+              ab.email AS assigned_by_email
+       FROM task_assignments a
+       JOIN tasks t ON t.id = a.task_id
+       JOIN users u ON u.id = a.user_id
+       JOIN users ab ON ab.id = a.assigned_by
+       WHERE a.id = ?`
+    )
+    .get(assignmentId);
+
+  return res.json({
+    ok: true,
+    task: row ? mapTaskAssignmentRow(row) : null
+  });
+});
+
+app.post("/api/admin/tasks", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+  if (!isAdmin(user)) {
+    return res.status(403).json({ error: "Endast admin kan skapa uppdrag." });
+  }
+
+  const title = String(req.body?.title || "").trim();
+  const description = String(req.body?.description || "").trim();
+  const imageUrl = normalizeTaskImageUrl(req.body?.image_url || "");
+  const audience = String(req.body?.audience || "all").trim().toLowerCase();
+  const requestedUserIds = Array.isArray(req.body?.user_ids) ? req.body.user_ids : [];
+
+  if (!title) return res.status(400).json({ error: "Titel krävs." });
+  if (!description) return res.status(400).json({ error: "Beskrivning krävs." });
+  if (title.length > 160) return res.status(400).json({ error: "Titeln är för lång (max 160 tecken)." });
+  if (description.length > 5000) return res.status(400).json({ error: "Beskrivningen är för lång (max 5000 tecken)." });
+  if (String(req.body?.image_url || "").trim() && !imageUrl) {
+    return res.status(400).json({ error: "Ogiltig bildlänk." });
+  }
+  if (!["all", "selected"].includes(audience)) {
+    return res.status(400).json({ error: "Ogiltigt målval för uppdrag." });
+  }
+
+  let recipientIds = [];
+  if (audience === "all") {
+    recipientIds = db
+      .prepare("SELECT id FROM users ORDER BY id ASC")
+      .all()
+      .map((r) => Number(r.id))
+      .filter((id) => Number.isInteger(id) && id > 0);
+  } else {
+    recipientIds = requestedUserIds
+      .map((id) => Number(id))
+      .filter((id) => Number.isInteger(id) && id > 0);
+    recipientIds = Array.from(new Set(recipientIds));
+  }
+
+  if (!recipientIds.length) {
+    return res.status(400).json({ error: "Välj minst en mottagare." });
+  }
+
+  const validRows = db
+    .prepare(
+      `SELECT id
+       FROM users
+       WHERE id IN (${recipientIds.map(() => "?").join(",")})`
+    )
+    .all(...recipientIds);
+  const validIds = new Set(validRows.map((r) => Number(r.id)));
+  recipientIds = recipientIds.filter((id) => validIds.has(id));
+  if (!recipientIds.length) {
+    return res.status(400).json({ error: "Inga giltiga mottagare valdes." });
+  }
+
+  const now = nowTs();
+  const insertTask = db.prepare(
+    "INSERT INTO tasks(title, description, image_url, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)"
+  );
+  const insertAssignment = db.prepare(
+    "INSERT INTO task_assignments(task_id, user_id, assigned_by, assigned_at, solved_at) VALUES (?, ?, ?, ?, NULL)"
+  );
+  const tx = db.transaction(() => {
+    const taskResult = insertTask.run(title, description, imageUrl || null, user.id, now, now);
+    const taskId = Number(taskResult.lastInsertRowid || 0);
+    let createdAssignments = 0;
+    recipientIds.forEach((recipientId) => {
+      insertAssignment.run(taskId, recipientId, user.id, now);
+      createdAssignments += 1;
+    });
+    return { taskId, createdAssignments };
+  });
+
+  const result = tx();
+  return res.status(201).json({
+    ok: true,
+    task_id: Number(result.taskId || 0),
+    assigned_count: Number(result.createdAssignments || 0)
+  });
+});
+
+app.get("/api/admin/tasks/library", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+  if (!isAdmin(user)) {
+    return res.status(403).json({ error: "Endast admin har åtkomst." });
+  }
+
+  const rows = db
+    .prepare(
+      `SELECT a.id AS assignment_id, a.task_id, a.assigned_at, a.solved_at,
+              t.title, t.description, t.image_url,
+              u.email AS assigned_to_email,
+              ab.email AS assigned_by_email
+       FROM task_assignments a
+       JOIN tasks t ON t.id = a.task_id
+       JOIN users u ON u.id = a.user_id
+       JOIN users ab ON ab.id = a.assigned_by
+       ORDER BY CASE WHEN a.solved_at IS NULL THEN 0 ELSE 1 END ASC,
+                COALESCE(a.solved_at, a.assigned_at) DESC,
+                a.id DESC`
+    )
+    .all();
+
+  const mapped = rows.map(mapTaskAssignmentRow);
+  const unsolved = mapped.filter((row) => !row.solved_at);
+  const solved = mapped.filter((row) => !!row.solved_at);
+
+  return res.json({
+    unsolved: unsolved,
+    solved: solved
+  });
 });
 
 app.get("/", (req, res) => {
