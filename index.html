@@ -191,7 +191,7 @@
         .important-admin-content h3 {
             margin-bottom: 12px;
             font-size: 1.02rem;
-            color: #eaf3fb;
+            color: #143852;
         }
         .important-admin-list {
             max-height: 240px;
@@ -211,26 +211,53 @@
             justify-content: space-between;
             gap: 8px;
             padding: 7px 8px;
-            border: 1px solid #4f6b83;
+            border: 1px solid #c8d8e7;
             border-radius: 7px;
-            background: #eaf3fb;
-            color: #eaf3fb;
+            background: #f4f9ff;
+            color: #143852;
             font-size: 0.86rem;
+            cursor: grab;
+        }
+        .important-admin-item:not([data-important-id]) {
+            cursor: default;
+        }
+        .important-admin-item.dragging {
+            opacity: 0.6;
+            cursor: grabbing;
         }
         .important-admin-item button {
-            border: 1px solid #4f6b83;
+            border: 1px solid #9fb8cf;
             border-radius: 6px;
-            background: #eaf3fb;
-            color: #eaf3fb;
+            background: #ffffff;
+            color: #1b6199;
             padding: 4px 7px;
             cursor: pointer;
             font-size: 0.76rem;
             font-weight: 700;
         }
+        .important-admin-item-actions {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .important-admin-move {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.14s ease;
+        }
+        .important-admin-item:hover .important-admin-move,
+        .important-admin-item:focus-within .important-admin-move {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .important-admin-move:disabled {
+            opacity: 0.35 !important;
+            cursor: default;
+        }
         .important-admin-item button[data-important-delete] {
             border-color: rgba(231, 76, 60, 0.5);
-            color: #ffd5d0;
-            background: rgba(231, 76, 60, 0.15);
+            color: #b42318;
+            background: #fdecea;
         }
         .important-admin-form {
             display: grid;
@@ -238,6 +265,7 @@
             gap: 8px;
             align-items: center;
             margin-bottom: 8px;
+            position: relative;
         }
         .important-admin-form input {
             border: 1px solid #c8d8e7;
@@ -247,6 +275,46 @@
             background: #ffffff;
             color: #143852;
         }
+        .important-icon-btn {
+            border: 1px solid #c8d8e7;
+            border-radius: 8px;
+            background: #ffffff;
+            color: #143852;
+            height: 38px;
+            font-size: 1.05rem;
+            cursor: pointer;
+        }
+        .important-icon-picker {
+            position: absolute;
+            top: 44px;
+            left: 0;
+            z-index: 6;
+            width: 220px;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 6px;
+            padding: 8px;
+            border: 1px solid #c8d8e7;
+            border-radius: 8px;
+            background: #ffffff;
+            box-shadow: 0 10px 24px rgba(0,0,0,0.16);
+        }
+        .important-icon-picker[hidden] {
+            display: none !important;
+        }
+        .important-icon-option {
+            border: 1px solid #c8d8e7;
+            border-radius: 6px;
+            background: #f7fbff;
+            color: #143852;
+            height: 32px;
+            font-size: 1rem;
+            cursor: pointer;
+            line-height: 1;
+        }
+        .important-icon-option:hover {
+            background: #eaf3fb;
+        }
         .important-admin-actions {
             display: flex;
             justify-content: flex-end;
@@ -255,19 +323,19 @@
         }
         .important-admin-btn-secondary,
         .important-admin-btn-primary {
-            border: 1px solid #4f6b83;
+            border: 1px solid #c8d8e7;
             border-radius: 8px;
-            background: #eaf3fb;
-            color: #eaf3fb;
+            background: #ffffff;
+            color: #143852;
             padding: 8px 11px;
             cursor: pointer;
             font-weight: 700;
             font-size: 0.82rem;
         }
         .important-admin-btn-primary {
-            border-color: #1b6199;
-            background: #1b6199;
-            color: #fff;
+            border-color: #1b6199 !important;
+            background: #1b6199 !important;
+            color: #ffffff !important;
         }
         .meeting-item {
             padding: 8px 10px;
@@ -578,8 +646,8 @@
         }
         .chat-post.mine {
             align-self: flex-end;
-            background: #1b6199;
-            color: #fff;
+            background: #d8eafc;
+            color: #143852;
             border-bottom-right-radius: 5px;
         }
         .chat-post.theirs {
@@ -603,6 +671,9 @@
             color: #4f6b83;
             margin-bottom: 5px;
             gap: 12px;
+        }
+        .chat-post.mine .chat-post-header {
+            color: #4f6b83;
         }
         .chat-post-meta {
             display: inline-flex;
@@ -2643,8 +2714,8 @@
         }
         .msgp-bubble.me {
             align-self: flex-end;
-            background: #1b6199;
-            color: #fff;
+            background: #d8eafc;
+            color: #143852;
             border-bottom-right-radius: 4px;
         }
         .msgp-bubble-time {
@@ -2896,8 +2967,8 @@
             color: #143852 !important;
         }
         .chat-post.mine {
-            background: #1b6199 !important;
-            color: #ffffff !important;
+            background: #d8eafc !important;
+            color: #143852 !important;
         }
         .chat-input-area {
             background: #f9fcff !important;
@@ -3002,8 +3073,6 @@
                 <div class="chat-header-actions">
                     <span class="chat-auth-badge" id="chatCurrentUserBadge">Inloggad som: -</span>
                     <button class="chat-profile-btn" id="openProfileBtn" type="button">Min profil</button>
-                    <button class="chat-header-btn" type="button" title="Samtal">📞</button>
-                    <button class="chat-header-btn" type="button" title="Video">🎥</button>
                     <button class="chat-header-btn" type="button" title="Info">ℹ</button>
                 </div>
             </div>
@@ -3165,7 +3234,7 @@
             <h2 id="modalDate" style="margin-bottom: 10px;">Datum</h2>
             <p><strong>Händelse:</strong> <span id="modalTitle">Titel</span></p>
             <p style="color: var(--text-muted); font-size: 0.9em; margin-top: 10px;">Detta är ett online-möte.</p>
-            <a href="#" id="modalLink" target="_blank" class="zoom-btn">🎥 Anslut till mötet (Zoom)</a>
+            <a href="#" id="modalLink" target="_blank" class="zoom-btn">Anslut till mötet (Zoom)</a>
             <button id="modalEditEventBtn" class="event-editor-btn" style="display:none; margin-top:10px;" type="button">Redigera möte</button>
         </div>
     </div>
@@ -3311,9 +3380,10 @@
             <h3>Redigera viktiga meddelanden</h3>
             <div class="important-admin-list" id="importantAdminList"></div>
             <div class="important-admin-form">
-                <input id="importantIconInput" type="text" maxlength="8" placeholder="📢" aria-label="Ikon">
+                <button id="importantIconBtn" class="important-icon-btn" type="button" aria-label="Välj ikon">📢</button>
                 <input id="importantTextInput" type="text" maxlength="500" placeholder="Skriv ett viktigt meddelande..." aria-label="Meddelande">
                 <button id="importantSaveBtn" class="important-admin-btn-primary" type="button">Spara</button>
+                <div id="importantIconPicker" class="important-icon-picker" hidden></div>
             </div>
             <div class="important-admin-actions">
                 <button class="important-admin-btn-secondary" type="button" onclick="closeImportantAdminModal()">Stäng</button>
@@ -3417,6 +3487,10 @@
         let importantEditingId = null;
         let importantApiAvailable = false;
         let importantMessagesLoadError = '';
+        let importantOrderSaving = false;
+        let importantOrderSaveTimer = null;
+        const importantIconChoices = ['📢','📌','✅','⚠️','📣','🔥','💡','🎯','📅','🛠️','🧠','🚀'];
+        let importantSelectedIcon = '📢';
         let academyLinks = [];
         let academyApiAvailable = false;
         let academyLinksLoadError = '';
@@ -4955,11 +5029,15 @@
                 box.innerHTML = '<div class="important-admin-item"><span>Inga meddelanden ännu.</span></div>';
                 return;
             }
-            box.innerHTML = importantMessages.map(function(msg) {
+            box.innerHTML = importantMessages.map(function(msg, idx) {
+                const disableUp = idx === 0 ? 'disabled' : '';
+                const disableDown = idx === importantMessages.length - 1 ? 'disabled' : '';
                 return `
-                    <div class="important-admin-item">
+                    <div class="important-admin-item" data-important-id="${msg.id}" draggable="true">
                         <span>${escapeHtml(String(msg.icon || '📢'))} ${escapeHtml(String(msg.text || ''))}</span>
-                        <span>
+                        <span class="important-admin-item-actions">
+                            <button type="button" class="important-admin-move" data-important-move="up" data-important-id="${msg.id}" ${disableUp}>↑</button>
+                            <button type="button" class="important-admin-move" data-important-move="down" data-important-id="${msg.id}" ${disableDown}>↓</button>
                             <button type="button" data-important-edit="${msg.id}">Redigera</button>
                             <button type="button" data-important-delete="${msg.id}">Ta bort</button>
                         </span>
@@ -4973,7 +5051,9 @@
                     const item = importantMessages.find(function(x) { return Number(x.id) === id; });
                     if (!item) return;
                     importantEditingId = id;
-                    document.getElementById('importantIconInput').value = String(item.icon || '📢');
+                    importantSelectedIcon = String(item.icon || '📢');
+                    updateImportantIconButton();
+                    closeImportantIconPicker();
                     document.getElementById('importantTextInput').value = String(item.text || '');
                 });
             });
@@ -4986,6 +5066,157 @@
                     });
                 });
             });
+            box.querySelectorAll('[data-important-move]').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const id = Number(btn.getAttribute('data-important-id'));
+                    const direction = String(btn.getAttribute('data-important-move') || '');
+                    const delta = direction === 'up' ? -1 : (direction === 'down' ? 1 : 0);
+                    if (!delta) return;
+                    moveImportantMessageByDelta(id, delta).catch(function(err) {
+                        alert(err.message || 'Kunde inte flytta meddelandet.');
+                    });
+                });
+            });
+
+            initImportantAdminDragAndDrop(box);
+        }
+
+        async function moveImportantMessageByDelta(id, delta) {
+            const fromIdx = importantMessages.findIndex(function(m) { return Number(m.id) === Number(id); });
+            if (fromIdx < 0) return;
+            const toIdx = fromIdx + Number(delta);
+            if (toIdx < 0 || toIdx >= importantMessages.length) return;
+            const copy = importantMessages.slice();
+            const moving = copy.splice(fromIdx, 1)[0];
+            copy.splice(toIdx, 0, moving);
+            importantMessages = copy.map(function(msg, idx) {
+                return Object.assign({}, msg, { sort_order: idx });
+            });
+            renderImportantMessages();
+            renderImportantAdminList();
+            schedulePersistImportantOrder();
+        }
+
+        function renderImportantIconPicker() {
+            const picker = document.getElementById('importantIconPicker');
+            if (!picker) return;
+            picker.innerHTML = importantIconChoices.map(function(icon) {
+                return `<button class="important-icon-option" type="button" data-important-icon="${escapeHtml(icon)}" aria-label="Välj ${escapeHtml(icon)}">${escapeHtml(icon)}</button>`;
+            }).join('');
+            picker.querySelectorAll('[data-important-icon]').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    importantSelectedIcon = String(btn.getAttribute('data-important-icon') || '📢');
+                    updateImportantIconButton();
+                    closeImportantIconPicker();
+                });
+            });
+        }
+
+        function updateImportantIconButton() {
+            const btn = document.getElementById('importantIconBtn');
+            if (!btn) return;
+            btn.textContent = importantSelectedIcon || '📢';
+        }
+
+        function closeImportantIconPicker() {
+            const picker = document.getElementById('importantIconPicker');
+            if (!picker) return;
+            picker.hidden = true;
+        }
+
+        function getImportantDragAfterElement(container, y) {
+            const candidates = Array.from(container.querySelectorAll('.important-admin-item[data-important-id]:not(.dragging)'));
+            let closestOffset = Number.NEGATIVE_INFINITY;
+            let closestElement = null;
+            candidates.forEach(function(el) {
+                const rect = el.getBoundingClientRect();
+                const offset = y - rect.top - rect.height / 2;
+                if (offset < 0 && offset > closestOffset) {
+                    closestOffset = offset;
+                    closestElement = el;
+                }
+            });
+            return closestElement;
+        }
+
+        function syncImportantOrderFromDom() {
+            const box = document.getElementById('importantAdminList');
+            if (!box) return false;
+            const ids = Array.from(box.querySelectorAll('.important-admin-item[data-important-id]'))
+                .map(function(el) { return Number(el.getAttribute('data-important-id')); })
+                .filter(function(id) { return Number.isFinite(id); });
+            if (!ids.length || ids.length !== importantMessages.length) return false;
+            const reordered = ids.map(function(id) {
+                return importantMessages.find(function(m) { return Number(m.id) === id; });
+            }).filter(Boolean);
+            if (reordered.length !== importantMessages.length) return false;
+            importantMessages = reordered.map(function(msg, idx) {
+                return Object.assign({}, msg, { sort_order: idx });
+            });
+            renderImportantMessages();
+            return true;
+        }
+
+        async function persistImportantOrder() {
+            if (importantOrderSaving || !currentUserIsAdmin || !importantApiAvailable) return;
+            importantOrderSaving = true;
+            try {
+                for (let i = 0; i < importantMessages.length; i += 1) {
+                    const msg = importantMessages[i];
+                    await apiSend(`/api/important-messages/${msg.id}`, 'PUT', {
+                        icon: String(msg.icon || '📢'),
+                        text: String(msg.text || ''),
+                        sort_order: i
+                    });
+                }
+            } finally {
+                importantOrderSaving = false;
+            }
+        }
+
+        function schedulePersistImportantOrder() {
+            if (importantOrderSaveTimer) clearTimeout(importantOrderSaveTimer);
+            importantOrderSaveTimer = setTimeout(function() {
+                persistImportantOrder().catch(function(err) {
+                    alert(err.message || 'Kunde inte spara ny ordning för viktiga meddelanden.');
+                    loadImportantMessages().catch(function() {});
+                });
+            }, 120);
+        }
+
+        function initImportantAdminDragAndDrop(box) {
+            if (!box) return;
+            const items = box.querySelectorAll('.important-admin-item[data-important-id]');
+            items.forEach(function(item) {
+                item.addEventListener('dragstart', function(e) {
+                    item.classList.add('dragging');
+                    if (e.dataTransfer) {
+                        e.dataTransfer.effectAllowed = 'move';
+                        e.dataTransfer.setData('text/plain', item.getAttribute('data-important-id') || '');
+                    }
+                });
+                item.addEventListener('dragend', function() {
+                    item.classList.remove('dragging');
+                    if (syncImportantOrderFromDom()) {
+                        schedulePersistImportantOrder();
+                    }
+                });
+            });
+
+            if (box.dataset.dragoverBound !== '1') {
+                box.dataset.dragoverBound = '1';
+                box.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    const dragging = box.querySelector('.important-admin-item.dragging');
+                    if (!dragging) return;
+                    const afterElement = getImportantDragAfterElement(box, e.clientY);
+                    if (!afterElement) {
+                        box.appendChild(dragging);
+                    } else {
+                        box.insertBefore(dragging, afterElement);
+                    }
+                });
+            }
         }
 
         async function loadImportantMessages() {
@@ -5018,7 +5249,9 @@
                 return;
             }
             importantEditingId = null;
-            document.getElementById('importantIconInput').value = '';
+            importantSelectedIcon = '📢';
+            updateImportantIconButton();
+            closeImportantIconPicker();
             document.getElementById('importantTextInput').value = '';
             renderImportantAdminList();
             document.getElementById('importantAdminModal').style.display = 'flex';
@@ -5026,8 +5259,14 @@
 
         function closeImportantAdminModal() {
             document.getElementById('importantAdminModal').style.display = 'none';
+            if (importantOrderSaveTimer) {
+                clearTimeout(importantOrderSaveTimer);
+                importantOrderSaveTimer = null;
+            }
             importantEditingId = null;
-            document.getElementById('importantIconInput').value = '';
+            importantSelectedIcon = '📢';
+            updateImportantIconButton();
+            closeImportantIconPicker();
             document.getElementById('importantTextInput').value = '';
         }
 
@@ -5036,7 +5275,7 @@
             if (!importantApiAvailable) {
                 throw new Error('Serverkoppling saknas. Meddelandet kunde inte sparas.');
             }
-            const icon = String(document.getElementById('importantIconInput').value || '').trim() || '📢';
+            const icon = String(importantSelectedIcon || '📢').trim() || '📢';
             const text = String(document.getElementById('importantTextInput').value || '').trim();
             if (!text) {
                 alert('Meddelandetext krävs.');
@@ -5058,7 +5297,9 @@
             }
 
             importantEditingId = null;
-            document.getElementById('importantIconInput').value = '';
+            importantSelectedIcon = '📢';
+            updateImportantIconButton();
+            closeImportantIconPicker();
             document.getElementById('importantTextInput').value = '';
             await loadImportantMessages();
         }
@@ -5073,7 +5314,9 @@
             await apiSend(`/api/important-messages/${id}`, 'DELETE');
             if (Number(importantEditingId) === Number(id)) {
                 importantEditingId = null;
-                document.getElementById('importantIconInput').value = '';
+                importantSelectedIcon = '📢';
+                updateImportantIconButton();
+                closeImportantIconPicker();
                 document.getElementById('importantTextInput').value = '';
             }
             await loadImportantMessages();
@@ -5153,8 +5396,8 @@
                         ? `<button class=\"meeting-edit-btn\" type=\"button\" data-edit-event-id=\"${m.id}\" title=\"Redigera\">✏️</button>`
                         : '';
                     const joinBtn = hasLink
-                        ? `<a class=\"meeting-link\" href=\"${link}\" target=\"_blank\" rel=\"noopener\" title=\"Anslut till mötet\">🎥</a>`
-                        : `<span class=\"meeting-link disabled\" title=\"Ingen möteslänk\">🎥</span>`;
+                        ? `<a class=\"meeting-link\" href=\"${link}\" target=\"_blank\" rel=\"noopener\" title=\"Anslut till mötet\">Gå med</a>`
+                        : `<span class=\"meeting-link disabled\" title=\"Ingen möteslänk\">Ingen länk</span>`;
                     const titleText = win.start === null
                         ? `${String(m.title || '')}`
                         : `${String(m.title || '')} • ${String(Math.floor(win.start / 60)).padStart(2, '0')}:${String(win.start % 60).padStart(2, '0')}`;
@@ -7176,6 +7419,21 @@
             saveImportantMessageFromForm().catch(function(err) {
                 alert(err.message || 'Kunde inte spara viktigt meddelande.');
             });
+        });
+        renderImportantIconPicker();
+        updateImportantIconButton();
+        document.getElementById('importantIconBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            const picker = document.getElementById('importantIconPicker');
+            if (!picker) return;
+            picker.hidden = !picker.hidden;
+        });
+        document.getElementById('importantAdminModal').addEventListener('click', function(e) {
+            const picker = document.getElementById('importantIconPicker');
+            if (!picker || picker.hidden) return;
+            const iconBtn = document.getElementById('importantIconBtn');
+            if (picker.contains(e.target) || (iconBtn && iconBtn.contains(e.target))) return;
+            closeImportantIconPicker();
         });
         document.getElementById('academySaveBtn').addEventListener('click', function() {
             saveAcademyLinkFromForm().catch(function(err) {
