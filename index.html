@@ -1753,12 +1753,42 @@
             backdrop-filter: blur(4px);
             background: rgba(8, 12, 18, 0.66);
         }
+        #eventModal .modal-content {
+            background: #ffffff;
+            border: 1px solid #c8d8e7;
+            color: #143852;
+            width: min(92vw, 460px);
+            border-radius: 12px;
+            box-shadow: 0 18px 38px rgba(0,0,0,0.28);
+            position: relative;
+        }
+        #eventModal .modal-close {
+            float: none;
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            width: 30px;
+            height: 30px;
+            border: 1px solid #c8d8e7;
+            border-radius: 8px;
+            background: #f4f9ff;
+            color: #143852;
+            font-size: 0.95rem;
+            cursor: pointer;
+        }
+        #eventModal .modal-content h2 {
+            color: #143852;
+            margin-right: 36px;
+        }
+        #eventModal .modal-content p {
+            color: #4f6b83;
+        }
         .event-editor-content {
-            background: linear-gradient(180deg, rgba(39, 49, 64, 0.98), rgba(30, 38, 50, 0.98));
+            background: #ffffff;
             width: min(92vw, 500px);
             border-radius: 14px;
-            border: 1px solid #4f6b83;
-            box-shadow: 0 22px 46px rgba(0,0,0,0.52);
+            border: 1px solid #c8d8e7;
+            box-shadow: 0 22px 46px rgba(0,0,0,0.35);
             padding: 18px;
             color: #143852;
             position: relative;
@@ -1770,10 +1800,10 @@
             right: 10px;
             width: 30px;
             height: 30px;
-            border: 1px solid #4f6b83;
+            border: 1px solid #c8d8e7;
             border-radius: 8px;
-            background: #4f6b83;
-            color: #eaf3fb;
+            background: #f4f9ff;
+            color: #143852;
             font-size: 0.95rem;
             cursor: pointer;
         }
@@ -1781,9 +1811,10 @@
             margin: 0 34px 6px 0;
             font-size: 1.08rem;
             letter-spacing: 0.01em;
+            color: #143852;
         }
         .event-editor-subtitle {
-            color: #c8d8e7;
+            color: #4f6b83;
             font-size: 0.82rem;
             margin-bottom: 12px;
         }
@@ -1794,21 +1825,21 @@
             display: block;
             font-size: 0.79rem;
             font-weight: 700;
-            color: #c8d8e7;
+            color: #4f6b83;
             margin-bottom: 6px;
             letter-spacing: 0.01em;
         }
         .event-editor-row input {
             width: 100%;
-            border: 1px solid #4f6b83;
+            border: 1px solid #c8d8e7;
             border-radius: 9px;
             padding: 9px 11px;
-            background: #4f6b83;
-            color: #eaf3fb;
+            background: #f7fbff;
+            color: #143852;
             outline: none;
         }
         .event-editor-row input::placeholder {
-            color: #4f6b83;
+            color: #6b8097;
         }
         .event-editor-row input:focus {
             border-color: #1b6199;
@@ -1820,28 +1851,28 @@
             gap: 8px;
             margin-top: 14px;
             padding-top: 10px;
-            border-top: 1px solid rgba(192, 208, 228, 0.2);
+            border-top: 1px solid #dce7f2;
         }
         .event-editor-btn {
-            border: 1px solid #4f6b83;
+            border: 1px solid #c8d8e7 !important;
             border-radius: 8px;
-            background: #4f6b83;
-            color: #eaf3fb;
+            background: #ffffff !important;
+            color: #143852 !important;
             padding: 8px 12px;
             cursor: pointer;
             font-weight: 700;
         }
         .event-editor-btn:hover {
-            background: #4f6b83;
+            background: #f4f9ff !important;
         }
         .event-editor-btn.primary {
-            background: linear-gradient(180deg, #1b6199, #1b6199);
-            border-color: #1b6199;
-            color: #fff;
+            background: #1b6199 !important;
+            border-color: #1b6199 !important;
+            color: #fff !important;
             font-weight: 700;
         }
         .event-editor-btn.primary:hover {
-            background: linear-gradient(180deg, #1b6199, #1b6199);
+            background: #0f568e !important;
         }
         .profile-modal-content {
             background: #ffffff;
@@ -1851,10 +1882,27 @@
             padding: 16px;
             box-shadow: 0 16px 34px rgba(0,0,0,0.45);
             color: #143852;
+            position: relative;
+        }
+        .profile-modal-content .modal-close {
+            float: none;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 30px;
+            height: 30px;
+            border: 1px solid #c8d8e7;
+            border-radius: 8px;
+            background: #f4f9ff;
+            color: #143852;
+            font-size: 0.95rem;
+            cursor: pointer;
         }
         .profile-modal-content h3 {
             margin-bottom: 10px;
             font-size: 1.08rem;
+            color: #143852;
+            margin-right: 34px;
         }
         .profile-row { margin-bottom: 10px; }
         .profile-row label {
@@ -1862,7 +1910,7 @@
             font-size: 0.82rem;
             font-weight: 700;
             margin-bottom: 6px;
-            color: #c8d8e7;
+            color: #4f6b83;
         }
         .profile-row input,
         .profile-row select {
@@ -1871,11 +1919,13 @@
             border-radius: 8px;
             padding: 8px 10px;
             outline: none;
-            background: #ffffff;
+            background: #f7fbff;
             color: #143852;
         }
         .profile-row input[readonly] {
-            opacity: 0.75;
+            opacity: 1;
+            background: #eef4fb;
+            color: #4f6b83;
         }
         .profile-actions {
             display: flex;
@@ -1884,17 +1934,17 @@
             margin-top: 8px;
         }
         .profile-btn {
-            border: 1px solid #4f6b83;
+            border: 1px solid #c8d8e7 !important;
             border-radius: 8px;
-            background: #eaf3fb;
-            color: #143852;
+            background: #ffffff !important;
+            color: #143852 !important;
             padding: 7px 10px;
             cursor: pointer;
         }
         .profile-btn.primary {
-            background: #1b6199;
-            border-color: #1b6199;
-            color: #fff;
+            background: #1b6199 !important;
+            border-color: #1b6199 !important;
+            color: #fff !important;
             font-weight: 700;
         }
         .academy-modal-content {
