@@ -7,18 +7,18 @@
 <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #f4f8fb;
+    --bg: #f3f4f6;
     --surface: rgba(255,255,255,0.94);
     --surface2: rgba(234,243,251,0.90);
-    --border: #c8d8e7;
-    --text: #143852;
-    --text-muted: #4f6b83;
-    --accent: #1b6199;
-    --accent-light: #eaf3fb;
-    --accent2: #143852;
-    --warning: #1b6199;
-    --warning-bg: #eaf3fb;
-    --today: #1b6199;
+    --border: #e5e7eb;
+    --text: #1f2937;
+    --text-muted: #6b7280;
+    --accent: #4f46e5;
+    --accent-light: #f9fafb;
+    --accent2: #1f2937;
+    --warning: #4f46e5;
+    --warning-bg: #f9fafb;
+    --today: #4f46e5;
     --shadow: 0 2px 12px rgba(0,0,0,0.07);
     --shadow-lg: 0 8px 32px rgba(0,0,0,0.10);
     --radius: 12px;
@@ -30,9 +30,9 @@
   body {
     font-family: 'DM Sans', sans-serif;
     background: 
-      radial-gradient(ellipse at 0% 0%, rgba(20,56,82,0.14) 0%, transparent 56%),
-      radial-gradient(ellipse at 100% 0%, rgba(27,97,153,0.16) 0%, transparent 50%),
-      radial-gradient(ellipse at 50% 100%, rgba(27,97,153,0.10) 0%, transparent 55%),
+      radial-gradient(ellipse at 0% 0%, rgba(79,70,229,0.10) 0%, transparent 56%),
+      radial-gradient(ellipse at 100% 0%, rgba(79,70,229,0.12) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 100%, rgba(79,70,229,0.08) 0%, transparent 55%),
       var(--bg);
     background-attachment: fixed;
     background-size: 300% 300%;
@@ -67,7 +67,7 @@
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #1b6199, #143852);
+    background: linear-gradient(135deg, #4f46e5, #1f2937);
     color: white;
     display: flex;
     align-items: center;
@@ -90,7 +90,7 @@
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: #4f6b83;
+    background: #6b7280;
   }
 
   .header-right {
@@ -246,7 +246,7 @@
     transition: all 0.15s;
     box-shadow: 0 2px 8px rgba(46,125,214,0.25);
   }
-  .new-meeting-btn:hover { background: #0f568e; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(27,97,153,0.35); }
+  .new-meeting-btn:hover { background: #4338ca; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(79,70,229,0.35); }
 
   .meetings-section {
     padding: 16px;
@@ -309,7 +309,7 @@
     cursor: pointer;
     transition: all 0.15s;
   }
-  .logout-btn:hover { background: #eaf3fb; border-color: #c8d8e7; color: #1b6199; }
+  .logout-btn:hover { background: #f9fafb; border-color: #e5e7eb; color: #4f46e5; }
 
   /* CENTER PANEL */
   .center-panel {
@@ -469,7 +469,7 @@
     transition: all 0.15s;
     box-shadow: 0 2px 8px rgba(46,125,214,0.30);
   }
-  .send-btn:hover { background: #0f568e; transform: scale(1.05); }
+  .send-btn:hover { background: #4338ca; transform: scale(1.05); }
 
   /* RIGHT PANEL */
   .right-panel {
@@ -495,7 +495,7 @@
 
   .alert-card {
     background: var(--warning-bg);
-    border: 1px solid #c8d8e7;
+    border: 1px solid #e5e7eb;
     border-radius: var(--radius-sm);
     padding: 12px 14px;
     display: flex;
@@ -503,7 +503,7 @@
     gap: 10px;
   }
   .alert-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
-  .alert-text { font-size: 13px; color: #4f6b83; line-height: 1.5; }
+  .alert-text { font-size: 13px; color: #6b7280; line-height: 1.5; }
 
   .tools-grid {
     display: grid;
@@ -547,6 +547,35 @@
   ::-webkit-scrollbar { width: 5px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+  /* Theme lock parity with tema.html */
+  body {
+    background: #f3f4f6 !important;
+    color: #1f2937 !important;
+    animation: none !important;
+  }
+  .panel, .left-panel, .right-panel, .chat-main {
+    background: #ffffff !important;
+    border-color: #e5e7eb !important;
+  }
+  .panel-header, .chat-header, .chat-input-area {
+    background: #f9fafb !important;
+    border-color: #e5e7eb !important;
+    color: #1f2937 !important;
+  }
+  .new-meeting-btn, .send-btn {
+    background: #4f46e5 !important;
+    border-color: #4f46e5 !important;
+    color: #fff !important;
+  }
+  .new-meeting-btn:hover, .send-btn:hover {
+    background: #4338ca !important;
+    border-color: #4338ca !important;
+  }
+  .chat-bubble.outgoing {
+    background: #eef2ff !important;
+    color: #4338ca !important;
+    border: 1px solid #e5e7eb !important;
+  }
 </style>
 </head>
 <body>

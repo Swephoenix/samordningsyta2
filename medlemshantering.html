@@ -8,14 +8,14 @@
 <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #f4f8fb;
+    --bg: #f3f4f6;
     --surface: rgba(255, 255, 255, 0.94);
-    --surface-2: #eaf3fb;
-    --text: #143852;
-    --muted: #4f6b83;
-    --border: #c8d8e7;
-    --accent: #1b6199;
-    --accent-hover: #0f568e;
+    --surface-2: #f9fafb;
+    --text: #1f2937;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --accent: #4f46e5;
+    --accent-hover: #4338ca;
     --danger: #d33;
     --danger-bg: #fff1f1;
   }
@@ -23,9 +23,9 @@
   body {
     font-family: "DM Sans", "Segoe UI", system-ui, sans-serif;
     background:
-      radial-gradient(ellipse at 0% 0%, rgba(20,56,82,0.14) 0%, transparent 56%),
-      radial-gradient(ellipse at 100% 0%, rgba(27,97,153,0.16) 0%, transparent 50%),
-      radial-gradient(ellipse at 50% 100%, rgba(27,97,153,0.10) 0%, transparent 55%),
+      radial-gradient(ellipse at 0% 0%, rgba(79,70,229,0.10) 0%, transparent 56%),
+      radial-gradient(ellipse at 100% 0%, rgba(79,70,229,0.12) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 100%, rgba(79,70,229,0.08) 0%, transparent 55%),
       var(--bg);
     color: var(--text);
     margin: 0;
@@ -79,7 +79,7 @@
     border: 1px solid var(--border);
     border-radius: 10px;
     background: var(--surface);
-    box-shadow: 0 4px 12px rgba(20, 56, 82, 0.06);
+    box-shadow: 0 4px 12px rgba(31,41,55,0.06);
   }
 
   .avatar {
@@ -126,11 +126,11 @@
     width: 10px;
     height: 10px;
     border-radius: 50%;
-    background: #4f6b83;
+    background: #6b7280;
   }
 
   .lamp.online {
-    background: #1b6199;
+    background: #4f46e5;
   }
 
   .actions {
@@ -156,6 +156,29 @@
     border-color: var(--danger);
     color: var(--danger);
     background: var(--danger-bg);
+  }
+  /* Theme lock parity with tema.html */
+  body {
+    background: #f3f4f6 !important;
+    color: #1f2937 !important;
+  }
+  .panel {
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+  }
+  .user {
+    background: #f9fafb !important;
+    border-color: #e5e7eb !important;
+    color: #1f2937 !important;
+  }
+  button.primary {
+    background: #4f46e5 !important;
+    border-color: #4f46e5 !important;
+    color: #fff !important;
+  }
+  button.primary:hover {
+    background: #4338ca !important;
+    border-color: #4338ca !important;
   }
 </style>
 </head>

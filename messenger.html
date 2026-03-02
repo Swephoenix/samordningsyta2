@@ -9,27 +9,20 @@
     <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #f4f8fb;
-            --surface: rgba(255, 255, 255, 0.94);
-            --surface2: rgba(234, 243, 251, 0.9);
-            --border: #c8d8e7;
-            --text: #143852;
-            --text-muted: #4f6b83;
-            --accent: #1b6199;
-            --accent-hover: #0f568e;
+            --bg: #f3f4f6;
+            --surface: #ffffff;
+            --surface2: #f9fafb;
+            --border: #e5e7eb;
+            --text: #1f2937;
+            --text-muted: #6b7280;
+            --accent: #4f46e5;
+            --accent-hover: #4338ca;
         }
 
         /* === BASE STYLES === */
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: "DM Sans", "Segoe UI", sans-serif; }
         body {
-            background:
-                radial-gradient(ellipse at 0% 0%, rgba(20, 56, 82, 0.14) 0%, transparent 56%),
-                radial-gradient(ellipse at 100% 0%, rgba(27, 97, 153, 0.16) 0%, transparent 50%),
-                radial-gradient(ellipse at 50% 100%, rgba(27, 97, 153, 0.10) 0%, transparent 55%),
-                var(--bg);
-            background-attachment: fixed;
-            background-size: 300% 300%;
-            animation: gradientShift 12s ease infinite;
+            background: var(--bg);
             height: 100vh;
             overflow: hidden;
             color: var(--text);
@@ -38,11 +31,11 @@
         /* === LAUNCHER BUTTON === */
         #widget-launcher {
             position: fixed; bottom: 24px; right: 24px; width: 60px; height: 60px;
-            background-color: var(--accent); border-radius: 50%; box-shadow: 0 4px 12px rgba(27,97,153,0.25);
+            background-color: var(--accent); border-radius: 50%; box-shadow: 0 4px 12px rgba(79,70,229,0.25);
             display: flex; justify-content: center; align-items: center; cursor: pointer;
             transition: transform 0.2s ease, box-shadow 0.2s ease; z-index: 1000;
         }
-        #widget-launcher:hover { transform: scale(1.05); box-shadow: 0 6px 16px rgba(27,97,153,0.35); }
+        #widget-launcher:hover { transform: scale(1.05); box-shadow: 0 6px 16px rgba(79,70,229,0.35); }
         #widget-launcher svg { fill: #fff; width: 32px; height: 32px; }
 
         /* === MAIN WIDGET CONTAINER === */
@@ -91,9 +84,9 @@
         /* === LIST ITEMS (Convos & Contacts) === */
         .list-item { display: flex; align-items: center; padding: 12px 16px; cursor: pointer; transition: background 0.2s; border-bottom: 1px solid rgba(221,234,247,0.5); }
         .list-item:hover { background: var(--surface2); }
-        .avatar { width: 48px; height: 48px; border-radius: 50%; background: #c8d8e7; margin-right: 12px; position: relative; flex-shrink: 0; display:flex; align-items:center; justify-content:center; font-weight:bold; color:var(--text); border: 1px solid var(--border); }
+        .avatar { width: 48px; height: 48px; border-radius: 50%; background: #e5e7eb; margin-right: 12px; position: relative; flex-shrink: 0; display:flex; align-items:center; justify-content:center; font-weight:bold; color:var(--text); border: 1px solid var(--border); }
         .avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
-        .online-dot { position: absolute; bottom: 0; right: 0; width: 14px; height: 14px; background: #1b6199; border: 2px solid #fff; border-radius: 50%; }
+        .online-dot { position: absolute; bottom: 0; right: 0; width: 14px; height: 14px; background: #4f46e5; border: 2px solid #fff; border-radius: 50%; }
         .item-info { flex: 1; overflow: hidden; }
         .item-top { display: flex; justify-content: space-between; align-items: baseline; }
         .item-name { font-weight: 600; color: var(--text); font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -111,7 +104,7 @@
         .msg-theirs { align-self: flex-start; align-items: flex-start; }
         
         .msg-bubble { padding: 10px 14px; border-radius: 18px; font-size: 0.95rem; line-height: 1.4; word-wrap: break-word; }
-        .msg-mine .msg-bubble { background: #d8eafc; color: #143852; border: 1px solid var(--border); border-bottom-right-radius: 4px; }
+        .msg-mine .msg-bubble { background: #eef2ff; color: #4338ca; border: 1px solid var(--border); border-bottom-right-radius: 4px; }
         .msg-theirs .msg-bubble { background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
         
         .msg-sender { font-size: 0.7rem; color: var(--text-muted); margin-bottom: 4px; margin-left: 4px; }
@@ -126,7 +119,7 @@
         
         /* === ACTION BUTTONS === */
         .action-btn-large { margin: 16px; padding: 12px; background: var(--surface2); color: var(--accent); text-align: center; border-radius: 8px; font-weight: 600; border: 1px solid var(--border); cursor: pointer; transition: background 0.2s; }
-        .action-btn-large:hover { background: #eaf3fb; }
+        .action-btn-large:hover { background: #f9fafb; }
         
         .file-attachment { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px; display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text); }
         .file-attachment svg { width: 16px; fill: var(--text-muted); }
@@ -134,6 +127,31 @@
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
+        }
+        /* Theme lock parity with tema.html */
+        body {
+            background: #f3f4f6 !important;
+            color: #1f2937 !important;
+        }
+        #chat-widget {
+            background: #ffffff !important;
+            border: 1px solid #e5e7eb !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+        }
+        .header, .chat-header, .chat-input-area {
+            background: #f9fafb !important;
+            border-color: #e5e7eb !important;
+        }
+        .msg-theirs .msg-bubble {
+            background: #ffffff !important;
+            color: #1f2937 !important;
+            border: 1px solid #e5e7eb !important;
+        }
+        .msg-mine .msg-bubble {
+            background: #eef2ff !important;
+            color: #4338ca !important;
+            border: 1px solid #e5e7eb !important;
         }
     </style>
 </head>
@@ -169,7 +187,7 @@
             <!-- View 2: Search / Contacts List -->
             <div id="view-search" class="view slide-right scrollable">
                 <div class="action-btn-large" onclick="createGroup()">+ Skapa ny grupp</div>
-                <div style="padding: 0 16px 8px; font-weight: 600; color: #4f6b83; font-size: 0.85rem;">Kontakter</div>
+                <div style="padding: 0 16px 8px; font-weight: 600; color: #6b7280; font-size: 0.85rem;">Kontakter</div>
                 <div id="contact-list"></div>
             </div>
 
@@ -209,10 +227,10 @@
         const me = { id: 'u0', name: 'Du' };
         
         let users = [
-            { id: 'u1', name: 'Anna Andersson', initials: 'AA', color: '#1b6199', online: true },
-            { id: 'u2', name: 'Erik Svensson', initials: 'ES', color: '#1b6199', online: false },
-            { id: 'u3', name: 'Johanna Lind', initials: 'JL', color: '#1b6199', online: true },
-            { id: 'u4', name: 'Mikael Berg', initials: 'MB', color: '#1b6199', online: true }
+            { id: 'u1', name: 'Anna Andersson', initials: 'AA', color: '#4f46e5', online: true },
+            { id: 'u2', name: 'Erik Svensson', initials: 'ES', color: '#4f46e5', online: false },
+            { id: 'u3', name: 'Johanna Lind', initials: 'JL', color: '#4f46e5', online: true },
+            { id: 'u4', name: 'Mikael Berg', initials: 'MB', color: '#4f46e5', online: true }
         ];
 
         let conversations = [
@@ -302,7 +320,7 @@
 
         // === RENDERING LOGIC ===
         function getAvatarHtml(user) {
-            if(!user) return `<div class="avatar" style="background:#c8d8e7">G</div>`;
+            if(!user) return `<div class="avatar" style="background:#e5e7eb">G</div>`;
             return `<div class="avatar" style="background:${user.color}33; color:${user.color}">${user.initials}${user.online ? '<div class="online-dot"></div>' : ''}</div>`;
         }
 
@@ -311,7 +329,7 @@
             list.innerHTML = '';
             
             if(conversations.length === 0) {
-                list.innerHTML = `<div style="padding:20px; text-align:center; color:#4f6b83;">Inga meddelanden än.</div>`;
+                list.innerHTML = `<div style="padding:20px; text-align:center; color:#6b7280;">Inga meddelanden än.</div>`;
                 return;
             }
 
@@ -319,7 +337,7 @@
             [...conversations].reverse().forEach(c => {
                 const lastMsg = c.messages[c.messages.length - 1];
                 let title = c.isGroup ? c.name : users.find(u => u.id === c.participants[0]).name;
-                let avatar = c.isGroup ? `<div class="avatar" style="background:#c8d8e7">👥</div>` : getAvatarHtml(users.find(u => u.id === c.participants[0]));
+                let avatar = c.isGroup ? `<div class="avatar" style="background:#e5e7eb">👥</div>` : getAvatarHtml(users.find(u => u.id === c.participants[0]));
                 let prefix = lastMsg.sender === me.id ? 'Du: ' : '';
 
                 list.innerHTML += `
@@ -358,7 +376,7 @@
             
             // Header
             let title = convo.isGroup ? convo.name : users.find(u => u.id === convo.participants[0]).name;
-            let avatar = convo.isGroup ? `<div class="avatar" style="background:#c8d8e7">👥</div>` : getAvatarHtml(users.find(u => u.id === convo.participants[0]));
+            let avatar = convo.isGroup ? `<div class="avatar" style="background:#e5e7eb">👥</div>` : getAvatarHtml(users.find(u => u.id === convo.participants[0]));
             let status = convo.isGroup ? `${convo.participants.length} medlemmar` : (users.find(u => u.id === convo.participants[0]).online ? 'Aktiv nu' : 'Offline');
 
             document.getElementById('active-chat-name').innerText = title;

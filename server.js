@@ -264,6 +264,7 @@ CREATE TABLE IF NOT EXISTS important_messages (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   icon TEXT NOT NULL DEFAULT '📢',
   text TEXT NOT NULL,
+  color TEXT NOT NULL DEFAULT 'info',
   sort_order INTEGER NOT NULL DEFAULT 0,
   created_by INTEGER,
   created_at INTEGER NOT NULL,
@@ -704,6 +705,7 @@ ensureColumn("users", "last_name", "last_name TEXT");
 ensureColumn("users", "phone", "phone TEXT");
 ensureColumn("qna_questions", "image_url", "image_url TEXT");
 ensureColumn("qna_answers", "image_url", "image_url TEXT");
+ensureColumn("important_messages", "color", "color TEXT NOT NULL DEFAULT 'info'");
 
 const isProduction = String(process.env.NODE_ENV || "").toLowerCase() === "production";
 const configuredAdminIdentifier = getConfiguredAdminIdentifier();
@@ -2284,7 +2286,7 @@ app.get("/api/important-messages", (req, res) => {
 
   const rows = db
     .prepare(
-      `SELECT id, icon, text, sort_order, created_at, updated_at
+      `SELECT id, icon, text, color, sort_order, created_at, updated_at
        FROM important_messages
        ORDER BY sort_order ASC, id ASC`
     )
@@ -2302,7 +2304,9 @@ app.post("/api/important-messages", (req, res) => {
 
   const icon = String(req.body?.icon || "📢").trim().slice(0, 8) || "📢";
   const text = String(req.body?.text || "").trim();
+  const colorRaw = String(req.body?.color || "info").trim().toLowerCase();
   const sortOrderRaw = Number(req.body?.sort_order);
+  const color = ["danger", "warning", "success", "info"].includes(colorRaw) ? colorRaw : "info";
 
   if (!text) return res.status(400).json({ error: "Text krävs." });
   if (text.length > 500) return res.status(400).json({ error: "Texten är för lång (max 500 tecken)." });
@@ -2315,9 +2319,9 @@ app.post("/api/important-messages", (req, res) => {
 
   const result = db
     .prepare(
-      "INSERT INTO important_messages(icon, text, sort_order, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)"
+      "INSERT INTO important_messages(icon, text, color, sort_order, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
     )
-    .run(icon, text, sortOrder, user.id, now, now);
+    .run(icon, text, color, sortOrder, user.id, now, now);
 
   return res.status(201).json({ ok: true, id: result.lastInsertRowid });
 });
@@ -2336,8 +2340,10 @@ app.put("/api/important-messages/:id", (req, res) => {
 
   const icon = String(req.body?.icon || "📢").trim().slice(0, 8) || "📢";
   const text = String(req.body?.text || "").trim();
+  const colorRaw = String(req.body?.color || "info").trim().toLowerCase();
   const sortOrderRaw = Number(req.body?.sort_order);
   const sortOrder = Number.isInteger(sortOrderRaw) ? sortOrderRaw : null;
+  const color = ["danger", "warning", "success", "info"].includes(colorRaw) ? colorRaw : "info";
 
   if (!text) return res.status(400).json({ error: "Text krävs." });
   if (text.length > 500) return res.status(400).json({ error: "Texten är för lång (max 500 tecken)." });
@@ -2346,12 +2352,12 @@ app.put("/api/important-messages/:id", (req, res) => {
   let result;
   if (sortOrder === null) {
     result = db
-      .prepare("UPDATE important_messages SET icon = ?, text = ?, updated_at = ? WHERE id = ?")
-      .run(icon, text, now, id);
+      .prepare("UPDATE important_messages SET icon = ?, text = ?, color = ?, updated_at = ? WHERE id = ?")
+      .run(icon, text, color, now, id);
   } else {
     result = db
-      .prepare("UPDATE important_messages SET icon = ?, text = ?, sort_order = ?, updated_at = ? WHERE id = ?")
-      .run(icon, text, sortOrder, now, id);
+      .prepare("UPDATE important_messages SET icon = ?, text = ?, color = ?, sort_order = ?, updated_at = ? WHERE id = ?")
+      .run(icon, text, color, sortOrder, now, id);
   }
 
   if (result.changes === 0) {
