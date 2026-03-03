@@ -5840,7 +5840,7 @@
                 const authorAvatarUrl = avatarUrlForUser(msg.email || authorLabel || 'user', msg.profile_image_url || '');
                 const cityLabel = String(msg.user_city || '').trim();
                 const classNames = ['chat-post', isMine ? 'mine' : 'theirs'];
-                if (isAdminAuthor) classNames.push('admin');
+                if (isAdminAuthor && currentUserIsAdmin) classNames.push('admin');
                 if (msg.pinned) classNames.push('pinned');
                 post.className = classNames.join(' ');
                 const messageId = Number(msg.id || 0);
