@@ -61,6 +61,8 @@ const UPLOAD_DIR = path.join(__dirname, "uploads", "chat");
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 const REGISTER_ALLOWED_DOMAIN = "@ambitionsverige.se";
 const DEFAULT_SMTP_IDENTITY = "mail@ambitionsverige.se";
+const TEST_ACCOUNT_IDENTIFIER = "test";
+const PARTIKANSLIET_API_KEY = String(process.env.PARTIKANSLIET_API_KEY || "").trim();
 const passwordResetRateLimit = new Map();
 const loginRateLimit = new Map();
 const loginCodeRequestRateLimit = new Map();
@@ -332,6 +334,7 @@ CREATE TABLE IF NOT EXISTS tasks (
   title TEXT NOT NULL,
   description TEXT NOT NULL,
   image_url TEXT,
+  priority TEXT NOT NULL DEFAULT 'low',
   created_by INTEGER NOT NULL,
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL,
@@ -806,6 +809,79 @@ function isAllowedUploadUrl(url) {
   return false;
 }
 
+function normalizeImportantColor(value) {
+  const raw = String(value || "").trim().toLowerCase();
+  return ["danger", "warning", "success", "info"].includes(raw) ? raw : "info";
+}
+
+function normalizeImportantSource(value) {
+  const raw = String(value || "").trim().toLowerCase();
+  return raw === "partikansliet" ? "partikansliet" : "admin";
+}
+
+function defaultImportantSourceLabel(source) {
+  return source === "partikansliet" ? "Partikansliet" : "admin";
+}
+
+function normalizeImportantSourceLabel(value, source) {
+  const trimmed = String(value || "").trim();
+  if (!trimmed) return defaultImportantSourceLabel(source);
+  return trimmed.slice(0, 80);
+}
+
+function normalizeImportantExternalId(value) {
+  const trimmed = String(value || "").trim();
+  if (!trimmed) return "";
+  return trimmed.slice(0, 120);
+}
+
+function readApiKeyFromRequest(req) {
+  const headerKey = String(req.get("x-api-key") || "").trim();
+  if (headerKey) return headerKey;
+  const authHeader = String(req.get("authorization") || "").trim();
+  const m = authHeader.match(/^Bearer\s+(.+)$/i);
+  return m ? String(m[1] || "").trim() : "";
+}
+
+function requirePartikanslietIntegration(req, res) {
+  if (!PARTIKANSLIET_API_KEY) {
+    res.status(503).json({ error: "Integrationen är inte aktiverad." });
+    return false;
+  }
+  const provided = readApiKeyFromRequest(req);
+  if (!provided || !safeEqualText(provided, PARTIKANSLIET_API_KEY)) {
+    res.status(401).json({ error: "Ogiltig integrationsnyckel." });
+    return false;
+  }
+  return true;
+}
+
+function mapImportantMessageRow(row) {
+  const source = normalizeImportantSource(row && row.source);
+  return {
+    id: Number(row && row.id || 0),
+    icon: String(row && row.icon || "📢"),
+    text: String(row && row.text || ""),
+    color: normalizeImportantColor(row && row.color),
+    sort_order: Number(row && row.sort_order || 0),
+    created_at: Number(row && row.created_at || 0),
+    updated_at: Number(row && row.updated_at || 0),
+    source: source,
+    source_label: normalizeImportantSourceLabel(row && row.source_label, source),
+    external_id: row && row.external_id ? String(row.external_id) : null
+  };
+}
+
+function listImportantMessages(whereClause, params) {
+  const where = String(whereClause || "").trim();
+  const sql = `
+    SELECT id, icon, text, color, sort_order, created_at, updated_at, source, source_label, external_id
+    FROM important_messages
+    ${where ? `WHERE ${where}` : ""}
+    ORDER BY sort_order ASC, id ASC`;
+  return db.prepare(sql).all(...(Array.isArray(params) ? params : []));
+}
+
 function normalizeAcademyLink(row) {
   if (!row || typeof row !== "object") return null;
   const id = String(row.id || "").trim();
@@ -851,14 +927,24 @@ ensureColumn("users", "city", "city TEXT");
 ensureColumn("users", "first_name", "first_name TEXT");
 ensureColumn("users", "last_name", "last_name TEXT");
 ensureColumn("users", "phone", "phone TEXT");
+ensureColumn("users", "profile_image_url", "profile_image_url TEXT");
 ensureColumn("qna_questions", "image_url", "image_url TEXT");
 ensureColumn("qna_questions", "category", "category TEXT NOT NULL DEFAULT 'other'");
 ensureColumn("qna_answers", "image_url", "image_url TEXT");
 ensureColumn("important_messages", "color", "color TEXT NOT NULL DEFAULT 'info'");
+ensureColumn("important_messages", "source", "source TEXT NOT NULL DEFAULT 'admin'");
+ensureColumn("important_messages", "source_label", "source_label TEXT NOT NULL DEFAULT 'admin'");
+ensureColumn("important_messages", "external_id", "external_id TEXT");
 ensureColumn("chat_messages", "pinned", "pinned INTEGER NOT NULL DEFAULT 0");
 ensureColumn("chat_messages", "pinned_at", "pinned_at INTEGER");
 ensureColumn("chat_messages", "pinned_by", "pinned_by INTEGER");
 ensureColumn("sessions", "csrf_token", "csrf_token TEXT");
+ensureColumn("tasks", "priority", "priority TEXT NOT NULL DEFAULT 'low'");
+db.exec(`
+CREATE UNIQUE INDEX IF NOT EXISTS idx_important_messages_source_external_id
+  ON important_messages(source, external_id)
+  WHERE external_id IS NOT NULL;
+`);
 
 const isProduction = ENV_IS_PRODUCTION;
 const configuredAdminIdentifier = getConfiguredAdminIdentifier();
@@ -874,7 +960,8 @@ if (configuredAdminIdentifier) {
 }
 
 // Fast testkonto (kan tas bort av admin i medlemshantering).
-ensureDefaultUser("test", "test");
+ensureDefaultUser(TEST_ACCOUNT_IDENTIFIER, "test");
+syncTestAccountContactEmailWithAdmin();
 
 if (!isProduction) {
   ensureDefaultUser("user1", "user1");
@@ -1071,11 +1158,49 @@ function normalizeEmail(value) {
   return String(value || "").trim().toLowerCase();
 }
 
+function isTestAccountIdentifier(value) {
+  return normalizeEmail(value) === TEST_ACCOUNT_IDENTIFIER;
+}
+
+function getAdminUserForContactRouting() {
+  const configuredId = normalizeEmail(configuredAdminIdentifier || "");
+  if (configuredId) {
+    const configuredRow = db
+      .prepare("SELECT id, email, contact_email FROM users WHERE lower(email) = ? LIMIT 1")
+      .get(configuredId);
+    if (configuredRow) return configuredRow;
+  }
+  return db
+    .prepare("SELECT id, email, contact_email FROM users WHERE lower(email) = ? LIMIT 1")
+    .get("admin");
+}
+
+function getAdminRoutingContactEmail() {
+  const adminUser = getAdminUserForContactRouting();
+  const fromDb = normalizeEmail(adminUser && adminUser.contact_email || "");
+  if (fromDb) return fromDb;
+  return normalizeEmail(configuredAdminContactEmail || "");
+}
+
+function syncTestAccountContactEmailWithAdmin() {
+  const adminContact = getAdminRoutingContactEmail();
+  if (!adminContact) return;
+  db.prepare("UPDATE users SET contact_email = ? WHERE lower(email) = ?")
+    .run(adminContact, TEST_ACCOUNT_IDENTIFIER);
+}
+
 function normalizeTaskImageUrl(url) {
   const value = String(url || "").trim();
   if (!value) return "";
   if (!isAllowedUploadUrl(value)) return "";
   return value.slice(0, 2000);
+}
+
+function normalizeTaskPriority(value) {
+  const priority = String(value || "").trim().toLowerCase();
+  if (!priority) return "low";
+  if (priority === "low" || priority === "medium" || priority === "high") return priority;
+  return "";
 }
 
 function mapTaskAssignmentRow(row) {
@@ -1085,6 +1210,7 @@ function mapTaskAssignmentRow(row) {
     title: String(row.title || ""),
     description: String(row.description || ""),
     image_url: String(row.image_url || ""),
+    priority: normalizeTaskPriority(row.priority),
     assigned_at: Number(row.assigned_at || 0),
     solved_at: row.solved_at ? Number(row.solved_at) : null,
     assigned_to_email: String(row.assigned_to_email || ""),
@@ -1234,10 +1360,16 @@ async function sendMailViaSmtp({ toEmail, subject, text }) {
     await smtpCommand(socket, `RCPT TO:<${toEmail}>`, [250, 251]);
     await smtpCommand(socket, "DATA", [354]);
 
+    const sentAt = new Date();
+    const messageId = `<${Date.now()}.${crypto.randomBytes(8).toString("hex")}@ambitionsverige.se>`;
     const body = [
       `From: ${smtpFrom}`,
       `To: ${toEmail}`,
       `Subject: ${subject}`,
+      `Date: ${sentAt.toUTCString()}`,
+      `Message-ID: ${messageId}`,
+      "MIME-Version: 1.0",
+      `X-Entity-Ref-ID: ${messageId}`,
       "Content-Type: text/plain; charset=utf-8",
       "",
       text
@@ -1251,16 +1383,44 @@ async function sendMailViaSmtp({ toEmail, subject, text }) {
     socket.end();
   }
 
-  const initialSocket = await new Promise((resolve, reject) => {
-    const socket = smtpSecure
-      ? tls.connect({ host: smtpHost, port: smtpPort, servername: smtpHost }, () => resolve(socket))
-      : net.connect({ host: smtpHost, port: smtpPort }, () => resolve(socket));
-    socket.setTimeout(20000, () => {
-      socket.destroy(new Error("SMTP socket timeout"));
+  async function createSmtpSocket() {
+    return new Promise((resolve, reject) => {
+      const socket = smtpSecure
+        ? tls.connect({ host: smtpHost, port: smtpPort, servername: smtpHost }, () => resolve(socket))
+        : net.connect({ host: smtpHost, port: smtpPort }, () => resolve(socket));
+      socket.setTimeout(20000, () => {
+        socket.destroy(new Error("SMTP socket timeout"));
+      });
+      socket.on("error", reject);
     });
-    socket.on("error", reject);
-  });
-  await sendViaSocket(initialSocket);
+  }
+
+  function isTransientSmtpError(err) {
+    const msg = String(err && err.message ? err.message : "");
+    return /SMTP fel \(4\d\d\)/.test(msg) || /timeout/i.test(msg) || /connection closed/i.test(msg);
+  }
+
+  const maxAttempts = 2;
+  let lastErr = null;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    let socket = null;
+    try {
+      socket = await createSmtpSocket();
+      await sendViaSocket(socket);
+      lastErr = null;
+      break;
+    } catch (err) {
+      lastErr = err;
+      if (socket && !socket.destroyed) {
+        try { socket.destroy(); } catch (_) {}
+      }
+      if (attempt >= maxAttempts || !isTransientSmtpError(err)) {
+        throw err;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 1200 * attempt));
+    }
+  }
+  if (lastErr) throw lastErr;
   return { mode: "smtp", auth_user: smtpAuthUser };
 }
 
@@ -1322,7 +1482,8 @@ function makeNumericLoginCode(length = 6) {
 }
 
 async function sendLoginCodeEmail({ recipientEmail, username, code }) {
-  const subject = "Din inloggningskod - Ambition Sverige";
+  const safeUser = String(username || "").trim() || "konto";
+  const subject = `Din inloggningskod (${safeUser}) - Ambition Sverige`;
   const text = [
     "Hej!",
     "",
@@ -1474,8 +1635,17 @@ app.post("/api/login/code/request", async (req, res) => {
     return res.json({ ok: true, message: genericMessage });
   }
 
+  const isTestAccount = isTestAccountIdentifier(user.email);
   let recipientEmail = normalizeEmail(user.contact_email || "");
-  if (!recipientEmail) {
+  if (isTestAccount) {
+    const adminContact = getAdminRoutingContactEmail();
+    if (adminContact) {
+      recipientEmail = adminContact;
+      if (recipientEmail !== normalizeEmail(user.contact_email || "")) {
+        db.prepare("UPDATE users SET contact_email = ? WHERE id = ?").run(recipientEmail, Number(user.id));
+      }
+    }
+  } else if (!recipientEmail) {
     const maybeAdmin = String(user.email || "").toLowerCase() === String(configuredAdminIdentifier || "").toLowerCase();
     const configuredMail = normalizeEmail(configuredAdminContactEmail || "");
     if (maybeAdmin && configuredMail) {
@@ -1698,7 +1868,7 @@ app.get("/api/me/profile", (req, res) => {
   if (!user) return;
 
   const row = db
-    .prepare("SELECT id, email, contact_email, city, first_name, last_name, phone FROM users WHERE id = ?")
+    .prepare("SELECT id, email, contact_email, city, first_name, last_name, phone, profile_image_url FROM users WHERE id = ?")
     .get(user.id);
   if (!row) {
     return res.status(404).json({ error: "Användaren hittades inte." });
@@ -1710,7 +1880,8 @@ app.get("/api/me/profile", (req, res) => {
     city: String(row.city || ""),
     first_name: String(row.first_name || ""),
     last_name: String(row.last_name || ""),
-    phone: String(row.phone || "")
+    phone: String(row.phone || ""),
+    profile_image_url: String(row.profile_image_url || "")
   });
 });
 
@@ -1723,6 +1894,7 @@ app.put("/api/me/profile", (req, res) => {
   const phone = String(req.body?.phone || "").trim();
   const contactEmail = normalizeEmail(req.body?.contact_email || "");
   const city = String(req.body?.city || "").trim();
+  const profileImageUrl = String(req.body?.profile_image_url || "").trim();
 
   if (!firstName) return res.status(400).json({ error: "Förnamn krävs." });
   if (!lastName) return res.status(400).json({ error: "Efternamn krävs." });
@@ -1733,17 +1905,31 @@ app.put("/api/me/profile", (req, res) => {
   if (!city || !REGISTER_CITIES.includes(city)) {
     return res.status(400).json({ error: "Välj en giltig ort." });
   }
+  if (profileImageUrl && !isAllowedUploadUrl(profileImageUrl)) {
+    return res.status(400).json({ error: "Ogiltig URL för profilbild." });
+  }
 
   const conflict = db
-    .prepare("SELECT id FROM users WHERE lower(contact_email) = ? AND id != ? LIMIT 1")
+    .prepare("SELECT id, email FROM users WHERE lower(contact_email) = ? AND id != ? LIMIT 1")
     .get(contactEmail, user.id);
   if (conflict) {
-    return res.status(409).json({ error: "E-postadressen används redan av en annan användare." });
+    const conflictEmail = normalizeEmail(conflict.email || "");
+    const selfEmail = normalizeEmail(user.email || "");
+    const allowAdminTestPair =
+      (isAdmin({ email: selfEmail }) && isTestAccountIdentifier(conflictEmail)) ||
+      (isTestAccountIdentifier(selfEmail) && isAdmin({ email: conflictEmail }));
+    if (!allowAdminTestPair) {
+      return res.status(409).json({ error: "E-postadressen används redan av en annan användare." });
+    }
   }
 
   db.prepare(
-    "UPDATE users SET first_name = ?, last_name = ?, phone = ?, contact_email = ?, city = ? WHERE id = ?"
-  ).run(firstName, lastName, phone, contactEmail, city, user.id);
+    "UPDATE users SET first_name = ?, last_name = ?, phone = ?, contact_email = ?, city = ?, profile_image_url = ? WHERE id = ?"
+  ).run(firstName, lastName, phone, contactEmail, city, profileImageUrl, user.id);
+
+  if (isAdmin(user) || isTestAccountIdentifier(user.email)) {
+    syncTestAccountContactEmailWithAdmin();
+  }
 
   return res.json({ ok: true });
 });
@@ -1905,6 +2091,14 @@ app.put("/api/admin/users/:id", (req, res) => {
     if (result.changes === 0) {
       return res.status(404).json({ error: "Användaren hittades inte." });
     }
+    if (
+      isAdmin({ email: target.email }) ||
+      isAdmin({ email: nextEmail }) ||
+      isTestAccountIdentifier(target.email) ||
+      isTestAccountIdentifier(nextEmail)
+    ) {
+      syncTestAccountContactEmailWithAdmin();
+    }
     return res.json({ ok: true });
   } catch (err) {
     if (String(err.message).includes("UNIQUE")) {
@@ -1970,6 +2164,7 @@ app.get("/api/messenger/threads", (req, res) => {
       `SELECT
          u.id,
          u.email,
+         u.profile_image_url,
          CASE
            WHEN EXISTS (
              SELECT 1
@@ -2080,6 +2275,7 @@ app.get("/api/messenger/threads", (req, res) => {
     kind: "direct",
     id: String(r.id),
     email: r.email,
+    profile_image_url: String(r.profile_image_url || ""),
     name: r.email,
     online: !!r.is_online,
     unread_count: Number(r.unread_count || 0),
@@ -2121,7 +2317,7 @@ app.get("/api/messenger/messages/:userId", (req, res) => {
 
   const rows = db
     .prepare(
-      `SELECT id, sender_id, recipient_id, message, created_at
+      `SELECT dm.id, dm.sender_id, dm.recipient_id, dm.message, dm.created_at, s.email AS sender_email, s.profile_image_url AS sender_profile_image_url
        FROM (
          SELECT id, sender_id, recipient_id, message, created_at
          FROM direct_messages
@@ -2129,8 +2325,9 @@ app.get("/api/messenger/messages/:userId", (req, res) => {
             OR (sender_id = ? AND recipient_id = ?)
          ORDER BY created_at DESC, id DESC
          LIMIT 500
-       ) recent
-       ORDER BY created_at ASC, id ASC`
+       ) dm
+       JOIN users s ON s.id = dm.sender_id
+       ORDER BY dm.created_at ASC, dm.id ASC`
     )
     .all(user.id, otherUserId, otherUserId, user.id);
 
@@ -2147,7 +2344,9 @@ app.get("/api/messenger/messages/:userId", (req, res) => {
       id: m.id,
       text: m.message,
       created_at: m.created_at,
-      from_me: m.sender_id === user.id
+      from_me: m.sender_id === user.id,
+      sender_email: String(m.sender_email || ""),
+      profile_image_url: String(m.sender_profile_image_url || "")
     }))
   });
 });
@@ -2201,7 +2400,7 @@ app.get("/api/messenger/groups/:groupId/messages", (req, res) => {
 
   const rows = db
     .prepare(
-      `SELECT gm.id, gm.message, gm.created_at, gm.sender_id, u.email
+      `SELECT gm.id, gm.message, gm.created_at, gm.sender_id, u.email, u.profile_image_url
        FROM (
          SELECT id, message, created_at, sender_id
          FROM chat_group_messages
@@ -2229,7 +2428,8 @@ app.get("/api/messenger/groups/:groupId/messages", (req, res) => {
       text: m.message,
       created_at: m.created_at,
       from_me: Number(m.sender_id) === user.id,
-      sender_email: m.email
+      sender_email: m.email,
+      profile_image_url: String(m.profile_image_url || "")
     }))
   });
 });
@@ -2514,7 +2714,7 @@ app.get("/api/chat/messages", (req, res) => {
 
   const rows = db
     .prepare(
-      `SELECT m.id, m.message, m.created_at, u.email, u.city AS user_city,
+      `SELECT m.id, m.message, m.created_at, u.email, u.city AS user_city, u.profile_image_url AS user_profile_image_url,
               m.pinned, m.pinned_at, m.pinned_by, pu.email AS pinned_by_email
        FROM chat_messages m
        JOIN users u ON u.id = m.user_id
@@ -2552,6 +2752,7 @@ app.get("/api/chat/messages", (req, res) => {
       pinned_at: Number(m.pinned_at || 0) || null,
       pinned_by_email: String(m.pinned_by_email || ""),
       author_is_admin: isAdmin({ email: String(m.email || "") }),
+      profile_image_url: String(m.user_profile_image_url || ""),
       seen_by: seenBy,
       seen_count: seenBy.length
     };
@@ -2740,15 +2941,9 @@ app.get("/api/important-messages", (req, res) => {
   const user = requireAuth(req, res);
   if (!user) return;
 
-  const rows = db
-    .prepare(
-      `SELECT id, icon, text, color, sort_order, created_at, updated_at
-       FROM important_messages
-       ORDER BY sort_order ASC, id ASC`
-    )
-    .all();
+  const rows = listImportantMessages();
 
-  return res.json({ messages: rows });
+  return res.json({ messages: rows.map(mapImportantMessageRow) });
 });
 
 app.post("/api/important-messages", (req, res) => {
@@ -2760,9 +2955,10 @@ app.post("/api/important-messages", (req, res) => {
 
   const icon = String(req.body?.icon || "📢").trim().slice(0, 8) || "📢";
   const text = String(req.body?.text || "").trim();
-  const colorRaw = String(req.body?.color || "info").trim().toLowerCase();
+  const color = normalizeImportantColor(req.body?.color);
   const sortOrderRaw = Number(req.body?.sort_order);
-  const color = ["danger", "warning", "success", "info"].includes(colorRaw) ? colorRaw : "info";
+  const source = "admin";
+  const sourceLabel = defaultImportantSourceLabel(source);
 
   if (!text) return res.status(400).json({ error: "Text krävs." });
   if (text.length > 500) return res.status(400).json({ error: "Texten är för lång (max 500 tecken)." });
@@ -2775,9 +2971,11 @@ app.post("/api/important-messages", (req, res) => {
 
   const result = db
     .prepare(
-      "INSERT INTO important_messages(icon, text, color, sort_order, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
+      `INSERT INTO important_messages(
+          icon, text, color, sort_order, created_by, created_at, updated_at, source, source_label, external_id
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)`
     )
-    .run(icon, text, color, sortOrder, user.id, now, now);
+    .run(icon, text, color, sortOrder, user.id, now, now, source, sourceLabel);
 
   return res.status(201).json({ ok: true, id: result.lastInsertRowid });
 });
@@ -2796,10 +2994,9 @@ app.put("/api/important-messages/:id", (req, res) => {
 
   const icon = String(req.body?.icon || "📢").trim().slice(0, 8) || "📢";
   const text = String(req.body?.text || "").trim();
-  const colorRaw = String(req.body?.color || "info").trim().toLowerCase();
+  const color = normalizeImportantColor(req.body?.color);
   const sortOrderRaw = Number(req.body?.sort_order);
   const sortOrder = Number.isInteger(sortOrderRaw) ? sortOrderRaw : null;
-  const color = ["danger", "warning", "success", "info"].includes(colorRaw) ? colorRaw : "info";
 
   if (!text) return res.status(400).json({ error: "Text krävs." });
   if (text.length > 500) return res.status(400).json({ error: "Texten är för lång (max 500 tecken)." });
@@ -2834,6 +3031,106 @@ app.delete("/api/important-messages/:id", (req, res) => {
     return res.status(400).json({ error: "Ogiltigt id." });
   }
   const result = db.prepare("DELETE FROM important_messages WHERE id = ?").run(id);
+  if (result.changes === 0) {
+    return res.status(404).json({ error: "Meddelandet hittades inte." });
+  }
+  return res.json({ ok: true });
+});
+
+app.get("/api/integrations/partikansliet/important-messages", (req, res) => {
+  if (!requirePartikanslietIntegration(req, res)) return;
+  const rows = listImportantMessages("source = ?", ["partikansliet"]);
+  return res.json({ messages: rows.map(mapImportantMessageRow) });
+});
+
+app.post("/api/integrations/partikansliet/important-messages", (req, res) => {
+  if (!requirePartikanslietIntegration(req, res)) return;
+
+  const icon = String(req.body?.icon || "📢").trim().slice(0, 8) || "📢";
+  const text = String(req.body?.text || "").trim();
+  const color = normalizeImportantColor(req.body?.color);
+  const sortOrderRaw = Number(req.body?.sort_order);
+  const source = "partikansliet";
+  const sourceLabel = normalizeImportantSourceLabel(req.body?.source_label, source);
+  const externalId = normalizeImportantExternalId(req.body?.external_id);
+  if (!text) return res.status(400).json({ error: "Text krävs." });
+  if (text.length > 500) return res.status(400).json({ error: "Texten är för lång (max 500 tecken)." });
+
+  const fallbackOrder = Number(
+    db.prepare("SELECT COALESCE(MAX(sort_order), -1) + 1 AS next_order FROM important_messages").get().next_order
+  );
+  const sortOrder = Number.isInteger(sortOrderRaw) ? sortOrderRaw : fallbackOrder;
+  const now = nowTs();
+
+  if (externalId) {
+    const existing = db
+      .prepare("SELECT id FROM important_messages WHERE source = ? AND external_id = ? LIMIT 1")
+      .get(source, externalId);
+    if (existing) {
+      db.prepare(
+        "UPDATE important_messages SET icon = ?, text = ?, color = ?, sort_order = ?, source_label = ?, updated_at = ? WHERE id = ?"
+      ).run(icon, text, color, sortOrder, sourceLabel, now, Number(existing.id));
+      return res.json({ ok: true, id: Number(existing.id), updated: true });
+    }
+  }
+
+  const result = db.prepare(
+    `INSERT INTO important_messages(
+        icon, text, color, sort_order, created_by, created_at, updated_at, source, source_label, external_id
+     ) VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, ?)`
+  ).run(icon, text, color, sortOrder, now, now, source, sourceLabel, externalId || null);
+  return res.status(201).json({ ok: true, id: Number(result.lastInsertRowid || 0), updated: false });
+});
+
+app.put("/api/integrations/partikansliet/important-messages/:id", (req, res) => {
+  if (!requirePartikanslietIntegration(req, res)) return;
+
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ error: "Ogiltigt id." });
+  }
+  const icon = String(req.body?.icon || "📢").trim().slice(0, 8) || "📢";
+  const text = String(req.body?.text || "").trim();
+  const color = normalizeImportantColor(req.body?.color);
+  const sortOrderRaw = Number(req.body?.sort_order);
+  const sortOrder = Number.isInteger(sortOrderRaw) ? sortOrderRaw : null;
+  const sourceLabel = normalizeImportantSourceLabel(req.body?.source_label, "partikansliet");
+  if (!text) return res.status(400).json({ error: "Text krävs." });
+  if (text.length > 500) return res.status(400).json({ error: "Texten är för lång (max 500 tecken)." });
+
+  const existing = db
+    .prepare("SELECT id FROM important_messages WHERE id = ? AND source = ? LIMIT 1")
+    .get(id, "partikansliet");
+  if (!existing) {
+    return res.status(404).json({ error: "Meddelandet hittades inte." });
+  }
+  const now = nowTs();
+  let result;
+  if (sortOrder === null) {
+    result = db.prepare(
+      "UPDATE important_messages SET icon = ?, text = ?, color = ?, source_label = ?, updated_at = ? WHERE id = ? AND source = ?"
+    ).run(icon, text, color, sourceLabel, now, id, "partikansliet");
+  } else {
+    result = db.prepare(
+      "UPDATE important_messages SET icon = ?, text = ?, color = ?, sort_order = ?, source_label = ?, updated_at = ? WHERE id = ? AND source = ?"
+    ).run(icon, text, color, sortOrder, sourceLabel, now, id, "partikansliet");
+  }
+  if (result.changes === 0) {
+    return res.status(404).json({ error: "Meddelandet hittades inte." });
+  }
+  return res.json({ ok: true, id: id });
+});
+
+app.delete("/api/integrations/partikansliet/important-messages/:id", (req, res) => {
+  if (!requirePartikanslietIntegration(req, res)) return;
+
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ error: "Ogiltigt id." });
+  }
+  const result = db
+    .prepare("DELETE FROM important_messages WHERE id = ? AND source = ?")
+    .run(id, "partikansliet");
   if (result.changes === 0) {
     return res.status(404).json({ error: "Meddelandet hittades inte." });
   }
@@ -3328,7 +3625,7 @@ app.get("/api/tasks/my", (req, res) => {
   const rows = db
     .prepare(
       `SELECT a.id AS assignment_id, a.task_id, a.assigned_at, a.solved_at,
-              t.title, t.description, t.image_url,
+              t.title, t.description, t.image_url, t.priority,
               u.email AS assigned_to_email,
               ab.email AS assigned_by_email
        FROM task_assignments a
@@ -3380,7 +3677,7 @@ app.put("/api/tasks/assignments/:id/solve", (req, res) => {
   const row = db
     .prepare(
       `SELECT a.id AS assignment_id, a.task_id, a.assigned_at, a.solved_at,
-              t.title, t.description, t.image_url,
+              t.title, t.description, t.image_url, t.priority,
               u.email AS assigned_to_email,
               ab.email AS assigned_by_email
        FROM task_assignments a
@@ -3407,6 +3704,8 @@ app.post("/api/admin/tasks", (req, res) => {
   const title = String(req.body?.title || "").trim();
   const description = String(req.body?.description || "").trim();
   const imageUrl = normalizeTaskImageUrl(req.body?.image_url || "");
+  const rawPriority = String(req.body?.priority || "").trim();
+  const priority = normalizeTaskPriority(rawPriority);
   const audience = String(req.body?.audience || "all").trim().toLowerCase();
   const requestedUserIds = Array.isArray(req.body?.user_ids) ? req.body.user_ids : [];
 
@@ -3415,7 +3714,10 @@ app.post("/api/admin/tasks", (req, res) => {
   if (title.length > 160) return res.status(400).json({ error: "Titeln är för lång (max 160 tecken)." });
   if (description.length > 5000) return res.status(400).json({ error: "Beskrivningen är för lång (max 5000 tecken)." });
   if (String(req.body?.image_url || "").trim() && !imageUrl) {
-    return res.status(400).json({ error: "Ogiltig bildlänk." });
+    return res.status(400).json({ error: "Ogiltig fil-länk." });
+  }
+  if (rawPriority && !priority) {
+    return res.status(400).json({ error: "Ogiltig prioritet. Tillåtna värden: low, medium, high." });
   }
   if (!["all", "selected"].includes(audience)) {
     return res.status(400).json({ error: "Ogiltigt målval för uppdrag." });
@@ -3454,13 +3756,13 @@ app.post("/api/admin/tasks", (req, res) => {
 
   const now = nowTs();
   const insertTask = db.prepare(
-    "INSERT INTO tasks(title, description, image_url, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)"
+    "INSERT INTO tasks(title, description, image_url, priority, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
   );
   const insertAssignment = db.prepare(
     "INSERT INTO task_assignments(task_id, user_id, assigned_by, assigned_at, solved_at) VALUES (?, ?, ?, ?, NULL)"
   );
   const tx = db.transaction(() => {
-    const taskResult = insertTask.run(title, description, imageUrl || null, user.id, now, now);
+    const taskResult = insertTask.run(title, description, imageUrl || null, priority, user.id, now, now);
     const taskId = Number(taskResult.lastInsertRowid || 0);
     let createdAssignments = 0;
     recipientIds.forEach((recipientId) => {
@@ -3478,6 +3780,74 @@ app.post("/api/admin/tasks", (req, res) => {
   });
 });
 
+app.put("/api/admin/tasks/assignments/:id", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+  if (!isAdmin(user)) {
+    return res.status(403).json({ error: "Endast admin kan redigera uppdrag." });
+  }
+
+  const assignmentId = Number(req.params.id);
+  if (!Number.isInteger(assignmentId) || assignmentId <= 0) {
+    return res.status(400).json({ error: "Ogiltigt uppdrags-id." });
+  }
+
+  const existing = db
+    .prepare(
+      `SELECT a.id, a.task_id, a.solved_at
+       FROM task_assignments a
+       WHERE a.id = ?`
+    )
+    .get(assignmentId);
+  if (!existing) {
+    return res.status(404).json({ error: "Uppdraget hittades inte." });
+  }
+  if (existing.solved_at) {
+    return res.status(400).json({ error: "Lösta uppdrag kan inte redigeras." });
+  }
+
+  const title = String(req.body?.title || "").trim();
+  const description = String(req.body?.description || "").trim();
+  const imageUrl = normalizeTaskImageUrl(req.body?.image_url || "");
+  const rawPriority = String(req.body?.priority || "").trim();
+  const priority = normalizeTaskPriority(rawPriority);
+
+  if (!title) return res.status(400).json({ error: "Titel krävs." });
+  if (!description) return res.status(400).json({ error: "Beskrivning krävs." });
+  if (title.length > 160) return res.status(400).json({ error: "Titeln är för lång (max 160 tecken)." });
+  if (description.length > 5000) return res.status(400).json({ error: "Beskrivningen är för lång (max 5000 tecken)." });
+  if (String(req.body?.image_url || "").trim() && !imageUrl) {
+    return res.status(400).json({ error: "Ogiltig fil-länk." });
+  }
+  if (rawPriority && !priority) {
+    return res.status(400).json({ error: "Ogiltig prioritet. Tillåtna värden: low, medium, high." });
+  }
+
+  const now = nowTs();
+  db.prepare(
+    "UPDATE tasks SET title = ?, description = ?, image_url = ?, priority = ?, updated_at = ? WHERE id = ?"
+  ).run(title, description, imageUrl || null, priority, now, Number(existing.task_id));
+
+  const row = db
+    .prepare(
+      `SELECT a.id AS assignment_id, a.task_id, a.assigned_at, a.solved_at,
+              t.title, t.description, t.image_url, t.priority,
+              u.email AS assigned_to_email,
+              ab.email AS assigned_by_email
+       FROM task_assignments a
+       JOIN tasks t ON t.id = a.task_id
+       JOIN users u ON u.id = a.user_id
+       JOIN users ab ON ab.id = a.assigned_by
+       WHERE a.id = ?`
+    )
+    .get(assignmentId);
+
+  return res.json({
+    ok: true,
+    task: row ? mapTaskAssignmentRow(row) : null
+  });
+});
+
 app.get("/api/admin/tasks/library", (req, res) => {
   const user = requireAuth(req, res);
   if (!user) return;
@@ -3488,7 +3858,7 @@ app.get("/api/admin/tasks/library", (req, res) => {
   const rows = db
     .prepare(
       `SELECT a.id AS assignment_id, a.task_id, a.assigned_at, a.solved_at,
-              t.title, t.description, t.image_url,
+              t.title, t.description, t.image_url, t.priority,
               u.email AS assigned_to_email,
               ab.email AS assigned_by_email
        FROM task_assignments a

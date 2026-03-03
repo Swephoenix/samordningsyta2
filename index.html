@@ -116,6 +116,9 @@
             position: relative;
             z-index: 1;
         }
+        .dashboard > * {
+            min-height: 0;
+        }
 
         .panel {
             background: var(--panel-bg);
@@ -143,7 +146,12 @@
         }
 
         /* Vänster kolumn */
-        .left-col { display: flex; flex-direction: column; gap: 20px; }
+        .left-col {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            min-height: 0;
+        }
         .messages { flex: 1; }
         .meetings { flex: 1.25; min-height: 250px; }
         .notes { flex: 1.2; }
@@ -178,6 +186,18 @@
             border-radius: 4px;
             font-size: 0.9em;
         }
+        .msg-item-main {
+            display: block;
+            font-weight: 600;
+            line-height: 1.35;
+        }
+        .msg-item-meta {
+            display: block;
+            margin-top: 4px;
+            font-size: 0.76rem;
+            opacity: 0.8;
+            font-weight: 600;
+        }
         .important-header {
             display: flex;
             align-items: center;
@@ -201,24 +221,30 @@
         .important-admin-content {
             background: #ffffff;
             border: 1px solid #e5e7eb;
-            width: min(92vw, 560px);
+            width: min(96vw, 980px);
+            max-height: min(96vh, 980px);
             border-radius: 12px;
-            padding: 16px;
+            padding: 18px;
             box-shadow: 0 16px 34px rgba(0,0,0,0.45);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
         .important-admin-content h3 {
-            margin-bottom: 12px;
-            font-size: 1.02rem;
+            margin-bottom: 14px;
+            font-size: 1.18rem;
             color: #1f2937;
         }
         .important-admin-list {
-            max-height: 240px;
+            flex: 1 1 auto;
+            min-height: 280px;
+            max-height: none;
             overflow-y: auto;
             border: 1px solid #e5e7eb;
             border-radius: 8px;
             background: #ffffff;
-            padding: 8px;
-            margin-bottom: 12px;
+            padding: 10px;
+            margin-bottom: 14px;
             display: flex;
             flex-direction: column;
             gap: 8px;
@@ -235,6 +261,17 @@
             color: #1f2937;
             font-size: 0.86rem;
             cursor: grab;
+        }
+        .important-admin-item-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 0;
+        }
+        .important-admin-item-meta {
+            font-size: 0.72rem;
+            opacity: 0.85;
+            font-weight: 700;
         }
         .important-admin-item.alert-info {
             background: #dbeafe;
@@ -299,19 +336,20 @@
         }
         .important-admin-form {
             display: grid;
-            grid-template-columns: 70px 130px 1fr auto;
-            gap: 8px;
+            grid-template-columns: 90px 170px 1fr auto;
+            gap: 10px;
             align-items: center;
-            margin-bottom: 8px;
+            margin-bottom: 12px;
             position: relative;
         }
         .important-admin-form input {
             border: 1px solid #e5e7eb;
             border-radius: 8px;
-            padding: 8px 10px;
+            padding: 10px 12px;
             outline: none;
             background: #ffffff;
             color: #1f2937;
+            font-size: 0.92rem;
         }
         .important-icon-btn {
             border: 1px solid #e5e7eb;
@@ -403,7 +441,7 @@
             display: flex;
             justify-content: flex-end;
             gap: 8px;
-            margin-top: 6px;
+            margin-top: 10px;
         }
         .important-admin-btn-secondary,
         .important-admin-btn-primary {
@@ -606,6 +644,13 @@
             font-size: 1.05rem;
             font-weight: 700;
             flex-shrink: 0;
+            overflow: hidden;
+        }
+        .chat-title-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
         }
         .chat-title-text {
             min-width: 0;
@@ -951,6 +996,22 @@
             color: #6b7280;
             margin-bottom: 5px;
             gap: 12px;
+        }
+        .chat-post-author {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            min-width: 0;
+        }
+        .chat-post-author-avatar {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            object-fit: cover;
+            display: inline-block;
+            border: 1px solid #d1d5db;
+            background: #eef2ff;
+            flex-shrink: 0;
         }
         .chat-post.mine .chat-post-header {
             color: #6b7280;
@@ -1772,7 +1833,17 @@
         }
 
         /* Höger kolumn: Kalender & Verktyg */
-        .right-col { display: flex; flex-direction: column; gap: 20px; }
+        .right-col {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            min-height: 0;
+        }
+        .right-col .messages,
+        .right-col .weekly-tasks-panel,
+        .right-col .placeholders {
+            min-height: 0;
+        }
         .calendar-wrapper { flex: 0 0 auto; }
         .placeholders { flex: 1; }
         .right-col .placeholders {
@@ -1837,7 +1908,7 @@
 
         .placeholder-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
             gap: 10px;
             padding: 12px;
         }
@@ -1848,6 +1919,7 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 10px;
+            min-height: 124px;
         }
         .task-card {
             position: relative;
@@ -1860,13 +1932,31 @@
             flex-direction: column;
             justify-content: space-between;
             transition: transform 0.2s ease;
-            background: linear-gradient(135deg, #facc15, #fde047);
-            box-shadow: 0 10px 20px rgba(250, 204, 21, 0.28);
             color: #1f2937;
         }
-        .task-card.task-card-blue {
-            background: linear-gradient(135deg, #2563eb, #1e3a8a);
-            box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3);
+        .task-card-full {
+            grid-column: 1 / -1;
+            width: 100%;
+        }
+        .task-all-solved-note {
+            grid-column: 1 / -1;
+            color: #111827;
+            font-size: 1rem;
+            font-weight: 700;
+            padding: 8px 2px;
+        }
+        .task-card.task-card-low {
+            background: linear-gradient(135deg, #facc15, #fde047);
+            box-shadow: 0 10px 20px rgba(250, 204, 21, 0.28);
+        }
+        .task-card.task-card-medium {
+            background: linear-gradient(135deg, #fb923c, #f97316);
+            box-shadow: 0 10px 20px rgba(249, 115, 22, 0.3);
+            color: #ffffff;
+        }
+        .task-card.task-card-high {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            box-shadow: 0 10px 20px rgba(220, 38, 38, 0.32);
             color: #ffffff;
         }
         .task-card.is-solved {
@@ -1907,7 +1997,8 @@
             background: rgba(255, 255, 255, 0.92);
             color: #1d4ed8;
         }
-        .task-card.task-card-blue .task-badge {
+        .task-card.task-card-medium .task-badge,
+        .task-card.task-card-high .task-badge {
             background: rgba(255, 255, 255, 0.2);
             color: #ffffff;
         }
@@ -1952,6 +2043,16 @@
             box-shadow: 0 24px 48px rgba(15, 23, 42, 0.35);
             animation: taskModalPop 0.2s ease;
         }
+        .task-modal-preview {
+            margin-bottom: 12px;
+        }
+        .task-modal-preview .task-card {
+            cursor: default;
+            min-height: 112px;
+        }
+        .task-modal-preview .task-card:hover {
+            transform: none;
+        }
         @keyframes taskModalPop {
             from { opacity: 0; transform: scale(0.94); }
             to { opacity: 1; transform: scale(1); }
@@ -1973,6 +2074,21 @@
             margin: 14px 0 0;
             display: none;
         }
+        .task-modal-attachment {
+            margin-top: 12px;
+            display: none;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            background: #f8fafc;
+            padding: 10px 12px;
+            font-size: 0.86rem;
+        }
+        .task-modal-attachment a {
+            color: #1d4ed8;
+            font-weight: 700;
+            text-decoration: none;
+        }
+        .task-modal-attachment a:hover { text-decoration: underline; }
         .task-modal-close {
             margin-top: 14px;
             width: 100%;
@@ -2003,6 +2119,121 @@
             background: #bbf7d0;
             border-color: #4ade80;
         }
+        .solved-library-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.22);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 95;
+            padding: 18px;
+        }
+        .solved-library-box {
+            width: min(95vw, 1120px);
+            max-height: min(92vh, 860px);
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 18px;
+            padding: 16px;
+            color: #1f2937;
+            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.12);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .solved-library-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .solved-library-title-wrap h3 {
+            margin: 0;
+            font-size: 1.15rem;
+            font-family: "Lora", serif;
+            color: #0f172a;
+        }
+        .solved-library-title-wrap p {
+            margin: 4px 0 0;
+            color: #64748b;
+            font-size: 0.86rem;
+        }
+        .solved-library-close {
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            background: #f8fafc;
+            color: #1f2937;
+            width: 34px;
+            height: 34px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+        .solved-library-close:hover { background: #eff6ff; }
+        .solved-library-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+            overflow-y: auto;
+            padding-right: 2px;
+        }
+        .solved-library-card {
+            border: 1px solid #dbeafe;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: #ffffff;
+            text-align: left;
+            padding: 12px;
+            min-height: 168px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.1);
+            transition: transform 0.16s ease, box-shadow 0.16s ease;
+        }
+        .solved-library-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 22px rgba(15, 23, 42, 0.14);
+        }
+        .solved-library-badge {
+            align-self: flex-start;
+            border-radius: 999px;
+            padding: 4px 8px;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            background: rgba(255, 255, 255, 0.22);
+            color: #ffffff;
+            font-size: 0.66rem;
+            font-weight: 800;
+            letter-spacing: 0.2px;
+        }
+        .solved-library-card h4 {
+            margin: 10px 0 6px;
+            font-size: 0.96rem;
+            line-height: 1.28;
+            color: #f8fafc;
+        }
+        .solved-library-card p {
+            margin: 0;
+            font-size: 0.78rem;
+            line-height: 1.35;
+            color: #dcfce7;
+        }
+        .solved-library-meta {
+            margin-top: 10px;
+            font-size: 0.72rem;
+            color: #ecfdf5;
+            font-weight: 700;
+        }
+        .solved-library-empty {
+            border: 1px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            color: #64748b;
+            font-size: 0.86rem;
+        }
         #taskAdminToolIcon {
             font-size: 1.35rem;
             color: #334155;
@@ -2017,11 +2248,13 @@
         .task-admin-content {
             background: #ffffff;
             border: 1px solid #e5e7eb;
-            width: min(92vw, 760px);
+            width: min(96vw, 1520px);
+            max-height: min(94vh, 980px);
             border-radius: 14px;
             padding: 16px;
             box-shadow: 0 20px 40px rgba(15, 23, 42, 0.18);
             color: #1f2937;
+            overflow-y: auto;
         }
         .task-admin-content h3 {
             margin: 0 0 12px;
@@ -2033,7 +2266,8 @@
             margin-bottom: 14px;
         }
         .task-admin-form input,
-        .task-admin-form textarea {
+        .task-admin-form textarea,
+        .task-admin-form select {
             width: 100%;
             border: 1px solid #d1d5db;
             border-radius: 10px;
@@ -2042,9 +2276,124 @@
             padding: 9px 10px;
             font: inherit;
         }
+        .task-admin-priority-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+        }
+        .task-admin-priority-card {
+            display: block;
+            cursor: pointer;
+        }
+        .task-admin-priority-card input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .task-admin-priority-card-ui {
+            position: relative;
+            border-radius: 14px;
+            min-height: 122px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+            border: 1px solid transparent;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, filter 0.15s ease;
+        }
+        .task-admin-priority-card-ui::after {
+            content: "";
+            position: absolute;
+            width: 88px;
+            height: 88px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            top: -26px;
+            right: -26px;
+            pointer-events: none;
+        }
+        .task-admin-priority-card-ui strong {
+            font-size: 0.9rem;
+            font-weight: 800;
+            line-height: 1.2;
+            margin-top: 6px;
+        }
+        .task-admin-priority-card-ui span {
+            font-size: 0.74rem;
+            line-height: 1.3;
+            opacity: 0.95;
+        }
+        .task-admin-priority-card input[type="radio"]:checked + .task-admin-priority-card-ui {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(15, 23, 42, 0.28);
+            border-color: rgba(255, 255, 255, 0.8);
+            filter: saturate(1.08);
+        }
+        .task-admin-priority-card:hover .task-admin-priority-card-ui {
+            transform: translateY(-2px);
+        }
+        .task-admin-priority-card-low .task-admin-priority-card-ui {
+            background: linear-gradient(135deg, #facc15, #fde047);
+            box-shadow: 0 10px 20px rgba(250, 204, 21, 0.28);
+            color: #1f2937;
+        }
+        .task-admin-priority-card-medium .task-admin-priority-card-ui {
+            background: linear-gradient(135deg, #fb923c, #f97316);
+            box-shadow: 0 10px 20px rgba(249, 115, 22, 0.3);
+            color: #ffffff;
+        }
+        .task-admin-priority-card-high .task-admin-priority-card-ui {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            box-shadow: 0 10px 20px rgba(220, 38, 38, 0.32);
+            color: #ffffff;
+        }
+        .task-admin-priority-card .task-badge {
+            align-self: flex-start;
+            position: relative;
+            z-index: 1;
+        }
+        .task-admin-priority-card-medium .task-badge,
+        .task-admin-priority-card-high .task-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+        }
+        .task-admin-priority-note {
+            position: relative;
+            z-index: 1;
+        }
         .task-admin-form textarea {
             min-height: 84px;
             resize: vertical;
+        }
+        .task-admin-file-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .task-admin-file-btn {
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+            background: #ffffff;
+            color: #1f2937;
+            padding: 8px 10px;
+            font: inherit;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .task-admin-file-btn:hover {
+            background: #eff6ff;
+            border-color: #93c5fd;
+        }
+        .task-admin-file-hint {
+            font-size: 0.8rem;
+            color: #475569;
+        }
+        .task-admin-field-label {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #374151;
         }
         .task-admin-audience {
             display: flex;
@@ -2061,21 +2410,121 @@
             cursor: pointer;
         }
         .task-admin-user-list {
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
-            background: #f8fafc;
-            max-height: 150px;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            background: #ffffff;
+            max-height: 320px;
             overflow-y: auto;
-            padding: 8px;
+            padding: 10px;
             display: grid;
-            gap: 6px;
+            gap: 10px;
         }
-        .task-admin-user-item {
+        .task-admin-user-list-head {
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 8px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #334155;
+            position: sticky;
+            top: -10px;
+            z-index: 1;
+            background: #ffffff;
+            padding: 2px 0 6px;
+        }
+        .task-admin-user-count {
+            font-size: 0.76rem;
+            color: #475569;
+            font-weight: 600;
+        }
+        .task-admin-user-search {
+            width: 100%;
+            border: 1px solid #dbe3ef;
+            border-radius: 10px;
+            padding: 8px 10px;
+            font-size: 0.82rem;
+            color: #1f2937;
+            background: #f8fafc;
+        }
+        .task-admin-user-search:focus {
+            outline: none;
+            border-color: #93c5fd;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.12);
+            background: #fff;
+        }
+        .task-admin-user-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 8px;
+        }
+        .task-admin-user-item {
+            border: 1px solid #dbe3ef;
+            border-radius: 12px;
+            background: #f8fafc;
+            padding: 9px 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
             font-size: 0.82rem;
             color: #334155;
+            cursor: pointer;
+            transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        .task-admin-user-item:hover {
+            background: #eef6ff;
+            border-color: #bfdbfe;
+        }
+        .task-admin-user-item.is-selected {
+            background: #eaf3ff;
+            border-color: #93c5fd;
+            box-shadow: inset 0 0 0 1px #bfdbfe;
+        }
+        .task-admin-user-item input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #4f46e5;
+            margin-top: -1px;
+        }
+        .task-admin-user-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #e0e7ff;
+            color: #4338ca;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.78rem;
+            font-weight: 800;
+            flex-shrink: 0;
+        }
+        .task-admin-user-meta {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+        .task-admin-user-name {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #1f2937;
+            line-height: 1.2;
+        }
+        .task-admin-user-email {
+            font-size: 0.74rem;
+            color: #64748b;
+            line-height: 1.2;
+            word-break: break-all;
+        }
+        .task-admin-user-no-match {
+            border: 1px dashed #cbd5e1;
+            border-radius: 10px;
+            padding: 10px;
+            font-size: 0.8rem;
+            color: #64748b;
+            text-align: center;
+            background: #f8fafc;
         }
         .task-admin-library h4 {
             margin: 10px 0 6px;
@@ -2100,29 +2549,92 @@
         .task-admin-row:last-child {
             border-bottom: none;
         }
+        .task-admin-row-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .task-admin-row-title {
+            min-width: 0;
+        }
+        .task-admin-row-actions {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+        .task-admin-row-btn {
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            background: #ffffff;
+            color: #1e40af;
+            font-size: 0.74rem;
+            font-weight: 700;
+            padding: 4px 8px;
+            cursor: pointer;
+        }
+        .task-admin-row-btn:hover {
+            background: #eff6ff;
+            border-color: #93c5fd;
+        }
         .task-admin-empty {
             color: #64748b;
             font-size: 0.8rem;
             padding: 8px;
+        }
+        .task-edit-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.58);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2300;
+            padding: 20px;
+        }
+        .task-edit-content {
+            width: min(92vw, 820px);
+            max-height: min(92vh, 920px);
+            overflow-y: auto;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 16px;
+            box-shadow: 0 20px 46px rgba(15, 23, 42, 0.35);
+            display: grid;
+            gap: 10px;
+        }
+        .task-edit-content h4 {
+            margin: 0 0 2px;
+            font-size: 1.04rem;
+            color: #0f172a;
+        }
+        .task-edit-content input,
+        .task-edit-content textarea {
+            width: 100%;
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+            background: #ffffff;
+            color: #1f2937;
+            padding: 9px 10px;
+            font: inherit;
+        }
+        .task-edit-content textarea {
+            min-height: 110px;
+            resize: vertical;
+        }
+        .task-edit-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            padding-top: 4px;
         }
         .right-col .placeholders .placeholder-grid {
             margin-top: 0;
             padding-top: 6px;
             padding-bottom: 10px;
         }
-        #adminSettingsIcon {
-            grid-column: 3;
-            grid-row: 2;
-        }
-        #statisticsToolIcon {
-            grid-column: 3;
-            grid-row: 3;
-        }
-        #taskAdminToolIcon {
-            grid-column: 3;
-            grid-row: 1;
-        }
-        
         .placeholder-icon {
             background: var(--bg-color);
             height: 64px;
@@ -2669,6 +3181,31 @@
         .profile-row input[readonly] {
             opacity: 1;
             background: #eef4fb;
+            color: #6b7280;
+        }
+        .profile-photo-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .profile-photo-preview {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            border: 1px solid #dbe3ef;
+            object-fit: cover;
+            background: #f7fbff;
+            flex-shrink: 0;
+        }
+        .profile-photo-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .profile-photo-hint {
+            font-size: 0.78rem;
             color: #6b7280;
         }
         .profile-actions {
@@ -3694,6 +4231,15 @@
             .chat-main-shell { grid-template-columns: 1fr; }
             .chat-thread-sidebar { display: none; }
             .task-cards { grid-template-columns: 1fr; }
+            .important-admin-content {
+                width: min(98vw, 720px);
+                max-height: min(96vh, 980px);
+                padding: 14px;
+            }
+            .important-admin-form {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
             .messenger-popup {
                 bottom: 0;
                 right: 0;
@@ -4073,6 +4619,7 @@
             <div class="panel weekly-tasks-panel">
                 <div class="panel-header">
                     <span>Veckans uppgifter</span>
+                    <button id="weeklySolvedBtn" class="important-admin-btn" type="button" style="display:none;">Tidigare lösta</button>
                 </div>
                 <div class="panel-content">
                     <div class="task-cards" id="weeklyTaskCards">
@@ -4120,11 +4667,24 @@
 
     <div class="task-modal" id="taskModal">
         <div class="task-modal-box">
-            <h3 id="taskModalTitle"></h3>
-            <p id="taskModalText"></p>
+            <div class="task-modal-preview" id="taskModalCardPreview"></div>
             <img id="taskModalImage" alt="Uppdragsbild">
+            <div class="task-modal-attachment" id="taskModalAttachment"></div>
             <button class="task-modal-solve" type="button" id="taskModalSolveBtn">Markera som löst</button>
             <button class="task-modal-close" type="button" onclick="closeTaskModal()">Stäng</button>
+        </div>
+    </div>
+
+    <div class="solved-library-modal" id="weeklySolvedLibraryModal">
+        <div class="solved-library-box">
+            <div class="solved-library-head">
+                <div class="solved-library-title-wrap">
+                    <h3>Tidigare Lösta Uppdrag</h3>
+                    <p>Din samling av lösta uppdrag - som ett eget kortbibliotek.</p>
+                </div>
+                <button class="solved-library-close" type="button" id="weeklySolvedLibraryCloseBtn">✕</button>
+            </div>
+            <div class="solved-library-grid" id="weeklySolvedLibraryGrid"></div>
         </div>
     </div>
 
@@ -4135,7 +4695,39 @@
             <div class="task-admin-form">
                 <input id="taskAdminTitleInput" type="text" maxlength="160" placeholder="Titel på uppdrag">
                 <textarea id="taskAdminDescInput" maxlength="5000" placeholder="Beskrivning"></textarea>
-                <input id="taskAdminImageInput" type="url" maxlength="2000" placeholder="Bildlänk (valfritt)">
+                <div class="task-admin-file-row">
+                    <button id="taskAdminFileBtn" class="task-admin-file-btn" type="button">Bifoga fil</button>
+                    <button id="taskAdminFileClearBtn" class="task-admin-file-btn" type="button">Ta bort fil</button>
+                    <input id="taskAdminFileInput" type="file" style="display:none;">
+                    <span id="taskAdminFileHint" class="task-admin-file-hint"></span>
+                </div>
+                <label class="task-admin-field-label">Prioritet / kortfärg</label>
+                <div class="task-admin-priority-cards" role="radiogroup" aria-label="Välj prioritet">
+                    <label class="task-admin-priority-card task-admin-priority-card-low">
+                        <input type="radio" name="taskAdminPriority" value="low" checked>
+                        <span class="task-admin-priority-card-ui">
+                            <span class="task-badge">Gul</span>
+                            <strong>Låg prioritet</strong>
+                            <span class="task-admin-priority-note">Standarduppdrag</span>
+                        </span>
+                    </label>
+                    <label class="task-admin-priority-card task-admin-priority-card-medium">
+                        <input type="radio" name="taskAdminPriority" value="medium">
+                        <span class="task-admin-priority-card-ui">
+                            <span class="task-badge">Orange</span>
+                            <strong>Medel prioritet</strong>
+                            <span class="task-admin-priority-note">Lite högre fokus</span>
+                        </span>
+                    </label>
+                    <label class="task-admin-priority-card task-admin-priority-card-high">
+                        <input type="radio" name="taskAdminPriority" value="high">
+                        <span class="task-admin-priority-card-ui">
+                            <span class="task-badge">Röd</span>
+                            <strong>Hög prioritet</strong>
+                            <span class="task-admin-priority-note">Mest brådskande</span>
+                        </span>
+                    </label>
+                </div>
                 <div class="task-admin-audience">
                     <label><input type="radio" name="taskAudience" value="all" checked> Alla användare</label>
                     <label><input type="radio" name="taskAudience" value="selected"> Välj användare</label>
@@ -4148,6 +4740,50 @@
                 <div class="task-admin-list" id="taskAdminUnsolvedList"></div>
                 <h4>Tidigare lösta</h4>
                 <div class="task-admin-list" id="taskAdminSolvedList"></div>
+            </div>
+        </div>
+    </div>
+    <div class="task-edit-modal" id="taskAdminEditModal">
+        <div class="task-edit-content">
+            <h4>Redigera olöst uppdrag</h4>
+            <input id="taskAdminEditTitleInput" type="text" maxlength="160" placeholder="Titel på uppdrag">
+            <textarea id="taskAdminEditDescInput" maxlength="5000" placeholder="Beskrivning"></textarea>
+            <div class="task-admin-file-row">
+                <button id="taskAdminEditFileBtn" class="task-admin-file-btn" type="button">Bifoga fil</button>
+                <button id="taskAdminEditFileClearBtn" class="task-admin-file-btn" type="button">Ta bort fil</button>
+                <input id="taskAdminEditFileInput" type="file" style="display:none;">
+                <span id="taskAdminEditFileHint" class="task-admin-file-hint"></span>
+            </div>
+            <label class="task-admin-field-label">Prioritet / kortfärg</label>
+            <div class="task-admin-priority-cards" role="radiogroup" aria-label="Välj prioritet för redigering">
+                <label class="task-admin-priority-card task-admin-priority-card-low">
+                    <input type="radio" name="taskAdminEditPriority" value="low" checked>
+                    <span class="task-admin-priority-card-ui">
+                        <span class="task-badge">Gul</span>
+                        <strong>Låg prioritet</strong>
+                        <span class="task-admin-priority-note">Standarduppdrag</span>
+                    </span>
+                </label>
+                <label class="task-admin-priority-card task-admin-priority-card-medium">
+                    <input type="radio" name="taskAdminEditPriority" value="medium">
+                    <span class="task-admin-priority-card-ui">
+                        <span class="task-badge">Orange</span>
+                        <strong>Medel prioritet</strong>
+                        <span class="task-admin-priority-note">Lite högre fokus</span>
+                    </span>
+                </label>
+                <label class="task-admin-priority-card task-admin-priority-card-high">
+                    <input type="radio" name="taskAdminEditPriority" value="high">
+                    <span class="task-admin-priority-card-ui">
+                        <span class="task-badge">Röd</span>
+                        <strong>Hög prioritet</strong>
+                        <span class="task-admin-priority-note">Mest brådskande</span>
+                    </span>
+                </label>
+            </div>
+            <div class="task-edit-actions">
+                <button id="taskAdminEditCancelBtn" class="important-admin-btn-secondary" type="button">Avbryt</button>
+                <button id="taskAdminEditSaveBtn" class="important-admin-btn-primary" type="button">Spara ändringar</button>
             </div>
         </div>
     </div>
@@ -4250,6 +4886,17 @@
         <div class="profile-modal-content">
             <button class="modal-close" type="button" onclick="closeProfileModal()">✖</button>
             <h3>Min profil</h3>
+            <div class="profile-photo-row">
+                <img id="profilePhotoPreview" class="profile-photo-preview" src="" alt="Profilfoto">
+                <div>
+                    <div class="profile-photo-controls">
+                        <button class="profile-btn" id="profilePhotoUploadBtn" type="button">Ladda upp foto</button>
+                        <button class="profile-btn" id="profilePhotoRemoveBtn" type="button">Ta bort foto</button>
+                    </div>
+                    <div class="profile-photo-hint" id="profilePhotoHint">JPG/PNG/WebP, max 10 MB. Beskärs automatiskt till kvadrat.</div>
+                    <input id="profilePhotoInput" type="file" accept="image/*" style="display:none;">
+                </div>
+            </div>
             <div class="profile-row">
                 <label for="profileUsername">Användarnamn</label>
                 <input id="profileUsername" type="text" readonly>
@@ -4368,7 +5015,6 @@
 
     <div class="modal-overlay" id="importantAdminModal">
         <div class="important-admin-content">
-            <button class="modal-close" type="button" onclick="closeImportantAdminModal()">✖</button>
             <h3>Redigera viktiga meddelanden</h3>
             <div class="important-admin-list" id="importantAdminList"></div>
             <div class="important-admin-form">
@@ -4473,6 +5119,9 @@
         let currentUserEmail = '';
         let currentUserId = 0;
         let currentUserIsAdmin = false;
+        let currentUserProfileImageUrl = '';
+        let profileModalImageUrl = '';
+        let profilePhotoUploadInProgress = false;
         let activeModalEvent = null;
         let eventEditorMode = 'create';
         let editingEventId = null;
@@ -4544,6 +5193,11 @@
         let taskLibraryUnsolved = [];
         let taskLibrarySolved = [];
         let activeTaskAssignmentId = 0;
+        let taskAdminAttachmentUrl = '';
+        let taskAdminAttachmentName = '';
+        let taskAdminEditAssignmentId = 0;
+        let taskAdminEditAttachmentUrl = '';
+        let taskAdminEditAttachmentName = '';
         let academyLinks = [];
         let academyApiAvailable = false;
         let academyLinksLoadError = '';
@@ -4585,21 +5239,24 @@
             chatPresence: null,
             todayMeetings: null,
             messengerUsers: null,
-            importantMessages: null
+            importantMessages: null,
+            weeklyTasks: null
         };
         const pollConfig = {
             chatMessages: { foregroundMs: 8000, backgroundMs: 30000, maxMs: 120000 },
             chatPresence: { foregroundMs: 15000, backgroundMs: 45000, maxMs: 120000 },
             todayMeetings: { foregroundMs: 60000, backgroundMs: 180000, maxMs: 300000 },
             messengerUsers: { foregroundMs: 8000, backgroundMs: 25000, maxMs: 120000 },
-            importantMessages: { foregroundMs: 20000, backgroundMs: 60000, maxMs: 180000 }
+            importantMessages: { foregroundMs: 20000, backgroundMs: 60000, maxMs: 180000 },
+            weeklyTasks: { foregroundMs: 3000, backgroundMs: 12000, maxMs: 60000 }
         };
         const pollState = {
             chatMessages: { timerId: null, running: false, failures: 0 },
             chatPresence: { timerId: null, running: false, failures: 0 },
             todayMeetings: { timerId: null, running: false, failures: 0 },
             messengerUsers: { timerId: null, running: false, failures: 0 },
-            importantMessages: { timerId: null, running: false, failures: 0 }
+            importantMessages: { timerId: null, running: false, failures: 0 },
+            weeklyTasks: { timerId: null, running: false, failures: 0 }
         };
 
         function singleFlightLoad(key, task) {
@@ -4655,6 +5312,7 @@
             schedulePollTask('todayMeetings', loadTodayMeetings, false);
             schedulePollTask('messengerUsers', loadMessengerUsers, false);
             schedulePollTask('importantMessages', loadImportantMessages, false);
+            schedulePollTask('weeklyTasks', loadWeeklyTasks, false);
         }
 
         function refreshPollingSoon() {
@@ -4665,6 +5323,7 @@
             schedulePollTask('chatPresence', loadChatPresence, true);
             schedulePollTask('messengerUsers', loadMessengerUsers, true);
             schedulePollTask('importantMessages', loadImportantMessages, true);
+            schedulePollTask('weeklyTasks', loadWeeklyTasks, true);
         }
 
         function computeChatMessagesDigest(messages, currentUser) {
@@ -4672,6 +5331,10 @@
             if (!list.length) return `0|${String(currentUser || '')}`;
             const last = list[list.length - 1] || {};
             const seen = Array.isArray(last.seen_by) ? last.seen_by.join(',') : '';
+            const profileSig = list
+                .slice(Math.max(0, list.length - 50))
+                .map(function(m) { return `${Number(m.id || 0)}:${String(m.profile_image_url || '')}`; })
+                .join(',');
             const pinSig = list
                 .filter(function(m) { return !!m.pinned; })
                 .map(function(m) { return `${Number(m.id || 0)}:${Number(m.pinned_at || 0)}`; })
@@ -4682,6 +5345,7 @@
                 String(last.created_at || ''),
                 String(last.email || ''),
                 seen,
+                profileSig,
                 pinSig,
                 String(currentUser || '')
             ].join('|');
@@ -5009,6 +5673,7 @@
                 const isMine = msg.email === currentUserEmail;
                 const isAdminAuthor = !!msg.author_is_admin || String(msg.email || '').toLowerCase() === 'admin';
                 const authorLabel = chatAuthorTitle(msg.email, isAdminAuthor);
+                const authorAvatarUrl = avatarUrlForUser(msg.email || authorLabel || 'user', msg.profile_image_url || '');
                 const cityLabel = String(msg.user_city || '').trim();
                 const classNames = ['chat-post', isMine ? 'mine' : 'theirs'];
                 if (isAdminAuthor) classNames.push('admin');
@@ -5031,7 +5696,7 @@
                     : '';
                 post.innerHTML = `
                     <div class=\"chat-post-header\">
-                        <strong>${escapeHtml(authorLabel)}${cityLabel ? ` <span class=\"chat-author-city\">· ${escapeHtml(cityLabel)}</span>` : ''}</strong>
+                        <strong class=\"chat-post-author\"><img class=\"chat-post-author-avatar\" src=\"${escapeHtml(authorAvatarUrl)}\" alt=\"${escapeHtml(authorLabel)}\">${escapeHtml(authorLabel)}${cityLabel ? ` <span class=\"chat-author-city\">· ${escapeHtml(cityLabel)}</span>` : ''}</strong>
                         <span class=\"chat-post-meta\">
                             ${pinBtn}
                             <span>${formatTimeFromUnix(msg.created_at)}</span>
@@ -5131,9 +5796,11 @@
                     : (thread.isGroup ? (thread.statusText || 'Grupp') : (thread.online ? 'Aktiv nu' : 'Offline'));
             }
             if (avatarEl) {
-                avatarEl.innerText = thread.id === MESSENGER_GROUP_THREAD_ID
-                    ? 'SA'
-                    : String(thread.name || '?').slice(0, 2).toUpperCase();
+                if (thread.id === MESSENGER_GROUP_THREAD_ID) {
+                    avatarEl.innerText = 'SA';
+                } else {
+                    avatarEl.innerHTML = `<img src="${escapeHtml(thread.avatar || messengerAvatarUrl(thread.name || '?'))}" alt="${escapeHtml(thread.name || 'Chatt')}">`;
+                }
             }
             if (inputEl) {
                 inputEl.placeholder = thread.id === MESSENGER_GROUP_THREAD_ID
@@ -5159,6 +5826,9 @@
                     created_at: Math.floor(Number(m.at || 0) / 1000),
                     email: m.from === 'me' ? (currentUserEmail || 'Du') : (m.sender || thread.email || thread.name || 'Okänd'),
                     message: m.text || '',
+                    profile_image_url: m.from === 'me'
+                        ? (m.profile_image_url || currentUserProfileImageUrl || '')
+                        : (m.profile_image_url || (!thread.isGroup ? thread.avatar : '')),
                     seen_by: []
                 };
             });
@@ -5291,6 +5961,51 @@
             await apiSend('/api/notes/me', 'PUT', { content: content });
         }
 
+        function profileImageFileName(url) {
+            const clean = String(url || '').split('?')[0].split('#')[0];
+            const parts = clean.split('/');
+            return decodeURIComponent(parts[parts.length - 1] || '');
+        }
+
+        function renderProfilePhotoPreview() {
+            const previewEl = document.getElementById('profilePhotoPreview');
+            const removeBtn = document.getElementById('profilePhotoRemoveBtn');
+            const hintEl = document.getElementById('profilePhotoHint');
+            if (!previewEl || !removeBtn || !hintEl) return;
+            const username = String(document.getElementById('profileUsername')?.value || currentUserEmail || 'user');
+            const hasImage = !!normalizeProfileImageUrl(profileModalImageUrl);
+            previewEl.src = avatarUrlForUser(username, profileModalImageUrl);
+            removeBtn.disabled = !hasImage || profilePhotoUploadInProgress;
+            if (profilePhotoUploadInProgress) {
+                hintEl.innerText = 'Laddar upp foto...';
+            } else if (hasImage) {
+                const fileName = profileImageFileName(profileModalImageUrl);
+                hintEl.innerText = fileName ? `Profilfoto: ${fileName}` : 'Profilfoto uppladdat.';
+            } else {
+                hintEl.innerText = 'JPG/PNG/WebP, max 10 MB. Beskärs automatiskt till kvadrat.';
+            }
+        }
+
+        async function uploadProfilePhotoFromInput(file) {
+            if (!file) return;
+            if (!String(file.type || '').toLowerCase().startsWith('image/')) {
+                throw new Error('Välj en bildfil.');
+            }
+            const processedFile = await cropProfilePhotoToSquare(file);
+            profilePhotoUploadInProgress = true;
+            renderProfilePhotoPreview();
+            try {
+                const uploaded = await uploadFileToChat(processedFile);
+                const uploadedUrl = String(uploaded && uploaded.url || '');
+                if (!uploadedUrl) throw new Error('Kunde inte ladda upp profilfoto.');
+                profileModalImageUrl = uploadedUrl;
+                currentUserProfileImageUrl = uploadedUrl;
+            } finally {
+                profilePhotoUploadInProgress = false;
+                renderProfilePhotoPreview();
+            }
+        }
+
         async function openProfileModal() {
             const modal = document.getElementById('profileModal');
             if (!modal) return;
@@ -5312,6 +6027,10 @@
                 document.getElementById('profileLastName').value = String(profileData.last_name || '');
                 document.getElementById('profilePhone').value = String(profileData.phone || '');
                 document.getElementById('profileContactEmail').value = String(profileData.contact_email || '');
+                profileModalImageUrl = String(profileData.profile_image_url || '');
+                currentUserProfileImageUrl = profileModalImageUrl;
+                profilePhotoUploadInProgress = false;
+                renderProfilePhotoPreview();
                 modal.style.display = 'flex';
             } catch (err) {
                 alert(err.message || 'Kunde inte ladda profilen.');
@@ -5324,6 +6043,10 @@
         }
 
         async function saveProfileFromModal() {
+            if (profilePhotoUploadInProgress) {
+                alert('Vänta tills profilfotot har laddats upp klart.');
+                return;
+            }
             const firstName = String(document.getElementById('profileFirstName').value || '').trim();
             const lastName = String(document.getElementById('profileLastName').value || '').trim();
             const phone = String(document.getElementById('profilePhone').value || '').trim();
@@ -5339,9 +6062,13 @@
                 last_name: lastName,
                 phone: phone,
                 contact_email: contactEmail,
-                city: city
+                city: city,
+                profile_image_url: normalizeProfileImageUrl(profileModalImageUrl)
             });
+            currentUserProfileImageUrl = normalizeProfileImageUrl(profileModalImageUrl);
             closeProfileModal();
+            await Promise.allSettled([loadMessengerUsers(), loadChatMessages()]);
+            renderActiveThreadInMainChat();
             alert('Profil uppdaterad.');
         }
 
@@ -6504,8 +7231,14 @@
             box.innerHTML = importantMessages.map(function(msg) {
                 const icon = String(msg.icon || '📢');
                 const text = String(msg.text || '');
+                const sourceLabel = String(msg.source_label || (msg.source === 'partikansliet' ? 'Partikansliet' : 'admin'));
                 const alertClass = importantAlertClass(icon, text, msg.color);
-                return `<div class="msg-item ${alertClass}">${escapeHtml(icon)} ${escapeHtml(text)}</div>`;
+                return `
+                    <div class="msg-item ${alertClass}">
+                        <span class="msg-item-main">${escapeHtml(icon)} ${escapeHtml(text)}</span>
+                        <span class="msg-item-meta">Avsändare: ${escapeHtml(sourceLabel)}</span>
+                    </div>
+                `;
             }).join('');
         }
 
@@ -6520,9 +7253,13 @@
                 const disableUp = idx === 0 ? 'disabled' : '';
                 const disableDown = idx === importantMessages.length - 1 ? 'disabled' : '';
                 const alertClass = importantAlertClass(String(msg.icon || ''), String(msg.text || ''), msg.color);
+                const sourceLabel = String(msg.source_label || (msg.source === 'partikansliet' ? 'Partikansliet' : 'admin'));
                 return `
                     <div class="important-admin-item ${alertClass}" data-important-id="${msg.id}" draggable="true">
-                        <span>${escapeHtml(String(msg.icon || '📢'))} ${escapeHtml(String(msg.text || ''))}</span>
+                        <span class="important-admin-item-content">
+                            <span>${escapeHtml(String(msg.icon || '📢'))} ${escapeHtml(String(msg.text || ''))}</span>
+                            <span class="important-admin-item-meta">Avsändare: ${escapeHtml(sourceLabel)}</span>
+                        </span>
                         <span class="important-admin-item-actions">
                             <button type="button" class="important-admin-move" data-important-move="up" data-important-id="${msg.id}" ${disableUp}>↑</button>
                             <button type="button" class="important-admin-move" data-important-move="down" data-important-id="${msg.id}" ${disableDown}>↓</button>
@@ -6731,7 +7468,10 @@
                             icon: String(m.icon || '📢'),
                             text: String(m.text || ''),
                             color: normalizeImportantColor(m.color || ''),
-                            sort_order: Number(m.sort_order || 0)
+                            sort_order: Number(m.sort_order || 0),
+                            source: String(m.source || 'admin'),
+                            source_label: String(m.source_label || ''),
+                            external_id: m.external_id ? String(m.external_id) : ''
                         };
                     });
                 } catch (err) {
@@ -8080,8 +8820,71 @@
                 .replace(/\b\w/g, function(ch) { return ch.toUpperCase(); }) || String(email || '');
         }
 
+        function normalizeProfileImageUrl(value) {
+            const url = String(value || '').trim();
+            if (!url) return '';
+            if (/^\/uploads\/chat\/[a-zA-Z0-9._-]+(?:[?#].*)?$/.test(url)) return url;
+            if (/^https?:\/\//i.test(url)) return url;
+            return '';
+        }
+
+        function cropProfilePhotoToSquare(file) {
+            return new Promise(function(resolve, reject) {
+                const objectUrl = URL.createObjectURL(file);
+                const img = new Image();
+                img.onload = function() {
+                    try {
+                        const side = Math.min(img.naturalWidth || img.width, img.naturalHeight || img.height);
+                        if (!side) {
+                            URL.revokeObjectURL(objectUrl);
+                            reject(new Error('Kunde inte läsa bildens storlek.'));
+                            return;
+                        }
+                        const sx = Math.floor(((img.naturalWidth || img.width) - side) / 2);
+                        const sy = Math.floor(((img.naturalHeight || img.height) - side) / 2);
+                        const outputSize = 512;
+                        const canvas = document.createElement('canvas');
+                        canvas.width = outputSize;
+                        canvas.height = outputSize;
+                        const ctx = canvas.getContext('2d');
+                        if (!ctx) {
+                            URL.revokeObjectURL(objectUrl);
+                            reject(new Error('Kunde inte förbereda bildbeskärning.'));
+                            return;
+                        }
+                        ctx.drawImage(img, sx, sy, side, side, 0, 0, outputSize, outputSize);
+                        canvas.toBlob(function(blob) {
+                            URL.revokeObjectURL(objectUrl);
+                            if (!blob) {
+                                reject(new Error('Kunde inte bearbeta bilden.'));
+                                return;
+                            }
+                            const base = String(file.name || 'profilbild').replace(/\.[a-z0-9]+$/i, '');
+                            const safeBase = base.replace(/[^a-zA-Z0-9._-]+/g, '_').slice(0, 60) || 'profilbild';
+                            const outFile = new File([blob], safeBase + '_square.jpg', { type: 'image/jpeg' });
+                            resolve(outFile);
+                        }, 'image/jpeg', 0.9);
+                    } catch (err) {
+                        URL.revokeObjectURL(objectUrl);
+                        reject(err instanceof Error ? err : new Error('Kunde inte bearbeta bilden.'));
+                    }
+                };
+                img.onerror = function() {
+                    URL.revokeObjectURL(objectUrl);
+                    reject(new Error('Kunde inte läsa bilden.'));
+                };
+                img.src = objectUrl;
+            });
+        }
+
         function messengerAvatarUrl(email) {
             return `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(email)}`;
+        }
+
+        function avatarUrlForUser(email, profileImageUrl) {
+            const explicitUrl = normalizeProfileImageUrl(profileImageUrl);
+            if (explicitUrl) return explicitUrl;
+            return messengerAvatarUrl(email || 'user');
         }
 
         function getLatestGroupChatMessageId() {
@@ -8386,6 +9189,7 @@
                 return {
                     from: isMine ? 'me' : 'them',
                     sender: msg.email,
+                    profile_image_url: String(msg.profile_image_url || ''),
                     text: msg.message,
                     at: Number(msg.created_at || 0) * 1000
                 };
@@ -8405,6 +9209,7 @@
                 return {
                     from: isMine ? 'me' : 'them',
                     sender: msg.email,
+                    profile_image_url: String(msg.profile_image_url || ''),
                     text: msg.message,
                     at: Number(msg.created_at || 0) * 1000
                 };
@@ -8456,7 +9261,7 @@
                         name: displayName,
                         avatar: isGroup
                             ? ('https://api.dicebear.com/9.x/initials/svg?seed=' + encodeURIComponent(displayName))
-                            : messengerAvatarUrl(email),
+                            : avatarUrlForUser(email, threadData.profile_image_url || ''),
                         online: !!threadData.online,
                         unread: Number(threadData.unread_count || 0),
                         isGroup: isGroup,
@@ -8499,6 +9304,7 @@
                     return {
                         from: isMine ? 'me' : 'them',
                         sender: msg.email,
+                        profile_image_url: String(msg.profile_image_url || ''),
                         text: msg.message,
                         at: Number(msg.created_at || 0) * 1000
                     };
@@ -8526,6 +9332,7 @@
                     return {
                         from: message.from_me ? 'me' : 'them',
                         sender: message.sender_email || '',
+                        profile_image_url: String(message.profile_image_url || ''),
                         text: message.text,
                         at: Number(message.created_at || 0) * 1000
                     };
@@ -8548,6 +9355,8 @@
             thread.messages = (data.messages || []).map(function(message) {
                 return {
                     from: message.from_me ? 'me' : 'them',
+                    sender: String(message.sender_email || ''),
+                    profile_image_url: String(message.profile_image_url || ''),
                     text: message.text,
                     at: Number(message.created_at || 0) * 1000
                 };
@@ -8668,6 +9477,7 @@
 
         function threadHasMessages(thread) {
             if (!thread) return false;
+            if (String(thread.id || '') === MESSENGER_GROUP_THREAD_ID) return true;
             if ((thread.messages || []).length > 0) return true;
             if (Number(thread.updatedAt || 0) > 0) return true;
             const preview = String(thread.lastPreview || '').trim().toLowerCase();
@@ -9241,10 +10051,87 @@
                 alert(err.message || 'Kunde inte skapa uppdrag.');
             });
         });
+        document.getElementById('taskAdminFileBtn').addEventListener('click', function() {
+            const input = document.getElementById('taskAdminFileInput');
+            if (input) input.click();
+        });
+        document.getElementById('taskAdminFileClearBtn').addEventListener('click', function() {
+            clearTaskAdminAttachmentSelection();
+        });
+        document.getElementById('taskAdminFileInput').addEventListener('change', function(e) {
+            const input = e && e.target ? e.target : null;
+            const file = input && input.files && input.files[0] ? input.files[0] : null;
+            if (!file) return;
+            handleTaskAdminFileSelection(file).catch(function(err) {
+                taskAdminAttachmentUrl = '';
+                taskAdminAttachmentName = '';
+                setTaskAdminAttachmentHint('');
+                alert(err.message || 'Kunde inte ladda upp bilagan.');
+            }).finally(function() {
+                if (input) input.value = '';
+            });
+        });
+        document.getElementById('taskAdminUnsolvedList').addEventListener('click', function(e) {
+            const btn = e && e.target ? e.target.closest('[data-task-edit-assignment-id]') : null;
+            if (!btn) return;
+            const assignmentId = Number(btn.getAttribute('data-task-edit-assignment-id') || 0);
+            if (!assignmentId) return;
+            openTaskAdminEditModal(assignmentId);
+        });
+        document.getElementById('taskAdminEditFileBtn').addEventListener('click', function() {
+            const input = document.getElementById('taskAdminEditFileInput');
+            if (input) input.click();
+        });
+        document.getElementById('taskAdminEditFileClearBtn').addEventListener('click', function() {
+            clearTaskAdminEditAttachmentSelection();
+        });
+        document.getElementById('taskAdminEditFileInput').addEventListener('change', function(e) {
+            const input = e && e.target ? e.target : null;
+            const file = input && input.files && input.files[0] ? input.files[0] : null;
+            if (!file) return;
+            handleTaskAdminEditFileSelection(file).catch(function(err) {
+                taskAdminEditAttachmentUrl = '';
+                taskAdminEditAttachmentName = '';
+                setTaskAdminEditAttachmentHint('');
+                alert(err.message || 'Kunde inte ladda upp bilagan.');
+            }).finally(function() {
+                if (input) input.value = '';
+            });
+        });
+        document.getElementById('taskAdminEditCancelBtn').addEventListener('click', function() {
+            closeTaskAdminEditModal();
+        });
+        document.getElementById('taskAdminEditSaveBtn').addEventListener('click', function() {
+            saveTaskAdminEdit().catch(function(err) {
+                alert(err.message || 'Kunde inte spara uppdraget.');
+            });
+        });
+        document.getElementById('taskAdminEditModal').addEventListener('click', function(e) {
+            if (e.target === this) closeTaskAdminEditModal();
+        });
+        document.getElementById('weeklySolvedBtn').addEventListener('click', function() {
+            openWeeklySolvedLibrary();
+        });
+        document.getElementById('weeklySolvedLibraryCloseBtn').addEventListener('click', function() {
+            closeWeeklySolvedLibrary();
+        });
+        document.getElementById('weeklySolvedLibraryModal').addEventListener('click', function(e) {
+            if (e.target === this) closeWeeklySolvedLibrary();
+        });
         document.querySelectorAll('input[name="taskAudience"]').forEach(function(radio) {
             radio.addEventListener('change', function() {
                 updateTaskAudienceVisibility();
             });
+        });
+        document.getElementById('taskAdminUserList').addEventListener('change', function(e) {
+            const target = e && e.target ? e.target : null;
+            if (!target || !target.matches('input[data-task-user-id]')) return;
+            updateTaskAdminUserSelectionUI();
+        });
+        document.getElementById('taskAdminUserList').addEventListener('input', function(e) {
+            const target = e && e.target ? e.target : null;
+            if (!target || target.id !== 'taskAdminUserSearch') return;
+            filterTaskAdminUserList();
         });
         document.getElementById('taskAdminModal').addEventListener('click', function(e) {
             if (e.target === this) closeTaskAdminModal();
@@ -9271,9 +10158,206 @@
             return `${clean.slice(0, maxLen - 1)}…`;
         }
 
+        function taskAttachmentNameFromUrl(url) {
+            const clean = String(url || '').split('?')[0].split('#')[0];
+            const parts = clean.split('/');
+            const last = parts[parts.length - 1] || '';
+            try {
+                return decodeURIComponent(last) || 'bilaga';
+            } catch (_) {
+                return last || 'bilaga';
+            }
+        }
+
+        function isTaskAttachmentNonImage(url) {
+            const clean = String(url || '').split('?')[0].split('#')[0].toLowerCase();
+            return /\.(pdf|txt|csv|doc|docx|xls|xlsx|ppt|pptx|zip|rar|7z|mp4|webm|mov|m4v|ogg)$/.test(clean);
+        }
+
+        function setTaskAdminAttachmentHint(text) {
+            const hint = document.getElementById('taskAdminFileHint');
+            if (!hint) return;
+            hint.innerText = String(text || '');
+        }
+
+        function clearTaskAdminAttachmentSelection() {
+            taskAdminAttachmentUrl = '';
+            taskAdminAttachmentName = '';
+            const taskFileInput = document.getElementById('taskAdminFileInput');
+            if (taskFileInput) taskFileInput.value = '';
+            setTaskAdminAttachmentHint('');
+        }
+
+        async function handleTaskAdminFileSelection(file) {
+            if (!file) return;
+            setTaskAdminAttachmentHint('Laddar upp fil...');
+            const uploaded = await uploadFileToChat(file);
+            const uploadedUrl = String(uploaded && uploaded.url || '');
+            if (!uploadedUrl) {
+                setTaskAdminAttachmentHint('');
+                throw new Error('Kunde inte ladda upp filen.');
+            }
+            taskAdminAttachmentUrl = uploadedUrl;
+            taskAdminAttachmentName = String(uploaded && uploaded.name || file.name || taskAttachmentNameFromUrl(uploadedUrl));
+            setTaskAdminAttachmentHint(`Vald fil: ${taskAdminAttachmentName}`);
+        }
+
+        function setTaskAdminEditAttachmentHint(text) {
+            const hint = document.getElementById('taskAdminEditFileHint');
+            if (!hint) return;
+            hint.innerText = String(text || '');
+        }
+
+        function clearTaskAdminEditAttachmentSelection() {
+            taskAdminEditAttachmentUrl = '';
+            taskAdminEditAttachmentName = '';
+            const editFileInput = document.getElementById('taskAdminEditFileInput');
+            if (editFileInput) editFileInput.value = '';
+            setTaskAdminEditAttachmentHint('');
+        }
+
+        async function handleTaskAdminEditFileSelection(file) {
+            if (!file) return;
+            setTaskAdminEditAttachmentHint('Laddar upp fil...');
+            const uploaded = await uploadFileToChat(file);
+            const uploadedUrl = String(uploaded && uploaded.url || '');
+            if (!uploadedUrl) {
+                setTaskAdminEditAttachmentHint('');
+                throw new Error('Kunde inte ladda upp filen.');
+            }
+            taskAdminEditAttachmentUrl = uploadedUrl;
+            taskAdminEditAttachmentName = String(uploaded && uploaded.name || file.name || taskAttachmentNameFromUrl(uploadedUrl));
+            setTaskAdminEditAttachmentHint(`Vald fil: ${taskAdminEditAttachmentName}`);
+        }
+
+        function closeTaskAdminEditModal() {
+            const modal = document.getElementById('taskAdminEditModal');
+            if (!modal) return;
+            modal.style.display = 'none';
+            taskAdminEditAssignmentId = 0;
+            clearTaskAdminEditAttachmentSelection();
+        }
+
+        function openTaskAdminEditModal(assignmentId) {
+            const assignment = taskLibraryUnsolved.find(function(row) {
+                return Number(row.assignment_id) === Number(assignmentId);
+            });
+            if (!assignment) {
+                alert('Uppdraget hittades inte eller är redan löst.');
+                return;
+            }
+            const modal = document.getElementById('taskAdminEditModal');
+            const titleInput = document.getElementById('taskAdminEditTitleInput');
+            const descInput = document.getElementById('taskAdminEditDescInput');
+            if (!modal || !titleInput || !descInput) return;
+            taskAdminEditAssignmentId = Number(assignment.assignment_id || 0);
+            titleInput.value = String(assignment.title || '');
+            descInput.value = String(assignment.description || '');
+            clearTaskAdminEditAttachmentSelection();
+            const existingAttachmentUrl = String(assignment.image_url || '').trim();
+            if (existingAttachmentUrl) {
+                taskAdminEditAttachmentUrl = existingAttachmentUrl;
+                taskAdminEditAttachmentName = taskAttachmentNameFromUrl(existingAttachmentUrl);
+                setTaskAdminEditAttachmentHint(`Vald fil: ${taskAdminEditAttachmentName}`);
+            }
+            const priority = String(assignment.priority || 'low').trim().toLowerCase();
+            const targetPriority = ['low', 'medium', 'high'].includes(priority) ? priority : 'low';
+            const radio = document.querySelector(`input[name="taskAdminEditPriority"][value="${targetPriority}"]`);
+            if (radio) radio.checked = true;
+            modal.style.display = 'flex';
+        }
+
+        async function saveTaskAdminEdit() {
+            const assignmentId = Number(taskAdminEditAssignmentId || 0);
+            if (!assignmentId) return;
+            const title = String(document.getElementById('taskAdminEditTitleInput').value || '').trim();
+            const description = String(document.getElementById('taskAdminEditDescInput').value || '').trim();
+            const attachmentUrl = String(taskAdminEditAttachmentUrl || '').trim();
+            const priorityInput = document.querySelector('input[name="taskAdminEditPriority"]:checked');
+            const priority = String(priorityInput ? priorityInput.value : 'low').trim().toLowerCase();
+            if (!title || !description) {
+                alert('Fyll i titel och beskrivning.');
+                return;
+            }
+            await apiSend(`/api/admin/tasks/assignments/${assignmentId}`, 'PUT', {
+                title: title,
+                description: description,
+                image_url: attachmentUrl,
+                priority: priority
+            });
+            closeTaskAdminEditModal();
+            await Promise.all([
+                loadTaskAdminLibrary(),
+                loadWeeklyTasks()
+            ]);
+            alert('Uppdraget uppdaterades.');
+        }
+
+        function getSolvedWeeklyTasks() {
+            return weeklyTasks
+                .filter(function(task) { return !!task.solved_at; })
+                .sort(function(a, b) {
+                    return Number(b.solved_at || 0) - Number(a.solved_at || 0);
+                });
+        }
+
+        function closeWeeklySolvedLibrary() {
+            const modal = document.getElementById('weeklySolvedLibraryModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function renderWeeklySolvedLibrary() {
+            const grid = document.getElementById('weeklySolvedLibraryGrid');
+            if (!grid) return;
+            const solved = getSolvedWeeklyTasks();
+            if (!solved.length) {
+                grid.innerHTML = '<div class="solved-library-empty">Du har inga lösta uppdrag ännu.</div>';
+                return;
+            }
+            grid.innerHTML = solved.map(function(task) {
+                const priority = getTaskPriorityMeta(task);
+                const title = escapeHtml(truncateTaskText(task.title || 'Löst uppdrag', 74));
+                const desc = escapeHtml(truncateTaskText(task.description || '', 125));
+                const solvedAt = escapeHtml(formatTaskTime(task.solved_at));
+                return `
+                    <button class="solved-library-card" type="button" data-task-assignment-id="${Number(task.assignment_id || 0)}">
+                        <span class="solved-library-badge">✓ Löst · ${escapeHtml(priority.label)}</span>
+                        <div>
+                            <h4>${title}</h4>
+                            <p>${desc || 'Uppdrag slutfört.'}</p>
+                        </div>
+                        <div class="solved-library-meta">Slutförd: ${solvedAt}</div>
+                    </button>
+                `;
+            }).join('');
+            grid.querySelectorAll('.solved-library-card[data-task-assignment-id]').forEach(function(card) {
+                card.addEventListener('click', function() {
+                    const assignmentId = Number(card.getAttribute('data-task-assignment-id') || 0);
+                    closeWeeklySolvedLibrary();
+                    openTaskModal(assignmentId);
+                });
+            });
+        }
+
+        function openWeeklySolvedLibrary() {
+            const modal = document.getElementById('weeklySolvedLibraryModal');
+            if (!modal) return;
+            renderWeeklySolvedLibrary();
+            modal.style.display = 'flex';
+        }
+
+        function getTaskPriorityMeta(task) {
+            const key = String(task && task.priority || '').trim().toLowerCase();
+            if (key === 'high') return { key: 'high', label: 'Hög prioritet', cardClass: 'task-card-high' };
+            if (key === 'medium') return { key: 'medium', label: 'Medel prioritet', cardClass: 'task-card-medium' };
+            return { key: 'low', label: 'Låg prioritet', cardClass: 'task-card-low' };
+        }
+
         function renderWeeklyTaskCards() {
             const root = document.getElementById('weeklyTaskCards');
+            const solvedBtn = document.getElementById('weeklySolvedBtn');
             if (!root) return;
+            if (solvedBtn) solvedBtn.style.display = 'none';
             if (!weeklyTasks.length) {
                 root.innerHTML = `
                     <div class="task-card">
@@ -9284,12 +10368,16 @@
                 `;
                 return;
             }
-            root.innerHTML = weeklyTasks.map(function(task, idx) {
+            const unsolved = weeklyTasks.filter(function(task) { return !task.solved_at; });
+            const solved = getSolvedWeeklyTasks();
+
+            root.innerHTML = (unsolved.length ? unsolved : []).map(function(task) {
                 const solved = !!task.solved_at;
                 const safeTitle = escapeHtml(String(task.title || 'Uppdrag'));
                 const safeDesc = escapeHtml(truncateTaskText(task.description || '', 90));
-                const styleClass = solved ? 'is-solved' : (idx % 2 === 1 ? 'task-card-blue' : '');
-                const badge = solved ? 'Löst' : 'Olöst';
+                const priority = getTaskPriorityMeta(task);
+                const styleClass = solved ? 'is-solved' : priority.cardClass;
+                const badge = solved ? 'Löst' : priority.label;
                 return `
                     <div class="task-card ${styleClass}" data-task-assignment-id="${Number(task.assignment_id || 0)}">
                         <span class="task-badge">${badge}</span>
@@ -9299,6 +10387,16 @@
                     </div>
                 `;
             }).join('');
+            if (!unsolved.length) {
+                root.innerHTML = `
+                    <div class="task-all-solved-note">Alla uppdrag lösta! Bra jobbat!</div>
+                `;
+            }
+
+            if (solvedBtn && solved.length) {
+                solvedBtn.style.display = 'inline-flex';
+            }
+
             root.querySelectorAll('.task-card[data-task-assignment-id]').forEach(function(card) {
                 card.addEventListener('click', function() {
                     const assignmentId = Number(card.getAttribute('data-task-assignment-id') || 0);
@@ -9308,24 +10406,29 @@
         }
 
         async function loadWeeklyTasks() {
-            try {
+            return singleFlightLoad('weeklyTasks', async function() {
+                try {
                 const data = await apiGet('/api/tasks/my');
                 weeklyTasks = Array.isArray(data.tasks) ? data.tasks : [];
                 renderWeeklyTaskCards();
                 return weeklyTasks;
-            } catch (err) {
-                const root = document.getElementById('weeklyTaskCards');
-                if (root) {
-                    root.innerHTML = `
-                        <div class="task-card">
-                            <span class="task-badge">Fel</span>
-                            <h4>Kunde inte ladda uppdrag</h4>
-                            <p>${escapeHtml(String(err && err.message ? err.message : 'Försök igen senare.'))}</p>
-                        </div>
-                    `;
+                } catch (err) {
+                    const root = document.getElementById('weeklyTaskCards');
+                    const solvedBtn = document.getElementById('weeklySolvedBtn');
+                    if (root) {
+                        root.innerHTML = `
+                            <div class="task-card">
+                                <span class="task-badge">Fel</span>
+                                <h4>Kunde inte ladda uppdrag</h4>
+                                <p>${escapeHtml(String(err && err.message ? err.message : 'Försök igen senare.'))}</p>
+                            </div>
+                        `;
+                    }
+                    if (solvedBtn) solvedBtn.style.display = 'none';
+                    closeWeeklySolvedLibrary();
+                    throw err;
                 }
-                throw err;
-            }
+            });
         }
 
         function findWeeklyTaskByAssignmentId(assignmentId) {
@@ -9344,21 +10447,42 @@
 
         function openTaskModal(assignmentId) {
             const modal = document.getElementById('taskModal');
-            const titleEl = document.getElementById('taskModalTitle');
-            const textEl = document.getElementById('taskModalText');
+            const previewEl = document.getElementById('taskModalCardPreview');
             const imageEl = document.getElementById('taskModalImage');
-            if (!modal || !titleEl || !textEl || !imageEl) return;
+            const attachmentEl = document.getElementById('taskModalAttachment');
+            if (!modal || !previewEl || !imageEl || !attachmentEl) return;
             const task = findWeeklyTaskByAssignmentId(assignmentId);
             if (!task) return;
             activeTaskAssignmentId = Number(task.assignment_id || 0);
-            titleEl.textContent = String(task.title || '');
-            textEl.textContent = String(task.description || '');
-            if (task.image_url) {
-                imageEl.src = String(task.image_url);
+            const solved = !!task.solved_at;
+            const priority = getTaskPriorityMeta(task);
+            const styleClass = solved ? 'is-solved' : priority.cardClass;
+            const badge = solved ? 'Löst' : priority.label;
+            previewEl.innerHTML = `
+                <div class="task-card ${styleClass}">
+                    <span class="task-badge">${escapeHtml(badge)}</span>
+                    <h4>${escapeHtml(String(task.title || 'Uppdrag'))}</h4>
+                    <p>${escapeHtml(truncateTaskText(task.description || '', 90))}</p>
+                    <span class="task-solved-pill">✓ Löst</span>
+                </div>
+            `;
+            const attachmentUrl = String(task.image_url || '').trim();
+            if (attachmentUrl && !isTaskAttachmentNonImage(attachmentUrl)) {
+                imageEl.src = attachmentUrl;
                 imageEl.style.display = 'block';
+                attachmentEl.style.display = 'none';
+                attachmentEl.innerHTML = '';
+            } else if (attachmentUrl) {
+                imageEl.src = '';
+                imageEl.style.display = 'none';
+                const fileName = escapeHtml(taskAttachmentNameFromUrl(attachmentUrl));
+                attachmentEl.innerHTML = `📎 <a href="${escapeHtml(attachmentUrl)}" target="_blank" rel="noopener">${fileName}</a>`;
+                attachmentEl.style.display = 'block';
             } else {
                 imageEl.src = '';
                 imageEl.style.display = 'none';
+                attachmentEl.style.display = 'none';
+                attachmentEl.innerHTML = '';
             }
             updateTaskModalSolveButton();
             modal.style.display = 'flex';
@@ -9397,14 +10521,81 @@
                 box.innerHTML = '<div class="task-admin-empty">Inga användare hittades.</div>';
                 return;
             }
-            box.innerHTML = taskAdminUsers.map(function(user) {
-                return `
-                    <label class="task-admin-user-item">
-                        <input type="checkbox" data-task-user-id="${Number(user.id)}">
-                        <span>${escapeHtml(String(user.email || ''))}</span>
-                    </label>
-                `;
-            }).join('');
+            const selected = new Set(
+                Array.from(box.querySelectorAll('input[data-task-user-id]:checked')).map(function(el) {
+                    return Number(el.getAttribute('data-task-user-id'));
+                })
+            );
+            const users = taskAdminUsers.slice().sort(function(a, b) {
+                return String(a.email || '').localeCompare(String(b.email || ''), 'sv');
+            });
+            box.innerHTML = `
+                <div class="task-admin-user-list-head">
+                    <span>Välj användare</span>
+                    <span class="task-admin-user-count" id="taskAdminUserCount">0 valda</span>
+                </div>
+                <input id="taskAdminUserSearch" class="task-admin-user-search" type="text" placeholder="Sök användare via e-post...">
+                <div class="task-admin-user-grid">
+                    ${users.map(function(user) {
+                        const email = String(user.email || '').trim();
+                        const safeEmail = escapeHtml(email);
+                        const localPart = email.split('@')[0] || email;
+                        const displayName = localPart
+                            .replace(/[._-]+/g, ' ')
+                            .replace(/\s+/g, ' ')
+                            .trim()
+                            .replace(/\b\w/g, function(ch) { return ch.toUpperCase(); }) || safeEmail;
+                        const initials = localPart
+                            .split(/[._-]+/)
+                            .filter(Boolean)
+                            .slice(0, 2)
+                            .map(function(part) { return String(part).charAt(0).toUpperCase(); })
+                            .join('') || 'U';
+                        const userId = Number(user.id);
+                        const checked = selected.has(userId) ? 'checked' : '';
+                        const searchable = escapeHtml((displayName + ' ' + email).toLowerCase());
+                        return `
+                            <label class="task-admin-user-item" data-task-user-row data-task-user-search="${searchable}">
+                                <input type="checkbox" data-task-user-id="${userId}" ${checked}>
+                                <span class="task-admin-user-avatar">${escapeHtml(initials)}</span>
+                                <span class="task-admin-user-meta">
+                                    <span class="task-admin-user-name">${escapeHtml(displayName)}</span>
+                                    <span class="task-admin-user-email">${safeEmail}</span>
+                                </span>
+                            </label>
+                        `;
+                    }).join('')}
+                </div>
+                <div class="task-admin-user-no-match" id="taskAdminUserNoMatch" style="display:none;">Inga användare matchar din sökning.</div>
+            `;
+            filterTaskAdminUserList();
+        }
+
+        function updateTaskAdminUserSelectionUI() {
+            const rows = Array.from(document.querySelectorAll('#taskAdminUserList [data-task-user-row]'));
+            const checked = Array.from(document.querySelectorAll('#taskAdminUserList input[data-task-user-id]:checked')).length;
+            rows.forEach(function(row) {
+                const checkbox = row.querySelector('input[data-task-user-id]');
+                row.classList.toggle('is-selected', !!(checkbox && checkbox.checked));
+            });
+            const countEl = document.getElementById('taskAdminUserCount');
+            if (countEl) countEl.textContent = `${checked} valda`;
+        }
+
+        function filterTaskAdminUserList() {
+            const input = document.getElementById('taskAdminUserSearch');
+            const query = String(input && input.value ? input.value : '').trim().toLowerCase();
+            const rows = Array.from(document.querySelectorAll('#taskAdminUserList [data-task-user-row]'));
+            let visible = 0;
+            rows.forEach(function(row) {
+                const text = String(row.getAttribute('data-task-user-search') || '');
+                const match = !query || text.indexOf(query) !== -1;
+                row.style.display = match ? 'flex' : 'none';
+                if (match) visible += 1;
+            });
+            const noMatch = document.getElementById('taskAdminUserNoMatch');
+            if (noMatch) noMatch.style.display = rows.length && !visible ? 'block' : 'none';
+            updateTaskAdminUserSelectionUI();
         }
 
         async function loadTaskAdminUsers() {
@@ -9429,9 +10620,21 @@
             box.innerHTML = rows.map(function(row) {
                 const who = escapeHtml(String(row.assigned_to_email || 'okänd'));
                 const title = escapeHtml(String(row.title || 'Uppdrag'));
+                const priority = escapeHtml(getTaskPriorityMeta(row).label);
                 const assignedAt = escapeHtml(formatTaskTime(row.assigned_at));
                 const solvedAt = solved ? ` · Löst: ${escapeHtml(formatTaskTime(row.solved_at))}` : '';
-                return `<div class="task-admin-row"><strong>${title}</strong><br>${who} · Tilldelad: ${assignedAt}${solvedAt}</div>`;
+                const editAction = solved
+                    ? ''
+                    : `<span class="task-admin-row-actions"><button class="task-admin-row-btn" type="button" data-task-edit-assignment-id="${Number(row.assignment_id || 0)}">Redigera</button></span>`;
+                return `
+                    <div class="task-admin-row">
+                        <div class="task-admin-row-head">
+                            <strong class="task-admin-row-title">${title} · ${priority}</strong>
+                            ${editAction}
+                        </div>
+                        <div>${who} · Tilldelad: ${assignedAt}${solvedAt}</div>
+                    </div>
+                `;
             }).join('');
         }
 
@@ -9464,7 +10667,9 @@
         async function createTaskFromAdminForm() {
             const title = String(document.getElementById('taskAdminTitleInput').value || '').trim();
             const description = String(document.getElementById('taskAdminDescInput').value || '').trim();
-            const imageUrl = String(document.getElementById('taskAdminImageInput').value || '').trim();
+            const attachmentUrl = String(taskAdminAttachmentUrl || '').trim();
+            const priorityInput = document.querySelector('input[name="taskAdminPriority"]:checked');
+            const priority = String(priorityInput ? priorityInput.value : 'low').trim().toLowerCase();
             const selectedAudience = document.querySelector('input[name="taskAudience"]:checked');
             const audience = selectedAudience ? String(selectedAudience.value || 'all') : 'all';
             const userIds = audience === 'selected' ? selectedTaskAdminUserIds() : [];
@@ -9479,14 +10684,17 @@
             const payload = {
                 title: title,
                 description: description,
-                image_url: imageUrl,
+                image_url: attachmentUrl,
+                priority: priority,
                 audience: audience
             };
             if (audience === 'selected') payload.user_ids = userIds;
             const resp = await apiSend('/api/admin/tasks', 'POST', payload);
             document.getElementById('taskAdminTitleInput').value = '';
             document.getElementById('taskAdminDescInput').value = '';
-            document.getElementById('taskAdminImageInput').value = '';
+            clearTaskAdminAttachmentSelection();
+            const defaultPriority = document.querySelector('input[name="taskAdminPriority"][value="low"]');
+            if (defaultPriority) defaultPriority.checked = true;
             document.querySelectorAll('#taskAdminUserList input[data-task-user-id]').forEach(function(el) { el.checked = false; });
             await Promise.all([
                 loadTaskAdminLibrary(),
@@ -9500,6 +10708,7 @@
             const modal = document.getElementById('taskAdminModal');
             if (!modal) return;
             modal.style.display = 'flex';
+            clearTaskAdminAttachmentSelection();
             updateTaskAudienceVisibility();
             await Promise.allSettled([
                 loadTaskAdminUsers(),
@@ -9511,6 +10720,8 @@
             const modal = document.getElementById('taskAdminModal');
             if (!modal) return;
             modal.style.display = 'none';
+            clearTaskAdminAttachmentSelection();
+            closeTaskAdminEditModal();
         }
 
         document.getElementById('importantSaveBtn').addEventListener('click', function() {
@@ -9653,6 +10864,26 @@
         document.getElementById('profileSaveBtn').addEventListener('click', function() {
             saveProfileFromModal().catch(function(err) {
                 alert(err.message || 'Kunde inte spara profil.');
+            });
+        });
+        document.getElementById('profilePhotoUploadBtn').addEventListener('click', function() {
+            const input = document.getElementById('profilePhotoInput');
+            if (input && !profilePhotoUploadInProgress) input.click();
+        });
+        document.getElementById('profilePhotoRemoveBtn').addEventListener('click', function() {
+            if (profilePhotoUploadInProgress) return;
+            profileModalImageUrl = '';
+            currentUserProfileImageUrl = '';
+            renderProfilePhotoPreview();
+        });
+        document.getElementById('profilePhotoInput').addEventListener('change', function(e) {
+            const input = e && e.target ? e.target : null;
+            const file = input && input.files && input.files[0] ? input.files[0] : null;
+            if (!file) return;
+            uploadProfilePhotoFromInput(file).catch(function(err) {
+                alert(err.message || 'Kunde inte ladda upp profilfoto.');
+            }).finally(function() {
+                if (input) input.value = '';
             });
         });
 
