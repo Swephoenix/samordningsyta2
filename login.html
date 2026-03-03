@@ -73,6 +73,25 @@
             font-weight: 600;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         }
+        .top-actions {
+            margin-bottom: 10px;
+        }
+        .back-btn {
+            border: 1px solid var(--line);
+            background: #fff;
+            color: var(--text);
+            border-radius: 999px;
+            padding: 6px 12px;
+            font: inherit;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s ease, border-color 0.15s ease;
+        }
+        .back-btn:hover {
+            background: #f9fafb;
+            border-color: #d1d5db;
+        }
 
         h1 {
             font-family: "Lora", serif;
@@ -225,6 +244,9 @@
 </head>
 <body>
     <main class="login-card">
+        <div class="top-actions">
+            <button type="button" class="back-btn" id="backBtn">Tillbaka</button>
+        </div>
         <h1 id="title">Välkommen tillbaka</h1>
         <p class="subtitle" id="subtitle">Ange ditt användarnamn så skickas en engångskod till din e-post.</p>
 
@@ -261,6 +283,7 @@
         const codeField = document.getElementById('codeField');
         const resendCodeBtn = document.getElementById('resendCodeBtn');
         const loginExtras = document.getElementById('loginExtras');
+        const backBtn = document.getElementById('backBtn');
         let codeRequested = false;
 
         function getPostLoginRedirect() {
@@ -359,6 +382,14 @@
             } finally {
                 resendCodeBtn.disabled = false;
             }
+        });
+
+        backBtn.addEventListener('click', function() {
+            if (window.history.length > 1) {
+                window.history.back();
+                return;
+            }
+            window.location.href = '/';
         });
 
         if (new URLSearchParams(window.location.search).get('register') === 'closed') {
