@@ -48,11 +48,15 @@ const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
 const PASSWORD_RESET_TTL_SECONDS = 60 * 30;
 const PASSWORD_RESET_RATE_LIMIT_WINDOW_SECONDS = 60 * 10;
 const PASSWORD_RESET_RATE_LIMIT_MAX_ATTEMPTS = 5;
+const REGISTER_RATE_LIMIT_WINDOW_SECONDS = 60 * 10;
+const REGISTER_RATE_LIMIT_MAX_ATTEMPTS = 20;
+const REGISTER_EMAIL_COOLDOWN_SECONDS = 90;
 const LOGIN_RATE_LIMIT_WINDOW_SECONDS = 60 * 10;
 const LOGIN_RATE_LIMIT_MAX_ATTEMPTS = 10;
 const LOGIN_CODE_TTL_SECONDS = 60 * 10;
 const LOGIN_CODE_RATE_LIMIT_WINDOW_SECONDS = 60 * 10;
 const LOGIN_CODE_RATE_LIMIT_MAX_ATTEMPTS = 8;
+const LOGIN_CODE_EMAIL_COOLDOWN_SECONDS = 90;
 const ONLINE_WINDOW_SECONDS = 20;
 const PBKDF2_ITERATIONS = 240000;
 const SESSION_COOKIE = "session_token";
@@ -64,6 +68,8 @@ const DEFAULT_SMTP_IDENTITY = "mail@ambitionsverige.se";
 const TEST_ACCOUNT_IDENTIFIER = "test";
 const PARTIKANSLIET_API_KEY = String(process.env.PARTIKANSLIET_API_KEY || "").trim();
 const passwordResetRateLimit = new Map();
+const registerRateLimit = new Map();
+const registerEmailCooldown = new Map();
 const loginRateLimit = new Map();
 const loginCodeRequestRateLimit = new Map();
 const loginCodeVerifyRateLimit = new Map();
@@ -621,6 +627,28 @@ function ensureColumn(table, column, ddl) {
   if (!exists) db.exec(`ALTER TABLE ${table} ADD COLUMN ${ddl}`);
 }
 
+function ensureUniqueContactEmailIndex() {
+  const duplicateRow = db
+    .prepare(
+      `SELECT lower(trim(contact_email)) AS key_email, COUNT(*) AS c
+       FROM users
+       WHERE contact_email IS NOT NULL AND trim(contact_email) <> ''
+       GROUP BY lower(trim(contact_email))
+       HAVING COUNT(*) > 1
+       LIMIT 1`
+    )
+    .get();
+  if (duplicateRow) {
+    console.warn("Kunde inte skapa unikt index för contact_email: dubbletter finns redan i users.");
+    return;
+  }
+  db.exec(`
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_contact_email_lower_unique
+  ON users(lower(contact_email))
+  WHERE contact_email IS NOT NULL AND trim(contact_email) <> '';
+`);
+}
+
 function isStateChangingMethod(method) {
   const m = String(method || "").toUpperCase();
   return m === "POST" || m === "PUT" || m === "PATCH" || m === "DELETE";
@@ -940,6 +968,7 @@ ensureColumn("chat_messages", "pinned_at", "pinned_at INTEGER");
 ensureColumn("chat_messages", "pinned_by", "pinned_by INTEGER");
 ensureColumn("sessions", "csrf_token", "csrf_token TEXT");
 ensureColumn("tasks", "priority", "priority TEXT NOT NULL DEFAULT 'low'");
+ensureUniqueContactEmailIndex();
 db.exec(`
 CREATE UNIQUE INDEX IF NOT EXISTS idx_important_messages_source_external_id
   ON important_messages(source, external_id)
@@ -1523,6 +1552,8 @@ app.post("/api/register", async (req, res) => {
   const firstName = String(req.body?.first_name || "").trim();
   const lastName = String(req.body?.last_name || "").trim();
   const phone = String(req.body?.phone || "").trim();
+  const now = nowTs();
+  const ip = String(req.ip || "unknown");
 
   if (!firstName) {
     return res.status(400).json({ error: "Förnamn krävs." });
@@ -1545,6 +1576,23 @@ app.post("/api/register", async (req, res) => {
     return res.status(400).json({ error: "Välj en giltig ort från listan." });
   }
 
+  const registerRateKey = `register:${ip}`;
+  const registerRate = registerRateLimit.get(registerRateKey) || { count: 0, reset_at: now + REGISTER_RATE_LIMIT_WINDOW_SECONDS };
+  if (registerRate.reset_at <= now) {
+    registerRate.count = 0;
+    registerRate.reset_at = now + REGISTER_RATE_LIMIT_WINDOW_SECONDS;
+  }
+  registerRate.count += 1;
+  registerRateLimit.set(registerRateKey, registerRate);
+  if (registerRate.count > REGISTER_RATE_LIMIT_MAX_ATTEMPTS) {
+    return res.status(429).json({ error: "För många registreringsförsök. Vänta en stund och prova igen." });
+  }
+
+  const cooldownUntil = Number(registerEmailCooldown.get(workEmail) || 0);
+  if (cooldownUntil > now) {
+    return res.status(429).json({ error: "För många försök för den här e-postadressen. Vänta en stund och prova igen." });
+  }
+
   const existingByContact = db
     .prepare("SELECT id FROM users WHERE lower(contact_email) = ? LIMIT 1")
     .get(workEmail);
@@ -1560,6 +1608,7 @@ app.post("/api/register", async (req, res) => {
 
   let createdId = null;
   try {
+    registerEmailCooldown.set(workEmail, now + REGISTER_EMAIL_COOLDOWN_SECONDS);
     const result = db
       .prepare(
         `INSERT INTO users(email, password_hash, salt, iterations, created_at, contact_email, city, first_name, last_name, phone)
@@ -1570,7 +1619,7 @@ app.post("/api/register", async (req, res) => {
         passwordHash,
         salt,
         PBKDF2_ITERATIONS,
-        nowTs(),
+        now,
         workEmail,
         city,
         firstName,
@@ -1655,6 +1704,22 @@ app.post("/api/login/code/request", async (req, res) => {
   }
   if (!recipientEmail || !recipientEmail.endsWith(REGISTER_ALLOWED_DOMAIN)) {
     return res.json({ ok: true, message: genericMessage });
+  }
+
+  const latestLoginCode = db
+    .prepare(
+      `SELECT created_at
+       FROM login_code_tokens
+       WHERE user_id = ?
+       ORDER BY id DESC
+       LIMIT 1`
+    )
+    .get(Number(user.id));
+  if (latestLoginCode) {
+    const lastCreatedAt = Number(latestLoginCode.created_at || 0);
+    if (lastCreatedAt > 0 && now - lastCreatedAt < LOGIN_CODE_EMAIL_COOLDOWN_SECONDS) {
+      return res.json({ ok: true, message: genericMessage });
+    }
   }
 
   const code = makeNumericLoginCode(6);
@@ -1885,6 +1950,32 @@ app.get("/api/me/profile", (req, res) => {
   });
 });
 
+app.get("/api/users/profile", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+
+  const email = normalizeEmail(req.query?.email || "");
+  if (!email) {
+    return res.status(400).json({ error: "Ogiltig användare." });
+  }
+
+  const row = db
+    .prepare("SELECT id, email, city, first_name, last_name, profile_image_url FROM users WHERE lower(email) = ? LIMIT 1")
+    .get(email);
+  if (!row) {
+    return res.status(404).json({ error: "Användaren hittades inte." });
+  }
+
+  return res.json({
+    id: Number(row.id || 0),
+    username: String(row.email || ""),
+    city: String(row.city || ""),
+    first_name: String(row.first_name || ""),
+    last_name: String(row.last_name || ""),
+    profile_image_url: String(row.profile_image_url || "")
+  });
+});
+
 app.put("/api/me/profile", (req, res) => {
   const user = requireAuth(req, res);
   if (!user) return;
@@ -1896,30 +1987,35 @@ app.put("/api/me/profile", (req, res) => {
   const city = String(req.body?.city || "").trim();
   const profileImageUrl = String(req.body?.profile_image_url || "").trim();
 
-  if (!firstName) return res.status(400).json({ error: "Förnamn krävs." });
-  if (!lastName) return res.status(400).json({ error: "Efternamn krävs." });
-  if (!phone) return res.status(400).json({ error: "Telefonnummer krävs." });
-  if (!contactEmail || !contactEmail.endsWith(REGISTER_ALLOWED_DOMAIN)) {
+  if (phone) {
+    const phoneDigits = phone.replace(/[^\d+]/g, "");
+    if (phoneDigits.length < 7) {
+      return res.status(400).json({ error: "Ogiltigt telefonnummer." });
+    }
+  }
+  if (contactEmail && !contactEmail.endsWith(REGISTER_ALLOWED_DOMAIN)) {
     return res.status(400).json({ error: `E-post måste sluta med ${REGISTER_ALLOWED_DOMAIN}.` });
   }
-  if (!city || !REGISTER_CITIES.includes(city)) {
+  if (city && !REGISTER_CITIES.includes(city)) {
     return res.status(400).json({ error: "Välj en giltig ort." });
   }
   if (profileImageUrl && !isAllowedUploadUrl(profileImageUrl)) {
     return res.status(400).json({ error: "Ogiltig URL för profilbild." });
   }
 
-  const conflict = db
-    .prepare("SELECT id, email FROM users WHERE lower(contact_email) = ? AND id != ? LIMIT 1")
-    .get(contactEmail, user.id);
-  if (conflict) {
-    const conflictEmail = normalizeEmail(conflict.email || "");
-    const selfEmail = normalizeEmail(user.email || "");
-    const allowAdminTestPair =
-      (isAdmin({ email: selfEmail }) && isTestAccountIdentifier(conflictEmail)) ||
-      (isTestAccountIdentifier(selfEmail) && isAdmin({ email: conflictEmail }));
-    if (!allowAdminTestPair) {
-      return res.status(409).json({ error: "E-postadressen används redan av en annan användare." });
+  if (contactEmail) {
+    const conflict = db
+      .prepare("SELECT id, email FROM users WHERE lower(contact_email) = ? AND id != ? LIMIT 1")
+      .get(contactEmail, user.id);
+    if (conflict) {
+      const conflictEmail = normalizeEmail(conflict.email || "");
+      const selfEmail = normalizeEmail(user.email || "");
+      const allowAdminTestPair =
+        (isAdmin({ email: selfEmail }) && isTestAccountIdentifier(conflictEmail)) ||
+        (isTestAccountIdentifier(selfEmail) && isAdmin({ email: conflictEmail }));
+      if (!allowAdminTestPair) {
+        return res.status(409).json({ error: "E-postadressen används redan av en annan användare." });
+      }
     }
   }
 

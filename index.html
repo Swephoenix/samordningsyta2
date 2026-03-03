@@ -1003,6 +1003,15 @@
             gap: 6px;
             min-width: 0;
         }
+        .chat-post-author.is-open-profile {
+            cursor: pointer;
+            border-radius: 10px;
+            padding: 1px 3px;
+            transition: background 0.15s ease;
+        }
+        .chat-post-author.is-open-profile:hover {
+            background: rgba(148, 163, 184, 0.18);
+        }
         .chat-post-author-avatar {
             width: 22px;
             height: 22px;
@@ -1180,9 +1189,30 @@
             font-size: 0.72rem;
             line-height: 1.3;
         }
+        .chat-reply-preview.is-jumpable {
+            cursor: pointer;
+            transition: background 0.15s ease, transform 0.15s ease;
+        }
+        .chat-reply-preview.is-jumpable:hover {
+            background: rgba(255,255,255,0.16);
+            transform: translateY(-1px);
+        }
         .chat-post.theirs .chat-reply-preview {
             border-left-color: rgba(120,160,255,0.75);
             background: rgba(58,119,243,0.12);
+        }
+        .chat-post.theirs .chat-reply-preview.is-jumpable:hover {
+            background: rgba(58,119,243,0.22);
+        }
+        .chat-post.is-jump-target {
+            animation: chatJumpBounce 0.48s ease;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.38), 0 8px 20px rgba(59, 130, 246, 0.2);
+        }
+        @keyframes chatJumpBounce {
+            0% { transform: translateY(0); }
+            30% { transform: translateY(-6px); }
+            60% { transform: translateY(2px); }
+            100% { transform: translateY(0); }
         }
         .chat-attachment {
             margin: 6px 0 4px;
@@ -3228,6 +3258,72 @@
             color: #fff !important;
             font-weight: 700;
         }
+        .chat-user-profile-content {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            width: min(92vw, 420px);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 16px 34px rgba(0,0,0,0.45);
+            color: #1f2937;
+            position: relative;
+        }
+        .chat-user-profile-content .modal-close {
+            float: none;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 30px;
+            height: 30px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background: #f4f9ff;
+            color: #1f2937;
+            font-size: 0.95rem;
+            cursor: pointer;
+        }
+        .chat-user-profile-head {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+        .chat-user-profile-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            border: 1px solid #dbe3ef;
+            object-fit: cover;
+            background: #f7fbff;
+            flex-shrink: 0;
+        }
+        .chat-user-profile-name {
+            font-size: 1rem;
+            font-weight: 800;
+            color: #111827;
+        }
+        .chat-user-profile-username {
+            font-size: 0.84rem;
+            color: #64748b;
+            margin-top: 2px;
+            word-break: break-all;
+        }
+        .chat-user-profile-grid {
+            border-top: 1px solid #e5e7eb;
+            padding-top: 10px;
+            display: grid;
+            gap: 8px;
+        }
+        .chat-user-profile-row strong {
+            display: block;
+            font-size: 0.76rem;
+            color: #64748b;
+            margin-bottom: 3px;
+        }
+        .chat-user-profile-row span {
+            font-size: 0.88rem;
+            color: #1f2937;
+        }
         #facebookAcademyModal {
             background: rgba(0,0,0,0.4);
         }
@@ -4929,6 +5025,24 @@
             </div>
         </div>
     </div>
+    <div class="modal-overlay" id="chatUserProfileModal">
+        <div class="chat-user-profile-content">
+            <button class="modal-close" type="button" onclick="closeChatUserProfileModal()">✖</button>
+            <div class="chat-user-profile-head">
+                <img id="chatUserProfileAvatar" class="chat-user-profile-avatar" src="" alt="Profilbild">
+                <div>
+                    <div id="chatUserProfileName" class="chat-user-profile-name">Användare</div>
+                    <div id="chatUserProfileUsername" class="chat-user-profile-username"></div>
+                </div>
+            </div>
+            <div class="chat-user-profile-grid">
+                <div class="chat-user-profile-row">
+                    <strong>Ort</strong>
+                    <span id="chatUserProfileCity">-</span>
+                </div>
+            </div>
+        </div>
+    </div>
 
         <div class="modal-overlay" id="folderModal">
         <div class="folder-modal-content">
@@ -5224,6 +5338,7 @@
         let memberManageCities = [];
         let memberManageSelectedId = 0;
         let profileCities = [];
+        let chatUserProfileCache = {};
         let notesSaveTimer = null;
         let lastChatMessagesDigest = '';
         let lastPresenceCount = -1;
@@ -5628,6 +5743,53 @@
             });
         }
 
+        function jumpToChatMessage(messageId) {
+            const id = Number(messageId || 0);
+            if (!id) return;
+            const feed = document.getElementById('groupChatFeed');
+            if (!feed) return;
+            const target = feed.querySelector(`.chat-post[data-chat-message-id="${id}"]`);
+            if (!target) return;
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            target.classList.remove('is-jump-target');
+            requestAnimationFrame(function() {
+                target.classList.add('is-jump-target');
+                setTimeout(function() {
+                    target.classList.remove('is-jump-target');
+                }, 700);
+            });
+        }
+
+        function jumpToReplyTarget(replyMeta, sourceMessageId) {
+            const meta = replyMeta && typeof replyMeta === 'object' ? replyMeta : {};
+            const jumpId = Number(meta.messageId || 0);
+            if (jumpId > 0) {
+                jumpToChatMessage(jumpId);
+                return;
+            }
+            const feed = document.getElementById('groupChatFeed');
+            if (!feed) return;
+            const replyAuthor = String(meta.author || '').trim().toLowerCase();
+            const replySnippet = String(meta.snippet || '').trim().toLowerCase();
+            if (!replyAuthor && !replySnippet) return;
+
+            const allPosts = Array.from(feed.querySelectorAll('.chat-post[data-chat-message-id]'));
+            const sourceId = Number(sourceMessageId || 0);
+            const candidates = allPosts.filter(function(post) {
+                const postId = Number(post.getAttribute('data-chat-message-id') || 0);
+                if (sourceId > 0 && postId >= sourceId) return false;
+                const postAuthor = String(post.getAttribute('data-chat-author-label') || '').trim().toLowerCase();
+                const postBody = String(post.getAttribute('data-chat-body') || '').trim().toLowerCase();
+                const authorMatch = !replyAuthor || postAuthor === replyAuthor || postAuthor.indexOf(replyAuthor) !== -1;
+                const snippetMatch = !replySnippet || (postBody && postBody.indexOf(replySnippet) !== -1);
+                return authorMatch && snippetMatch;
+            });
+            if (!candidates.length) return;
+            const best = candidates[candidates.length - 1];
+            const bestId = Number(best.getAttribute('data-chat-message-id') || 0);
+            if (bestId > 0) jumpToChatMessage(bestId);
+        }
+
         function renderChatFeed(messages) {
             const feed = document.getElementById('groupChatFeed');
             const isSharedGroupThread = !composeState.active &&
@@ -5673,20 +5835,28 @@
                 const isMine = msg.email === currentUserEmail;
                 const isAdminAuthor = !!msg.author_is_admin || String(msg.email || '').toLowerCase() === 'admin';
                 const authorLabel = chatAuthorTitle(msg.email, isAdminAuthor);
+                const authorEmail = String(msg.email || '').trim().toLowerCase();
+                const canOpenAuthorProfile = authorEmail.indexOf('@') !== -1;
                 const authorAvatarUrl = avatarUrlForUser(msg.email || authorLabel || 'user', msg.profile_image_url || '');
                 const cityLabel = String(msg.user_city || '').trim();
                 const classNames = ['chat-post', isMine ? 'mine' : 'theirs'];
                 if (isAdminAuthor) classNames.push('admin');
                 if (msg.pinned) classNames.push('pinned');
                 post.className = classNames.join(' ');
+                const messageId = Number(msg.id || 0);
+                if (messageId > 0) {
+                    post.setAttribute('data-chat-message-id', String(messageId));
+                }
                 const parsed = parseReplyPayload(msg.message);
+                post.setAttribute('data-chat-author-label', String(authorLabel || ''));
+                post.setAttribute('data-chat-body', String(parsed.body || ''));
                 const seenBy = (msg.seen_by || []).filter(function(email) { return email !== msg.email; });
                 const seenText = isMine && seenBy.length
                     ? `<div class=\"chat-post-seen\">Sett av: ${escapeHtml(seenBy.join(', '))}</div>`
                     : '';
                 const attachmentHtml = parsed.attachment ? renderAttachmentHtml(parsed.attachment) : '';
                 const replyPreview = parsed.replyTo
-                    ? `<div class=\"chat-reply-preview\">Svar på ${escapeHtml(parsed.replyTo.author || 'okänd')}: ${escapeHtml(parsed.replyTo.snippet || '')}</div>`
+                    ? `<div class=\"chat-reply-preview is-jumpable\" ${parsed.replyTo.messageId ? `data-chat-jump-id=\"${Number(parsed.replyTo.messageId)}\"` : ''} data-chat-reply-author=\"${escapeHtml(String(parsed.replyTo.author || ''))}\" data-chat-reply-snippet=\"${escapeHtml(String(parsed.replyTo.snippet || ''))}\">Svar på ${escapeHtml(parsed.replyTo.author || 'okänd')}: ${escapeHtml(parsed.replyTo.snippet || '')}</div>`
                     : '';
                 const replyBtn = !isMine
                     ? `<button class=\"chat-reply-btn\" type=\"button\" title=\"Svara\">↩</button>`
@@ -5696,7 +5866,7 @@
                     : '';
                 post.innerHTML = `
                     <div class=\"chat-post-header\">
-                        <strong class=\"chat-post-author\"><img class=\"chat-post-author-avatar\" src=\"${escapeHtml(authorAvatarUrl)}\" alt=\"${escapeHtml(authorLabel)}\">${escapeHtml(authorLabel)}${cityLabel ? ` <span class=\"chat-author-city\">· ${escapeHtml(cityLabel)}</span>` : ''}</strong>
+                        <strong class=\"chat-post-author ${canOpenAuthorProfile ? 'is-open-profile' : ''}\" ${canOpenAuthorProfile ? `data-chat-author-email=\"${escapeHtml(authorEmail)}\" title=\"Dubbelklicka för profil\"` : ''}><img class=\"chat-post-author-avatar\" src=\"${escapeHtml(authorAvatarUrl)}\" alt=\"${escapeHtml(authorLabel)}\">${escapeHtml(authorLabel)}${cityLabel ? ` <span class=\"chat-author-city\">· ${escapeHtml(cityLabel)}</span>` : ''}</strong>
                         <span class=\"chat-post-meta\">
                             ${pinBtn}
                             <span>${formatTimeFromUnix(msg.created_at)}</span>
@@ -5717,9 +5887,37 @@
                     replyBtnEl.addEventListener('click', function(e) {
                         e.preventDefault();
                         setActiveReply({
+                            messageId: messageId,
                             author: authorLabel,
                             snippet: String(parsed.body || '').slice(0, 80)
                         });
+                    });
+                }
+                const authorEl = post.querySelector('[data-chat-author-email]');
+                if (authorEl) {
+                    authorEl.addEventListener('dblclick', function(e) {
+                        e.preventDefault();
+                        const email = String(authorEl.getAttribute('data-chat-author-email') || '').trim().toLowerCase();
+                        if (!email) return;
+                        openChatUserProfileModalByEmail(email).catch(function(err) {
+                            alert(err.message || 'Kunde inte öppna profil.');
+                        });
+                    });
+                }
+                const replyPreviewEl = post.querySelector('.chat-reply-preview.is-jumpable');
+                if (replyPreviewEl) {
+                    replyPreviewEl.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const jumpId = Number(replyPreviewEl.getAttribute('data-chat-jump-id') || 0);
+                        if (jumpId > 0) {
+                            jumpToChatMessage(jumpId);
+                            return;
+                        }
+                        jumpToReplyTarget({
+                            author: String(replyPreviewEl.getAttribute('data-chat-reply-author') || ''),
+                            snippet: String(replyPreviewEl.getAttribute('data-chat-reply-snippet') || ''),
+                            messageId: 0
+                        }, messageId);
                     });
                 }
                 const attachmentEl = post.querySelector('[data-attachment-preview="1"]');
@@ -5823,6 +6021,7 @@
 
             const mapped = (thread.messages || []).map(function(m) {
                 return {
+                    id: Number(m.id || 0),
                     created_at: Math.floor(Number(m.at || 0) / 1000),
                     email: m.from === 'me' ? (currentUserEmail || 'Du') : (m.sender || thread.email || thread.name || 'Okänd'),
                     message: m.text || '',
@@ -5967,6 +6166,49 @@
             return decodeURIComponent(parts[parts.length - 1] || '');
         }
 
+        async function loadMyProfileFromDb() {
+            const profileData = await apiGet('/api/me/profile');
+            currentUserProfileImageUrl = normalizeProfileImageUrl(profileData && profileData.profile_image_url || '');
+            return profileData;
+        }
+
+        function closeChatUserProfileModal() {
+            const modal = document.getElementById('chatUserProfileModal');
+            if (!modal) return;
+            modal.style.display = 'none';
+        }
+
+        function renderChatUserProfileModal(profileData) {
+            const nameEl = document.getElementById('chatUserProfileName');
+            const usernameEl = document.getElementById('chatUserProfileUsername');
+            const cityEl = document.getElementById('chatUserProfileCity');
+            const avatarEl = document.getElementById('chatUserProfileAvatar');
+            const username = String(profileData && profileData.username || '');
+            const first = String(profileData && profileData.first_name || '').trim();
+            const last = String(profileData && profileData.last_name || '').trim();
+            const fullName = `${first} ${last}`.trim() || messengerDisplayName(username || 'användare');
+            const city = String(profileData && profileData.city || '').trim();
+            const avatar = avatarUrlForUser(username || fullName, String(profileData && profileData.profile_image_url || ''));
+            if (nameEl) nameEl.innerText = fullName;
+            if (usernameEl) usernameEl.innerText = username || '-';
+            if (cityEl) cityEl.innerText = city || '-';
+            if (avatarEl) avatarEl.src = avatar;
+        }
+
+        async function openChatUserProfileModalByEmail(email) {
+            const cleanEmail = String(email || '').trim().toLowerCase();
+            if (!cleanEmail || cleanEmail.indexOf('@') === -1) return;
+            const modal = document.getElementById('chatUserProfileModal');
+            if (!modal) return;
+            let profileData = chatUserProfileCache[cleanEmail] || null;
+            if (!profileData) {
+                profileData = await apiGet(`/api/users/profile?email=${encodeURIComponent(cleanEmail)}`);
+                chatUserProfileCache[cleanEmail] = profileData;
+            }
+            renderChatUserProfileModal(profileData);
+            modal.style.display = 'flex';
+        }
+
         function renderProfilePhotoPreview() {
             const previewEl = document.getElementById('profilePhotoPreview');
             const removeBtn = document.getElementById('profilePhotoRemoveBtn');
@@ -6010,11 +6252,9 @@
             const modal = document.getElementById('profileModal');
             if (!modal) return;
             try {
-                const [profileData, registerOptions] = await Promise.all([
-                    apiGet('/api/me/profile'),
-                    apiGet('/api/register/options')
-                ]);
-                profileCities = Array.isArray(registerOptions.cities) ? registerOptions.cities : [];
+                const profileData = await loadMyProfileFromDb();
+                const registerOptions = await apiGet('/api/register/options').catch(function() { return { cities: [] }; });
+                profileCities = Array.isArray(registerOptions && registerOptions.cities) ? registerOptions.cities : [];
                 const citySelect = document.getElementById('profileCity');
                 if (citySelect) {
                     citySelect.innerHTML = '<option value="">Välj ort</option>' + profileCities.map(function(city) {
@@ -6052,11 +6292,6 @@
             const phone = String(document.getElementById('profilePhone').value || '').trim();
             const contactEmail = String(document.getElementById('profileContactEmail').value || '').trim().toLowerCase();
             const city = String(document.getElementById('profileCity').value || '').trim();
-
-            if (!firstName || !lastName || !phone || !contactEmail || !city) {
-                alert('Fyll i alla profilfält.');
-                return;
-            }
             await apiSend('/api/me/profile', 'PUT', {
                 first_name: firstName,
                 last_name: lastName,
@@ -6066,6 +6301,15 @@
                 profile_image_url: normalizeProfileImageUrl(profileModalImageUrl)
             });
             currentUserProfileImageUrl = normalizeProfileImageUrl(profileModalImageUrl);
+            if (currentUserEmail) {
+                chatUserProfileCache[String(currentUserEmail).trim().toLowerCase()] = {
+                    username: String(currentUserEmail),
+                    first_name: firstName,
+                    last_name: lastName,
+                    city: city,
+                    profile_image_url: currentUserProfileImageUrl
+                };
+            }
             closeProfileModal();
             await Promise.allSettled([loadMessengerUsers(), loadChatMessages()]);
             renderActiveThreadInMainChat();
@@ -8897,13 +9141,24 @@
             let replyTo = null;
             let attachment = null;
 
-            const replyMatch = rest.match(/^\[reply\|([^\]|]*)\|([^\]]*)\]\n?/);
-            if (replyMatch) {
+            const replyWithIdMatch = rest.match(/^\[reply\|([0-9]+)\|([^\]|]*)\|([^\]]*)\]\n?/);
+            if (replyWithIdMatch) {
                 replyTo = {
-                    author: replyMatch[1] || '',
-                    snippet: replyMatch[2] || ''
+                    messageId: Number(replyWithIdMatch[1] || 0),
+                    author: replyWithIdMatch[2] || '',
+                    snippet: replyWithIdMatch[3] || ''
                 };
-                rest = rest.slice(replyMatch[0].length);
+                rest = rest.slice(replyWithIdMatch[0].length);
+            } else {
+                const replyMatch = rest.match(/^\[reply\|([^\]|]*)\|([^\]]*)\]\n?/);
+                if (replyMatch) {
+                    replyTo = {
+                        messageId: 0,
+                        author: replyMatch[1] || '',
+                        snippet: replyMatch[2] || ''
+                    };
+                    rest = rest.slice(replyMatch[0].length);
+                }
             }
 
             const attachmentMatch = rest.match(/^\[attachment\|([A-Za-z0-9+/=]+)\]\n?/);
@@ -8931,9 +9186,14 @@
             const cleanBody = String(body || '').trim();
             const parts = [];
             if (replyMeta) {
+                const messageId = Number(replyMeta.messageId || 0);
                 const author = String(replyMeta.author || '').replace(/\|/g, '/');
                 const snippet = String(replyMeta.snippet || '').replace(/\|/g, '/');
-                parts.push(`[reply|${author}|${snippet}]`);
+                if (messageId > 0) {
+                    parts.push(`[reply|${messageId}|${author}|${snippet}]`);
+                } else {
+                    parts.push(`[reply|${author}|${snippet}]`);
+                }
             }
             if (attachmentMeta && attachmentMeta.url) {
                 const cleanAttachment = {
@@ -9302,6 +9562,7 @@
                 thread.messages = (allChatMessages || []).map(function(msg) {
                     const isMine = msg.email === currentUserEmail;
                     return {
+                        id: Number(msg.id || 0),
                         from: isMine ? 'me' : 'them',
                         sender: msg.email,
                         profile_image_url: String(msg.profile_image_url || ''),
@@ -9330,6 +9591,7 @@
                 if (loadSeq !== threadLoadSeq || messengerState.activeThreadId !== activeThreadId) return;
                 thread.messages = (groupData.messages || []).map(function(message) {
                     return {
+                        id: Number(message.id || 0),
                         from: message.from_me ? 'me' : 'them',
                         sender: message.sender_email || '',
                         profile_image_url: String(message.profile_image_url || ''),
@@ -9354,6 +9616,7 @@
             if (loadSeq !== threadLoadSeq || messengerState.activeThreadId !== activeThreadId) return;
             thread.messages = (data.messages || []).map(function(message) {
                 return {
+                    id: Number(message.id || 0),
                     from: message.from_me ? 'me' : 'them',
                     sender: String(message.sender_email || ''),
                     profile_image_url: String(message.profile_image_url || ''),
@@ -10844,6 +11107,9 @@
         document.getElementById('profileModal').addEventListener('click', function(e) {
             if (e.target === this) closeProfileModal();
         });
+        document.getElementById('chatUserProfileModal').addEventListener('click', function(e) {
+            if (e.target === this) closeChatUserProfileModal();
+        });
         document.getElementById('memberManageSearch').addEventListener('input', function() {
             filterMemberManageList();
         });
@@ -10908,6 +11174,7 @@
             document.body.style.visibility = 'hidden';
             const allowed = await requireAuth();
             if (!allowed) return;
+            await loadMyProfileFromDb().catch(function() {});
             await handleGroupInviteFromUrl();
             initGroupChat();
             initNotes();
