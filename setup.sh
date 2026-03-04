@@ -14,7 +14,11 @@ echo ""
 
 if [ -f "${SCRIPT_DIR}/.env" ]; then
     echo "Decrypting .env with sops..."
-    sops -d -i .env
+    if [ "$(id -u)" -eq 0 ] && [ -n "${SUDO_USER:-}" ] && [ "${SUDO_USER}" != "root" ]; then
+        sudo -u "${SUDO_USER}" sops -d -i .env
+    else
+        sops -d -i .env
+    fi
 fi
 
 # Create persistent data directories
