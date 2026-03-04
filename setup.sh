@@ -13,11 +13,15 @@ echo "=== Samordningsyta2 Setup ==="
 echo ""
 
 if [ -f "${SCRIPT_DIR}/.env" ]; then
-    echo "Decrypting .env with sops..."
-    if [ "$(id -u)" -eq 0 ] && [ -n "${SUDO_USER:-}" ] && [ "${SUDO_USER}" != "root" ]; then
-        sudo -u "${SUDO_USER}" sops -d -i .env
+    if grep -Eq '(^|[^A-Z])ENC\[' "${SCRIPT_DIR}/.env"; then
+        echo "Decrypting .env with sops..."
+        if [ "$(id -u)" -eq 0 ] && [ -n "${SUDO_USER:-}" ] && [ "${SUDO_USER}" != "root" ]; then
+            sudo -u "${SUDO_USER}" sops -d -i .env
+        else
+            sops -d -i .env
+        fi
     else
-        sops -d -i .env
+        echo ".env appears already decrypted, skipping sops decrypt."
     fi
 fi
 
