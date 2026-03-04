@@ -3,10 +3,11 @@
 # Setup script for samordningsyta2 Docker deployment
 # Creates necessary directories and sets correct permissions
 
-set -e
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PERSISTENT_DATA_ROOT="/mnt/data/projects/data"
+cd "${SCRIPT_DIR}"
 
 echo "=== Samordningsyta2 Setup ==="
 echo ""
@@ -79,6 +80,11 @@ echo "Directories created:"
 echo "  - ${PERSISTENT_DATA_ROOT}/samordningsyta2/data"
 echo "  - ${PERSISTENT_DATA_ROOT}/samordningsyta2/uploads"
 echo ""
-echo "Next steps:"
-echo "  1. cd ${SCRIPT_DIR}"
-echo "  2. ./docker-up.sh"
+echo "Building image without cache..."
+docker compose build --no-cache
+
+echo "Starting containers..."
+docker compose up -d
+
+echo ""
+echo "Deployment complete."
