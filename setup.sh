@@ -57,6 +57,9 @@ ADMIN_EMAIL=
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=changeme89
 ADMIN_NAME=Admin
+ADMIN2_EMAIL=
+ADMIN2_USERNAME=admin2
+ADMIN2_PASSWORD=changeme90
 
 SMTP_HOST=
 SMTP_PORT=587
@@ -77,7 +80,7 @@ SESSION_SECRET=${SESSION_SECRET}
 EOF
     
     echo "WARNING: Please review and update ${SCRIPT_DIR}/.env with your settings!"
-    echo "Especially set: ADMIN_EMAIL, SMTP_HOST, SMTP_PASS, MAIL_FROM"
+    echo "Especially set: ADMIN_EMAIL/ADMIN_USERNAME + ADMIN_PASSWORD, ADMIN2_EMAIL/ADMIN2_USERNAME + ADMIN2_PASSWORD, SMTP_HOST, SMTP_PASS, MAIL_FROM"
 else
     echo ".env file already exists, skipping creation."
 fi

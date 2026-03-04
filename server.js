@@ -476,21 +476,37 @@ function ensureDefaultUser(email, password) {
   ).run(email, passwordHash, salt, PBKDF2_ITERATIONS, nowTs());
 }
 
-function getConfiguredAdminIdentifier() {
-  const fromEmail = String(process.env.ADMIN_EMAIL || "").trim().toLowerCase();
-  const fromUsername = String(process.env.ADMIN_USERNAME || "").trim().toLowerCase();
-  if (fromUsername) return fromUsername;
-  if (fromEmail) return fromEmail;
-  return "";
+function getConfiguredAdminFromEnv({ emailKey, usernameKey, passwordKey, label }) {
+  const contactEmail = normalizeEmail(process.env[emailKey] || "");
+  const username = normalizeEmail(process.env[usernameKey] || "");
+  const identifier = username || contactEmail;
+  const password = String(process.env[passwordKey] || "");
+  return {
+    label,
+    emailKey,
+    usernameKey,
+    passwordKey,
+    identifier,
+    contactEmail,
+    password
+  };
 }
 
-function getConfiguredAdminContactEmail() {
-  return String(process.env.ADMIN_EMAIL || "").trim().toLowerCase();
-}
-
-function getConfiguredAdminPassword() {
-  const fromEnv = String(process.env.ADMIN_PASSWORD || "");
-  return fromEnv;
+function getConfiguredAdmins() {
+  return [
+    getConfiguredAdminFromEnv({
+      label: "ADMIN1",
+      emailKey: "ADMIN_EMAIL",
+      usernameKey: "ADMIN_USERNAME",
+      passwordKey: "ADMIN_PASSWORD"
+    }),
+    getConfiguredAdminFromEnv({
+      label: "ADMIN2",
+      emailKey: "ADMIN2_EMAIL",
+      usernameKey: "ADMIN2_USERNAME",
+      passwordKey: "ADMIN2_PASSWORD"
+    })
+  ];
 }
 
 function syncConfiguredAdminContactEmail(identifier, contactEmail) {
@@ -976,16 +992,34 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_important_messages_source_external_id
 `);
 
 const isProduction = ENV_IS_PRODUCTION;
-const configuredAdminIdentifier = getConfiguredAdminIdentifier();
-const configuredAdminContactEmail = getConfiguredAdminContactEmail();
-let configuredAdminPassword = getConfiguredAdminPassword();
-if (configuredAdminIdentifier) {
-  if (!configuredAdminPassword) {
-    configuredAdminPassword = makeRandomPassword(24);
-    console.warn("ADMIN_PASSWORD saknas - använder internt slumpat bootstrap-losenord.");
+const configuredAdmins = getConfiguredAdmins();
+const validConfiguredAdmins = configuredAdmins.filter((admin) => admin.identifier);
+if (validConfiguredAdmins.length !== 2) {
+  throw new Error(
+    "Du måste sätta två admin-konton i .env (ADMIN_* och ADMIN2_* med username eller email)."
+  );
+}
+const configuredAdminIdentifierList = validConfiguredAdmins.map((admin) => normalizeEmail(admin.identifier));
+const configuredAdminIdentifierSet = new Set(configuredAdminIdentifierList);
+if (configuredAdminIdentifierSet.size !== configuredAdminIdentifierList.length) {
+  throw new Error("ADMIN_* och ADMIN2_* måste vara två olika användarnamn.");
+}
+const configuredAdminContactByIdentifier = new Map();
+validConfiguredAdmins.forEach((admin) => {
+  if (!admin.password) {
+    throw new Error(`${admin.passwordKey} saknas i .env. Båda admin-lösenord måste sättas.`);
   }
-  ensureDefaultUser(configuredAdminIdentifier, configuredAdminPassword);
-  syncConfiguredAdminContactEmail(configuredAdminIdentifier, configuredAdminContactEmail);
+  ensureDefaultUser(admin.identifier, admin.password);
+  syncConfiguredAdminContactEmail(admin.identifier, admin.contactEmail);
+  if (admin.contactEmail) {
+    configuredAdminContactByIdentifier.set(normalizeEmail(admin.identifier), normalizeEmail(admin.contactEmail));
+  }
+});
+const primaryConfiguredAdminIdentifier = configuredAdminIdentifierList[0] || "";
+const primaryConfiguredAdminContactEmail = configuredAdminContactByIdentifier.get(primaryConfiguredAdminIdentifier) || "";
+
+function isConfiguredAdminIdentifier(value) {
+  return configuredAdminIdentifierSet.has(normalizeEmail(value));
 }
 
 // Fast testkonto (kan tas bort av admin i medlemshantering).
@@ -1177,10 +1211,7 @@ function requireAuth(req, res) {
 }
 
 function isAdmin(user) {
-  const userEmail = String(user && user.email || "").toLowerCase();
-  const configured = String(configuredAdminIdentifier || "").toLowerCase();
-  if (configured && userEmail === configured) return true;
-  return userEmail === "admin";
+  return isConfiguredAdminIdentifier(user && user.email || "");
 }
 
 function normalizeEmail(value) {
@@ -1192,23 +1223,20 @@ function isTestAccountIdentifier(value) {
 }
 
 function getAdminUserForContactRouting() {
-  const configuredId = normalizeEmail(configuredAdminIdentifier || "");
-  if (configuredId) {
+  for (const configuredId of configuredAdminIdentifierList) {
     const configuredRow = db
       .prepare("SELECT id, email, contact_email FROM users WHERE lower(email) = ? LIMIT 1")
       .get(configuredId);
     if (configuredRow) return configuredRow;
   }
-  return db
-    .prepare("SELECT id, email, contact_email FROM users WHERE lower(email) = ? LIMIT 1")
-    .get("admin");
+  return null;
 }
 
 function getAdminRoutingContactEmail() {
   const adminUser = getAdminUserForContactRouting();
   const fromDb = normalizeEmail(adminUser && adminUser.contact_email || "");
   if (fromDb) return fromDb;
-  return normalizeEmail(configuredAdminContactEmail || "");
+  return normalizeEmail(primaryConfiguredAdminContactEmail || "");
 }
 
 function syncTestAccountContactEmailWithAdmin() {
@@ -1695,8 +1723,10 @@ app.post("/api/login/code/request", async (req, res) => {
       }
     }
   } else if (!recipientEmail) {
-    const maybeAdmin = String(user.email || "").toLowerCase() === String(configuredAdminIdentifier || "").toLowerCase();
-    const configuredMail = normalizeEmail(configuredAdminContactEmail || "");
+    const maybeAdmin = isConfiguredAdminIdentifier(user.email);
+    const configuredMail = normalizeEmail(
+      configuredAdminContactByIdentifier.get(normalizeEmail(user.email || "")) || ""
+    );
     if (maybeAdmin && configuredMail) {
       recipientEmail = configuredMail;
       db.prepare("UPDATE users SET contact_email = ? WHERE id = ?").run(recipientEmail, Number(user.id));
@@ -2129,7 +2159,7 @@ app.get("/api/admin/users", (req, res) => {
       last_name: String(r.last_name || ""),
       phone: String(r.phone || ""),
       online: !!r.is_online,
-      is_admin: String(r.email || "").toLowerCase() === "admin"
+      is_admin: isAdmin({ email: String(r.email || "") })
     }))
   });
 });
@@ -2160,8 +2190,13 @@ app.put("/api/admin/users/:id", (req, res) => {
   if (!nextEmail || nextEmail.length < 2) {
     return res.status(400).json({ error: "Ogiltigt användarnamn." });
   }
-  if (String(target.email || "").toLowerCase() === "admin" && nextEmail !== "admin") {
-    return res.status(400).json({ error: "Admin-användaren kan inte byta användarnamn." });
+  const targetEmail = normalizeEmail(target.email || "");
+  const targetIsAdmin = isConfiguredAdminIdentifier(targetEmail);
+  if (targetIsAdmin && nextEmail !== targetEmail) {
+    return res.status(400).json({ error: "Admin-konton från .env kan inte byta användarnamn." });
+  }
+  if (!targetIsAdmin && isConfiguredAdminIdentifier(nextEmail)) {
+    return res.status(409).json({ error: "Användarnamnet är reserverat för admin från .env." });
   }
   if (nextContactEmail && !nextContactEmail.endsWith(REGISTER_ALLOWED_DOMAIN)) {
     return res.status(400).json({ error: `Kontaktmail måste sluta med ${REGISTER_ALLOWED_DOMAIN}.` });
@@ -2223,8 +2258,8 @@ app.delete("/api/admin/users/:id", (req, res) => {
   if (!target) {
     return res.status(404).json({ error: "Användaren hittades inte." });
   }
-  if (String(target.email || "").toLowerCase() === "admin") {
-    return res.status(400).json({ error: "Admin-användaren kan inte tas bort." });
+  if (isConfiguredAdminIdentifier(target.email || "")) {
+    return res.status(400).json({ error: "Admin-konton från .env kan inte tas bort." });
   }
 
   const tx = db.transaction(() => {
