@@ -199,6 +199,29 @@
         }
         .notice.error { color: var(--danger); }
         .notice.ok { color: var(--ok); }
+        .code-delivery-hint {
+            display: none;
+            margin-top: 8px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(217, 119, 6, 0.35);
+            background: linear-gradient(120deg, rgba(251, 191, 36, 0.14), rgba(245, 158, 11, 0.22), rgba(251, 191, 36, 0.14));
+            background-size: 200% 200%;
+            color: #92400e;
+            font-size: 0.92rem;
+            font-weight: 700;
+            text-align: center;
+            animation: codeHintGlow 1.8s ease-in-out infinite, codeHintShift 3.2s linear infinite;
+        }
+        .code-delivery-hint.visible { display: block; }
+        @keyframes codeHintGlow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.20); transform: translateY(0); }
+            50% { box-shadow: 0 8px 18px -8px rgba(245, 158, 11, 0.45); transform: translateY(-1px); }
+        }
+        @keyframes codeHintShift {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
         @keyframes gradientShift {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
@@ -248,6 +271,7 @@
 
         <p class="foot">Ingen användare? <a class="link" href="/registrera">Skapa konto</a></p>
         <p class="notice" id="notice"></p>
+        <p class="code-delivery-hint" id="codeDeliveryHint">Det kan ta upp till 60 sekunder innan du får din kod på mejlen</p>
     </main>
 
     <script>
@@ -259,6 +283,7 @@
         const codeInput = document.getElementById('loginCode');
         const codeField = document.getElementById('codeField');
         const resendCodeBtn = document.getElementById('resendCodeBtn');
+        const codeDeliveryHint = document.getElementById('codeDeliveryHint');
         const loginExtras = document.getElementById('loginExtras');
         let codeRequested = false;
 
@@ -272,6 +297,11 @@
         function setNotice(msg, kind) {
             notice.className = 'notice ' + (kind || '');
             notice.textContent = msg || '';
+        }
+
+        function setCodeDeliveryHint(visible) {
+            if (!codeDeliveryHint) return;
+            codeDeliveryHint.classList.toggle('visible', !!visible);
         }
 
         async function postJson(path, payload) {
@@ -293,6 +323,7 @@
             codeField.style.display = codeRequested ? 'block' : 'none';
             resendCodeBtn.style.display = codeRequested ? 'inline-block' : 'none';
             submitBtn.textContent = codeRequested ? 'Logga in med kod' : 'Skicka kod';
+            setCodeDeliveryHint(codeRequested);
             if (codeRequested) {
                 if (loginExtras) {
                     const text = loginExtras.querySelector('.remember');

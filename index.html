@@ -5231,6 +5231,7 @@
 
     <script>
         let currentUserEmail = '';
+        let currentUserDisplayName = '';
         let currentUserId = 0;
         let currentUserIsAdmin = false;
         let currentUserProfileImageUrl = '';
@@ -5241,10 +5242,12 @@
         let editingEventId = null;
 
         function currentUserTitle() {
-            return currentUserIsAdmin ? 'admin' : (currentUserEmail || '-');
+            return String(currentUserDisplayName || '').trim() || (currentUserEmail || '-');
         }
 
-        function chatAuthorTitle(email, isAdminAuthor) {
+        function chatAuthorTitle(email, isAdminAuthor, displayName) {
+            const explicit = String(displayName || '').trim();
+            if (explicit) return explicit;
             if (isAdminAuthor) return 'admin';
             return String(email || 'okänd');
         }
@@ -5260,6 +5263,8 @@
                 const data = await resp.json();
                 currentUserId = Number(data.id || 0);
                 currentUserEmail = String(data.email || '');
+                currentUserDisplayName = String(data.display_name || '').trim();
+                rememberUserDisplayName(currentUserEmail, currentUserDisplayName);
                 currentUserIsAdmin = !!data.is_admin;
                 const userBadge = document.getElementById('chatCurrentUserBadge');
                 if (userBadge) userBadge.innerText = `Inloggad som: ${currentUserTitle()}`;
@@ -5834,7 +5839,7 @@
                 const post = document.createElement('div');
                 const isMine = msg.email === currentUserEmail;
                 const isAdminAuthor = !!msg.author_is_admin || String(msg.email || '').toLowerCase() === 'admin';
-                const authorLabel = chatAuthorTitle(msg.email, isAdminAuthor);
+                const authorLabel = chatAuthorTitle(msg.email, isAdminAuthor, msg.author_display_name);
                 const authorEmail = String(msg.email || '').trim().toLowerCase();
                 const canOpenAuthorProfile = authorEmail.indexOf('@') !== -1;
                 const authorAvatarUrl = avatarUrlForUser(msg.email || authorLabel || 'user', msg.profile_image_url || '');
@@ -6065,6 +6070,9 @@
                 lastChatMessagesDigest = nextDigest;
                 allChatMessages = nextMessages;
                 if (data.current_user_email) currentUserEmail = data.current_user_email;
+                if (currentUserEmail && currentUserDisplayName) {
+                    rememberUserDisplayName(currentUserEmail, currentUserDisplayName);
+                }
                 if (messengerState.activeThreadId === MESSENGER_GROUP_THREAD_ID) {
                     markGroupChatRead();
                 }
@@ -9050,13 +9058,24 @@
         let pendingChatAttachment = null;
         let threadLoadSeq = 0;
         const groupMembersCache = {};
+        const knownUserDisplayNames = {};
         const composeState = {
             active: false,
             selectedIds: [],
             query: ''
         };
 
+        function rememberUserDisplayName(email, displayName) {
+            const key = String(email || '').trim().toLowerCase();
+            const safeName = String(displayName || '').trim();
+            if (!key || !safeName) return;
+            knownUserDisplayNames[key] = safeName;
+        }
+
         function messengerDisplayName(email) {
+            const key = String(email || '').trim().toLowerCase();
+            const known = knownUserDisplayNames[key];
+            if (known) return known;
             const local = String(email || '').split('@')[0] || String(email || '');
             return local
                 .replace(/[._-]+/g, ' ')
@@ -9508,7 +9527,9 @@
                     const prev = prevById[id];
                     const isGroup = threadData.kind === 'group';
                     const email = String(threadData.email || '');
-                    const displayName = isGroup ? String(threadData.name || 'Grupp') : messengerDisplayName(email);
+                    const serverName = String(threadData.name || '').trim();
+                    if (!isGroup) rememberUserDisplayName(email, serverName);
+                    const displayName = isGroup ? String(threadData.name || 'Grupp') : (serverName || messengerDisplayName(email));
                     const statusText = isGroup
                         ? `${Number(threadData.member_count || 0)} medlemmar`
                         : (threadData.online ? 'Aktiv nu' : 'Offline');
@@ -9561,10 +9582,12 @@
             if (thread.id === MESSENGER_GROUP_THREAD_ID) {
                 thread.messages = (allChatMessages || []).map(function(msg) {
                     const isMine = msg.email === currentUserEmail;
+                    rememberUserDisplayName(msg.email, msg.author_display_name);
                     return {
                         id: Number(msg.id || 0),
                         from: isMine ? 'me' : 'them',
                         sender: msg.email,
+                        sender_display_name: String(msg.author_display_name || ''),
                         profile_image_url: String(msg.profile_image_url || ''),
                         text: msg.message,
                         at: Number(msg.created_at || 0) * 1000
@@ -9590,10 +9613,12 @@
                 const groupData = await apiGet(`/api/messenger/groups/${thread.id}/messages`);
                 if (loadSeq !== threadLoadSeq || messengerState.activeThreadId !== activeThreadId) return;
                 thread.messages = (groupData.messages || []).map(function(message) {
+                    rememberUserDisplayName(message.sender_email, message.sender_display_name);
                     return {
                         id: Number(message.id || 0),
                         from: message.from_me ? 'me' : 'them',
                         sender: message.sender_email || '',
+                        sender_display_name: String(message.sender_display_name || ''),
                         profile_image_url: String(message.profile_image_url || ''),
                         text: message.text,
                         at: Number(message.created_at || 0) * 1000
@@ -9615,10 +9640,12 @@
             const data = await apiGet(`/api/messenger/messages/${thread.id}`);
             if (loadSeq !== threadLoadSeq || messengerState.activeThreadId !== activeThreadId) return;
             thread.messages = (data.messages || []).map(function(message) {
+                rememberUserDisplayName(message.sender_email, message.sender_display_name);
                 return {
                     id: Number(message.id || 0),
                     from: message.from_me ? 'me' : 'them',
                     sender: String(message.sender_email || ''),
+                    sender_display_name: String(message.sender_display_name || ''),
                     profile_image_url: String(message.profile_image_url || ''),
                     text: message.text,
                     at: Number(message.created_at || 0) * 1000
@@ -9684,8 +9711,12 @@
             if (!titleEl || !subtitleEl || !listEl) return;
 
             const normalized = (Array.isArray(members) ? members : []).map(function(member) {
+                const email = String(member && member.email || '').trim().toLowerCase();
+                const displayName = String(member && member.display_name || '').trim();
+                rememberUserDisplayName(email, displayName);
                 return {
-                    email: String(member && member.email || '').trim().toLowerCase(),
+                    email: email,
+                    display_name: displayName,
                     online: !!(member && member.online)
                 };
             }).filter(function(member) { return !!member.email; });
@@ -9703,7 +9734,7 @@
             }
             listEl.innerHTML = normalized.map(function(member) {
                 const isMe = member.email === String(currentUserEmail || '').trim().toLowerCase();
-                const displayName = messengerDisplayName(member.email) + (isMe ? ' (du)' : '');
+                const displayName = (member.display_name || messengerDisplayName(member.email)) + (isMe ? ' (du)' : '');
                 return `
                     <div class="group-members-row">
                         <div>
@@ -9949,7 +9980,7 @@
 
             msgList.innerHTML = thread.messages.map(function(message) {
                 const sender = thread.isGroup && message.from !== 'me'
-                    ? `<div class="msgp-sender">${escapeHtml(messengerDisplayName(message.sender || 'Okänd'))}</div>`
+                    ? `<div class="msgp-sender">${escapeHtml(String(message.sender_display_name || messengerDisplayName(message.sender || 'Okänd')))}</div>`
                     : '';
                 return `
                     <div class="msgp-bubble ${message.from === 'me' ? 'me' : 'them'}">

@@ -1017,9 +1017,52 @@ validConfiguredAdmins.forEach((admin) => {
 });
 const primaryConfiguredAdminIdentifier = configuredAdminIdentifierList[0] || "";
 const primaryConfiguredAdminContactEmail = configuredAdminContactByIdentifier.get(primaryConfiguredAdminIdentifier) || "";
+const secondaryConfiguredAdminContactEmail = configuredAdminContactByIdentifier.get(configuredAdminIdentifierList[1] || "") || "";
+if (
+  primaryConfiguredAdminContactEmail &&
+  secondaryConfiguredAdminContactEmail &&
+  primaryConfiguredAdminContactEmail === secondaryConfiguredAdminContactEmail
+) {
+  throw new Error("ADMIN_EMAIL och ADMIN2_EMAIL måste vara olika för separata konton.");
+}
+const primaryConfiguredAdminDisplayName = "admin";
+const secondaryConfiguredAdminIdentifier = configuredAdminIdentifierList[1] || "";
+const secondaryConfiguredAdminDisplayName = "IT-admin";
 
 function isConfiguredAdminIdentifier(value) {
   return configuredAdminIdentifierSet.has(normalizeEmail(value));
+}
+
+function getUserDisplayNameByIdentifier(identifier) {
+  const normalized = normalizeEmail(identifier);
+  if (!normalized) return "";
+  if (normalized === primaryConfiguredAdminIdentifier) return primaryConfiguredAdminDisplayName;
+  if (normalized === secondaryConfiguredAdminIdentifier) return secondaryConfiguredAdminDisplayName;
+  if (isConfiguredAdminIdentifier(normalized)) return primaryConfiguredAdminDisplayName;
+  return String(identifier || "");
+}
+
+function configuredAdminContactEmailForIdentifier(identifier) {
+  const normalized = normalizeEmail(identifier);
+  if (!normalized || !isConfiguredAdminIdentifier(normalized)) return "";
+  const row = db
+    .prepare("SELECT contact_email FROM users WHERE lower(email) = ? LIMIT 1")
+    .get(normalized);
+  const fromDb = normalizeEmail(row && row.contact_email || "");
+  if (fromDb) return fromDb;
+  return normalizeEmail(configuredAdminContactByIdentifier.get(normalized) || "");
+}
+
+function isContactEmailUsedByOtherConfiguredAdmin(identifier, contactEmail) {
+  const normalizedId = normalizeEmail(identifier);
+  const normalizedContact = normalizeEmail(contactEmail);
+  if (!normalizedId || !normalizedContact || !isConfiguredAdminIdentifier(normalizedId)) return false;
+  for (const adminId of configuredAdminIdentifierList) {
+    if (adminId === normalizedId) continue;
+    const otherContact = configuredAdminContactEmailForIdentifier(adminId);
+    if (otherContact && otherContact === normalizedContact) return true;
+  }
+  return false;
 }
 
 // Fast testkonto (kan tas bort av admin i medlemshantering).
@@ -1950,9 +1993,11 @@ app.get("/api/me", (req, res) => {
   if (!user) {
     return res.status(401).json({ error: "Inte inloggad." });
   }
+  const displayName = getUserDisplayNameByIdentifier(user.email);
   return res.json({
     id: user.id,
     email: user.email,
+    display_name: displayName,
     created_at: user.created_at,
     is_admin: isAdmin(user)
   });
@@ -2025,6 +2070,9 @@ app.put("/api/me/profile", (req, res) => {
   }
   if (contactEmail && !contactEmail.endsWith(REGISTER_ALLOWED_DOMAIN)) {
     return res.status(400).json({ error: `E-post måste sluta med ${REGISTER_ALLOWED_DOMAIN}.` });
+  }
+  if (contactEmail && isContactEmailUsedByOtherConfiguredAdmin(user.email, contactEmail)) {
+    return res.status(409).json({ error: "Admin 1 och admin 2 måste ha olika kontaktmail." });
   }
   if (city && !REGISTER_CITIES.includes(city)) {
     return res.status(400).json({ error: "Välj en giltig ort." });
@@ -2200,6 +2248,9 @@ app.put("/api/admin/users/:id", (req, res) => {
   }
   if (nextContactEmail && !nextContactEmail.endsWith(REGISTER_ALLOWED_DOMAIN)) {
     return res.status(400).json({ error: `Kontaktmail måste sluta med ${REGISTER_ALLOWED_DOMAIN}.` });
+  }
+  if (nextContactEmail && isContactEmailUsedByOtherConfiguredAdmin(nextEmail, nextContactEmail)) {
+    return res.status(409).json({ error: "Admin 1 och admin 2 måste ha olika kontaktmail." });
   }
   if (nextCity && !REGISTER_CITIES.includes(nextCity)) {
     return res.status(400).json({ error: "Ogiltig ort." });
@@ -2407,7 +2458,7 @@ app.get("/api/messenger/threads", (req, res) => {
     id: String(r.id),
     email: r.email,
     profile_image_url: String(r.profile_image_url || ""),
-    name: r.email,
+    name: getUserDisplayNameByIdentifier(r.email),
     online: !!r.is_online,
     unread_count: Number(r.unread_count || 0),
     last_message_text: r.last_message_text || "",
@@ -2477,6 +2528,7 @@ app.get("/api/messenger/messages/:userId", (req, res) => {
       created_at: m.created_at,
       from_me: m.sender_id === user.id,
       sender_email: String(m.sender_email || ""),
+      sender_display_name: getUserDisplayNameByIdentifier(m.sender_email),
       profile_image_url: String(m.sender_profile_image_url || "")
     }))
   });
@@ -2560,6 +2612,7 @@ app.get("/api/messenger/groups/:groupId/messages", (req, res) => {
       created_at: m.created_at,
       from_me: Number(m.sender_id) === user.id,
       sender_email: m.email,
+      sender_display_name: getUserDisplayNameByIdentifier(m.email),
       profile_image_url: String(m.profile_image_url || "")
     }))
   });
@@ -2607,6 +2660,7 @@ app.get("/api/messenger/groups/:groupId/members", (req, res) => {
     members: rows.map((r) => ({
       id: Number(r.id || 0),
       email: String(r.email || ""),
+      display_name: getUserDisplayNameByIdentifier(r.email),
       online: !!r.is_online
     }))
   });
@@ -2877,12 +2931,15 @@ app.get("/api/chat/messages", (req, res) => {
     const seenBy = readRows
       .filter((r) => r.last_read_message_id >= m.id)
       .map((r) => r.email);
+    const authorEmail = String(m.email || "");
     return {
       ...m,
+      email: authorEmail,
+      author_display_name: getUserDisplayNameByIdentifier(authorEmail),
       pinned: !!Number(m.pinned || 0),
       pinned_at: Number(m.pinned_at || 0) || null,
       pinned_by_email: String(m.pinned_by_email || ""),
-      author_is_admin: isAdmin({ email: String(m.email || "") }),
+      author_is_admin: isAdmin({ email: authorEmail }),
       profile_image_url: String(m.user_profile_image_url || ""),
       seen_by: seenBy,
       seen_count: seenBy.length
