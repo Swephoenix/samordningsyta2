@@ -65,7 +65,15 @@ const UPLOAD_DIR = path.join(__dirname, "uploads", "chat");
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 const REGISTER_ALLOWED_DOMAIN = "@ambitionsverige.se";
 const DEFAULT_SMTP_IDENTITY = "mail@ambitionsverige.se";
-const TEST_ACCOUNT_IDENTIFIER = "test";
+const TEST_ACCOUNT_IDENTIFIER = normalizeEmail(
+  process.env.TEST_USERNAME || process.env.TEST_ACCOUNT_USERNAME || "test"
+) || "test";
+const TEST_ACCOUNT_PASSWORD = String(
+  process.env.TEST_PASSWORD || process.env.TEST_ACCOUNT_PASSWORD || "test"
+);
+const TEST_ACCOUNT_CONTACT_EMAIL = normalizeEmail(
+  process.env.TEST_EMAIL || process.env.TEST_ACCOUNT_EMAIL || ""
+);
 const PARTIKANSLIET_API_KEY = String(process.env.PARTIKANSLIET_API_KEY || "").trim();
 const passwordResetRateLimit = new Map();
 const registerRateLimit = new Map();
@@ -1004,6 +1012,9 @@ const configuredAdminIdentifierSet = new Set(configuredAdminIdentifierList);
 if (configuredAdminIdentifierSet.size !== configuredAdminIdentifierList.length) {
   throw new Error("ADMIN_* och ADMIN2_* måste vara två olika användarnamn.");
 }
+if (configuredAdminIdentifierSet.has(TEST_ACCOUNT_IDENTIFIER)) {
+  throw new Error("TEST_USERNAME måste vara separat från admin-konton.");
+}
 const configuredAdminContactByIdentifier = new Map();
 validConfiguredAdmins.forEach((admin) => {
   if (!admin.password) {
@@ -1024,6 +1035,15 @@ if (
   primaryConfiguredAdminContactEmail === secondaryConfiguredAdminContactEmail
 ) {
   throw new Error("ADMIN_EMAIL och ADMIN2_EMAIL måste vara olika för separata konton.");
+}
+if (
+  TEST_ACCOUNT_CONTACT_EMAIL &&
+  (
+    TEST_ACCOUNT_CONTACT_EMAIL === primaryConfiguredAdminContactEmail ||
+    TEST_ACCOUNT_CONTACT_EMAIL === secondaryConfiguredAdminContactEmail
+  )
+) {
+  throw new Error("TEST_EMAIL måste vara separat från ADMIN_EMAIL och ADMIN2_EMAIL.");
 }
 const primaryConfiguredAdminDisplayName = "admin";
 const secondaryConfiguredAdminIdentifier = configuredAdminIdentifierList[1] || "";
@@ -1066,8 +1086,8 @@ function isContactEmailUsedByOtherConfiguredAdmin(identifier, contactEmail) {
 }
 
 // Fast testkonto (kan tas bort av admin i medlemshantering).
-ensureDefaultUser(TEST_ACCOUNT_IDENTIFIER, "test");
-syncTestAccountContactEmailWithAdmin();
+ensureDefaultUser(TEST_ACCOUNT_IDENTIFIER, TEST_ACCOUNT_PASSWORD || "test");
+syncConfiguredTestAccountContactEmail();
 
 if (!isProduction) {
   ensureDefaultUser("user1", "user1");
@@ -1265,28 +1285,11 @@ function isTestAccountIdentifier(value) {
   return normalizeEmail(value) === TEST_ACCOUNT_IDENTIFIER;
 }
 
-function getAdminUserForContactRouting() {
-  for (const configuredId of configuredAdminIdentifierList) {
-    const configuredRow = db
-      .prepare("SELECT id, email, contact_email FROM users WHERE lower(email) = ? LIMIT 1")
-      .get(configuredId);
-    if (configuredRow) return configuredRow;
-  }
-  return null;
-}
-
-function getAdminRoutingContactEmail() {
-  const adminUser = getAdminUserForContactRouting();
-  const fromDb = normalizeEmail(adminUser && adminUser.contact_email || "");
-  if (fromDb) return fromDb;
-  return normalizeEmail(primaryConfiguredAdminContactEmail || "");
-}
-
-function syncTestAccountContactEmailWithAdmin() {
-  const adminContact = getAdminRoutingContactEmail();
-  if (!adminContact) return;
+function syncConfiguredTestAccountContactEmail() {
+  const configuredTestContact = normalizeEmail(TEST_ACCOUNT_CONTACT_EMAIL || "");
+  if (!configuredTestContact) return;
   db.prepare("UPDATE users SET contact_email = ? WHERE lower(email) = ?")
-    .run(adminContact, TEST_ACCOUNT_IDENTIFIER);
+    .run(configuredTestContact, TEST_ACCOUNT_IDENTIFIER);
 }
 
 function normalizeTaskImageUrl(url) {
@@ -1758,9 +1761,9 @@ app.post("/api/login/code/request", async (req, res) => {
   const isTestAccount = isTestAccountIdentifier(user.email);
   let recipientEmail = normalizeEmail(user.contact_email || "");
   if (isTestAccount) {
-    const adminContact = getAdminRoutingContactEmail();
-    if (adminContact) {
-      recipientEmail = adminContact;
+    const configuredTestContact = normalizeEmail(TEST_ACCOUNT_CONTACT_EMAIL || "");
+    if (configuredTestContact) {
+      recipientEmail = configuredTestContact;
       if (recipientEmail !== normalizeEmail(user.contact_email || "")) {
         db.prepare("UPDATE users SET contact_email = ? WHERE id = ?").run(recipientEmail, Number(user.id));
       }
@@ -2086,14 +2089,7 @@ app.put("/api/me/profile", (req, res) => {
       .prepare("SELECT id, email FROM users WHERE lower(contact_email) = ? AND id != ? LIMIT 1")
       .get(contactEmail, user.id);
     if (conflict) {
-      const conflictEmail = normalizeEmail(conflict.email || "");
-      const selfEmail = normalizeEmail(user.email || "");
-      const allowAdminTestPair =
-        (isAdmin({ email: selfEmail }) && isTestAccountIdentifier(conflictEmail)) ||
-        (isTestAccountIdentifier(selfEmail) && isAdmin({ email: conflictEmail }));
-      if (!allowAdminTestPair) {
-        return res.status(409).json({ error: "E-postadressen används redan av en annan användare." });
-      }
+      return res.status(409).json({ error: "E-postadressen används redan av en annan användare." });
     }
   }
 
@@ -2102,7 +2098,7 @@ app.put("/api/me/profile", (req, res) => {
   ).run(firstName, lastName, phone, contactEmail, city, profileImageUrl, user.id);
 
   if (isAdmin(user) || isTestAccountIdentifier(user.email)) {
-    syncTestAccountContactEmailWithAdmin();
+    syncConfiguredTestAccountContactEmail();
   }
 
   return res.json({ ok: true });
@@ -2279,7 +2275,7 @@ app.put("/api/admin/users/:id", (req, res) => {
       isTestAccountIdentifier(target.email) ||
       isTestAccountIdentifier(nextEmail)
     ) {
-      syncTestAccountContactEmailWithAdmin();
+      syncConfiguredTestAccountContactEmail();
     }
     return res.json({ ok: true });
   } catch (err) {
