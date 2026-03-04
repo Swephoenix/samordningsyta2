@@ -12,6 +12,11 @@ cd "${SCRIPT_DIR}"
 echo "=== Samordningsyta2 Setup ==="
 echo ""
 
+if [ -f "${SCRIPT_DIR}/.env" ]; then
+    echo "Decrypting .env with sops..."
+    sops -d -i .env
+fi
+
 # Create persistent data directories
 echo "Creating persistent data directories..."
 mkdir -p "${PERSISTENT_DATA_ROOT}/samordningsyta2/data"
