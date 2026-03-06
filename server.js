@@ -1508,6 +1508,18 @@ function getUserDisplayNameByIdentifier(identifier) {
   return String(identifier || "");
 }
 
+function getUserRoleLabelByIdentifier(identifier) {
+  const normalized = normalizeEmail(identifier);
+  if (!normalized) return "";
+  if (normalized === itConfiguredAdminIdentifier) return "IT-admin";
+  if (normalized === primaryConfiguredAdminIdentifier || normalized === secondaryConfiguredAdminIdentifier) return "Admin";
+  if (isConfiguredAdminIdentifier(normalized)) return "Admin";
+  const row = db
+    .prepare("SELECT role FROM users WHERE lower(email) = ? LIMIT 1")
+    .get(normalized);
+  return normalizeUserRole(row && row.role) === "secretary" ? "Sekreterare" : "";
+}
+
 function configuredAdminContactEmailForIdentifier(identifier) {
   const normalized = normalizeEmail(identifier);
   if (!normalized || !isConfiguredAdminIdentifier(normalized)) return "";
@@ -3056,6 +3068,7 @@ app.get("/api/messenger/messages/:userId", (req, res) => {
       from_me: m.sender_id === user.id,
       sender_email: String(m.sender_email || ""),
       sender_display_name: getUserDisplayNameByIdentifier(m.sender_email),
+      sender_role_label: getUserRoleLabelByIdentifier(m.sender_email),
       profile_image_url: String(m.sender_profile_image_url || "")
     }))
   });
@@ -3140,6 +3153,7 @@ app.get("/api/messenger/groups/:groupId/messages", (req, res) => {
       from_me: Number(m.sender_id) === user.id,
       sender_email: m.email,
       sender_display_name: getUserDisplayNameByIdentifier(m.email),
+      sender_role_label: getUserRoleLabelByIdentifier(m.email),
       profile_image_url: String(m.profile_image_url || "")
     }))
   });
@@ -3463,6 +3477,7 @@ app.get("/api/chat/messages", (req, res) => {
       ...m,
       email: authorEmail,
       author_display_name: getUserDisplayNameByIdentifier(authorEmail),
+      author_role_label: getUserRoleLabelByIdentifier(authorEmail),
       pinned: !!Number(m.pinned || 0),
       pinned_at: Number(m.pinned_at || 0) || null,
       pinned_by_email: String(m.pinned_by_email || ""),
