@@ -74,6 +74,9 @@ const TEST_ACCOUNT_PASSWORD = String(
 const TEST_ACCOUNT_CONTACT_EMAIL = normalizeEmail(
   process.env.TEST_EMAIL || process.env.TEST_ACCOUNT_EMAIL || ""
 );
+const SECRETARY_TEST_IDENTIFIER = normalizeEmail(process.env.SECRETARY_TEST_USERNAME || "sekreterare1") || "sekreterare1";
+const SECRETARY_TEST_PASSWORD = String(process.env.SECRETARY_TEST_PASSWORD || "sekreterare1");
+const SECRETARY_TEST_CONTACT_EMAIL = normalizeEmail(process.env.SECRETARY_TEST_EMAIL || "");
 const PARTIKANSLIET_API_KEY = String(process.env.PARTIKANSLIET_API_KEY || "").trim();
 const passwordResetRateLimit = new Map();
 const registerRateLimit = new Map();
@@ -292,6 +295,31 @@ CREATE TABLE IF NOT EXISTS events (
   FOREIGN KEY(created_by) REFERENCES users(id)
 );
 
+CREATE TABLE IF NOT EXISTS event_attachments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  event_id INTEGER NOT NULL,
+  file_url TEXT NOT NULL,
+  file_name TEXT NOT NULL,
+  file_mime TEXT,
+  file_size INTEGER,
+  created_by INTEGER,
+  created_at INTEGER NOT NULL,
+  FOREIGN KEY(event_id) REFERENCES events(id) ON DELETE CASCADE,
+  FOREIGN KEY(created_by) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS event_attendance (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  event_id INTEGER NOT NULL,
+  attendee_name TEXT NOT NULL,
+  present INTEGER NOT NULL DEFAULT 0,
+  created_by INTEGER,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  FOREIGN KEY(event_id) REFERENCES events(id) ON DELETE CASCADE,
+  FOREIGN KEY(created_by) REFERENCES users(id)
+);
+
 CREATE TABLE IF NOT EXISTS important_messages (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   icon TEXT NOT NULL DEFAULT '📢',
@@ -395,6 +423,12 @@ CREATE INDEX IF NOT EXISTS idx_sessions_user_activity
 
 CREATE INDEX IF NOT EXISTS idx_events_date_key
   ON events(date_key);
+
+CREATE INDEX IF NOT EXISTS idx_event_attachments_event_id
+  ON event_attachments(event_id);
+
+CREATE INDEX IF NOT EXISTS idx_event_attendance_event_id
+  ON event_attendance(event_id);
 
 CREATE INDEX IF NOT EXISTS idx_direct_messages_sender_recipient_created
   ON direct_messages(sender_id, recipient_id, created_at DESC, id DESC);
@@ -831,6 +865,12 @@ function ensureRegistrationSetting() {
   }
 }
 
+function ensureRuleWikiEntries() {
+  if (!Array.isArray(getAppDataJson("rule_wiki_entries_v1"))) {
+    setRuleWikiEntries(defaultRuleWikiEntries());
+  }
+}
+
 function inferAcademyLinkType(url) {
   const lower = String(url || "").toLowerCase();
   if (!lower) return null;
@@ -859,6 +899,85 @@ function isAllowedUploadUrl(url) {
   if (/^\/uploads\/chat\/[a-zA-Z0-9._-]+(?:[?#].*)?$/.test(value)) return true;
   if (/^https?:\/\//i.test(value)) return true;
   return false;
+}
+
+function isAllowedMeetingAttachmentUrl(url) {
+  const value = String(url || "").trim();
+  return /^\/uploads\/chat\/[a-zA-Z0-9._-]+(?:[?#].*)?$/.test(value);
+}
+
+function normalizeEventAttachments(payload) {
+  if (payload === undefined || payload === null || payload === "") return [];
+  if (!Array.isArray(payload)) {
+    throw new Error("Bilagor måste skickas som en lista.");
+  }
+  if (payload.length > 20) {
+    throw new Error("Max 20 bilagor per möte.");
+  }
+
+  const normalized = [];
+  const seen = new Set();
+  payload.forEach((item) => {
+    if (!item || typeof item !== "object") {
+      throw new Error("Ogiltigt bilageformat.");
+    }
+    const url = String(item.url || "").trim();
+    const name = String(item.name || "").trim();
+    const mime = String(item.mime || "").trim().toLowerCase().slice(0, 120);
+    const sizeRaw = Number(item.size);
+    const size = Number.isFinite(sizeRaw) && sizeRaw >= 0 ? Math.floor(sizeRaw) : null;
+    if (!url || !name) {
+      throw new Error("Varje bilaga måste ha url och namn.");
+    }
+    if (!isAllowedMeetingAttachmentUrl(url)) {
+      throw new Error("Ogiltig bilage-url. Använd uppladdad fil från /uploads/chat/.");
+    }
+    if (name.length > 180) {
+      throw new Error("Bilagens namn är för långt (max 180 tecken).");
+    }
+    if (size !== null && size > MAX_UPLOAD_BYTES) {
+      throw new Error("Bilagans storlek är för stor (max 10 MB).");
+    }
+    const key = `${url}::${name}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    normalized.push({
+      url: url,
+      name: name,
+      mime: mime || null,
+      size: size
+    });
+  });
+  return normalized;
+}
+
+function normalizeEventAttendance(payload) {
+  if (payload === undefined || payload === null || payload === "") return [];
+  if (!Array.isArray(payload)) {
+    throw new Error("Närvarolistan måste skickas som en lista.");
+  }
+  if (payload.length > 500) {
+    throw new Error("Närvarolistan är för lång (max 500 namn).");
+  }
+
+  const normalized = [];
+  const seen = new Set();
+  payload.forEach((item) => {
+    if (!item || typeof item !== "object") {
+      throw new Error("Ogiltigt format för närvaropost.");
+    }
+    const name = String(item.name || "").trim();
+    const present = !!item.present;
+    if (!name) return;
+    if (name.length > 120) {
+      throw new Error("Namn i närvarolistan är för långt (max 120 tecken).");
+    }
+    const key = name.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    normalized.push({ name, present });
+  });
+  return normalized;
 }
 
 function normalizeImportantColor(value) {
@@ -973,6 +1092,254 @@ function setFacebookAcademyLinks(links) {
   setAppDataJson("facebook_academy_links_v1", safe);
 }
 
+function defaultRuleWikiEntries() {
+  return [
+    {
+      id: "membership-values",
+      title: "1. Medlemskap och värdegrund",
+      body: "Medlemskap i partiet innebär att medlemmen följer stadgar, partiprogram och intern uppförandekod.",
+      bullets: [
+        "Medlem förväntas bidra konstruktivt i lokal eller nationell verksamhet.",
+        "Utträde sker skriftligt till lokal förening eller medlemsservice.",
+        "Vid allvarliga stadgebrott kan medlemskap frysas i väntan på beslut."
+      ]
+    },
+    {
+      id: "meeting-process",
+      title: "2. Mötesordning och beslutsprocess",
+      body: "Partiets beslut fattas i demokratiska forum med tydlig beredning, mötesordning och protokoll.",
+      bullets: [
+        "Kallelse, dagordning och underlag ska publiceras i rimlig tid före mötet.",
+        "Röstlängd fastställs i början av mötet innan beslutsärenden behandlas.",
+        "Alla beslut dokumenteras med ansvarig funktion och tidsram."
+      ]
+    },
+    {
+      id: "nominations",
+      title: "3. Nomineringar och kandidaturer",
+      body: "Nominering till uppdrag och vallistor ska ske öppet, transparent och enligt fastställd kandidatpolicy.",
+      bullets: [
+        "Valberedningens arbete ska vara sakligt, opartiskt och dokumenterat.",
+        "Kandidater ska godkänna partiets etiska riktlinjer innan nominering fastställs.",
+        "Jäv ska alltid anmälas i nominerings- och tillsättningsärenden."
+      ]
+    },
+    {
+      id: "public-communication",
+      title: "4. Offentlig kommunikation",
+      body: "Partiets externa kommunikation ska vara faktabaserad, respektfull och följa beslutad politisk linje.",
+      bullets: [
+        "Officiella uttalanden görs av utsedda talespersoner eller ansvariga företrädare.",
+        "Interna diskussioner publiceras inte externt utan uttryckligt mandat.",
+        "Felaktigheter i extern kommunikation ska rättas skyndsamt och öppet."
+      ]
+    },
+    {
+      id: "conduct-discipline",
+      title: "5. Uppförandekod och disciplin",
+      body: "Partiet accepterar inte hot, hat, trakasserier eller diskriminering inom den egna organisationen.",
+      bullets: [
+        "Alla medlemmar ska bidra till ett tryggt och professionellt arbetsklimat.",
+        "Rapporterade överträdelser utreds enligt intern disciplinprocess.",
+        "Åtgärder kan omfatta varning, tillfällig avstängning eller uteslutning."
+      ]
+    },
+    {
+      id: "finance-reporting",
+      title: "6. Ekonomi, bidrag och redovisning",
+      body: "Partiets ekonomi ska hanteras med full spårbarhet, intern kontroll och efterlevnad av gällande regelverk.",
+      bullets: [
+        "Alla utbetalningar kräver korrekt attest enligt fastställd delegationsordning.",
+        "Donationer och bidrag registreras och rapporteras enligt lag och interna rutiner.",
+        "Kampanjmedel följs upp separat för att säkerställa transparens."
+      ]
+    },
+    {
+      id: "privacy-security",
+      title: "7. Integritet, säkerhet och visselblåsning",
+      body: "Partiet skyddar personuppgifter och intern information genom tydliga rutiner för säkerhet och rapportering.",
+      bullets: [
+        "Åtkomst till medlemsdata ges enbart till behöriga roller.",
+        "Säkerhetsincidenter rapporteras omedelbart till ansvarig funktion.",
+        "Visselblåsning kan ske via intern kanal med skydd för rapporterande person."
+      ]
+    }
+  ];
+}
+
+function defaultRuleWikiDocument() {
+  return {
+    title: "📘 Partiets Regelbok",
+    subtitle: "Intern regelbok för partiets arbetssätt, beslutsvägar och uppförandekod.",
+    assistant_text: "Kommande feature.\nRegelassistenten är inte aktiv ännu.",
+    footer_text: "Pedagogisk regelbok",
+    pages: [
+      {
+        id: "organisation",
+        title: "Organisation",
+        description: "Grundstruktur för hur partiet är organiserat och hur beslut fattas.",
+        rules: [
+          {
+            id: "organisation-1",
+            title: "1. Organisation",
+            text: "Partiet organiseras i nationell nivå, regionnivå och lokal nivå.",
+            explanation: "Det betyder att partiet har tre nivåer av beslut. Lokala föreningar hanterar lokala frågor medan nationella beslut tas centralt."
+          },
+          {
+            id: "organisation-2",
+            title: "2. Mötesordning och beslutsprocess",
+            text: "Partiets beslut fattas i demokratiska forum med tydlig beredning, mötesordning och protokoll.",
+            explanation: "Kallelser, underlag och ansvarsfördelning ska vara tydliga så att beslut går att följa upp."
+          }
+        ]
+      },
+      {
+        id: "medlemskap",
+        title: "Medlemskap",
+        description: "Regler för medlemskap, värdegrund och disciplinära frågor.",
+        rules: [
+          {
+            id: "membership-1",
+            title: "1. Medlemskap",
+            text: "Medlemskap beviljas personer som accepterar partiets stadgar och värdegrund.",
+            explanation: "Medlemskap innebär rätt att delta i möten och bidra till partiets arbete."
+          },
+          {
+            id: "membership-2",
+            title: "2. Uppförandekod",
+            text: "Partiet accepterar inte hot, hat, trakasserier eller diskriminering inom organisationen.",
+            explanation: "Alla medlemmar förväntas bidra till ett tryggt och professionellt arbetsklimat."
+          }
+        ]
+      },
+      {
+        id: "kommunikation",
+        title: "Kommunikation",
+        description: "Regler för extern och intern kommunikation.",
+        rules: [
+          {
+            id: "communication-1",
+            title: "1. Kommunikation",
+            text: "Officiella uttalanden görs av utsedda talespersoner.",
+            explanation: "Detta förhindrar att olika budskap sprids samtidigt och skapar tydlighet externt."
+          }
+        ]
+      },
+      {
+        id: "valarbete",
+        title: "Valarbete",
+        description: "Regler för nomineringar, kandidaturer och valorganisation.",
+        rules: [
+          {
+            id: "election-1",
+            title: "1. Valarbete",
+            text: "Valorganisationen ansvarar för kampanjstrategi och material.",
+            explanation: "Valgruppen samordnar aktiviteter, budskap och resurser inför val."
+          }
+        ]
+      }
+    ]
+  };
+}
+
+function normalizeRuleWikiEntry(row, index) {
+  if (!row || typeof row !== "object") return null;
+  const idx = Number(index || 0) + 1;
+  const title = String(row.title || "").trim().slice(0, 180);
+  const body = String(row.body || "").trim().slice(0, 4000);
+  const bullets = Array.isArray(row.bullets)
+    ? row.bullets.map((item) => String(item || "").trim().slice(0, 500)).filter(Boolean).slice(0, 12)
+    : [];
+  if (!title || !body) return null;
+  const idRaw = String(row.id || "").trim().toLowerCase();
+  const safeId = (idRaw || `rule-${idx}`).replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80) || `rule-${idx}`;
+  return {
+    id: safeId,
+    title: title,
+    body: body,
+    bullets: bullets
+  };
+}
+
+function normalizeRuleWikiRule(row, index) {
+  if (!row || typeof row !== "object") return null;
+  const idx = Number(index || 0) + 1;
+  const title = String(row.title || "").trim().slice(0, 180);
+  const text = String(row.text || row.body || "").trim().slice(0, 4000);
+  const explanation = String(row.explanation || "").trim().slice(0, 4000);
+  if (!title || !text) return null;
+  const idRaw = String(row.id || "").trim().toLowerCase();
+  const safeId = (idRaw || `rule-${idx}`).replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80) || `rule-${idx}`;
+  return {
+    id: safeId,
+    title: title,
+    text: text,
+    explanation: explanation
+  };
+}
+
+function normalizeRuleWikiPage(row, index) {
+  if (!row || typeof row !== "object") return null;
+  const idx = Number(index || 0) + 1;
+  const title = String(row.title || "").trim().slice(0, 180);
+  const description = String(row.description || "").trim().slice(0, 1200);
+  const category = String(row.category || "").trim().slice(0, 80);
+  const rules = Array.isArray(row.rules)
+    ? row.rules.map((rule, ruleIndex) => normalizeRuleWikiRule(rule, ruleIndex)).filter(Boolean)
+    : [];
+  if (!title || !rules.length) return null;
+  const idRaw = String(row.id || "").trim().toLowerCase();
+  const safeId = (idRaw || `page-${idx}`).replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80) || `page-${idx}`;
+  return {
+    id: safeId,
+    title: title,
+    description: description,
+    category: category,
+    rules: rules
+  };
+}
+
+function normalizeRuleWikiDocument(value) {
+  if (!value || typeof value !== "object") return null;
+  const pages = Array.isArray(value.pages)
+    ? value.pages.map((page, index) => normalizeRuleWikiPage(page, index)).filter(Boolean)
+    : [];
+  if (!pages.length) return null;
+  return {
+    title: String(value.title || "📘 Partiets Regelbok").trim().slice(0, 180) || "📘 Partiets Regelbok",
+    subtitle: String(value.subtitle || "").trim().slice(0, 1200),
+    assistant_text: String(value.assistant_text || "").trim().slice(0, 2000),
+    footer_text: String(value.footer_text || "").trim().slice(0, 200),
+    pages: pages
+  };
+}
+
+function getRuleWikiDocument() {
+  const raw = getAppDataJson("rule_wiki_document_v1");
+  const normalized = normalizeRuleWikiDocument(raw);
+  return normalized || null;
+}
+
+function setRuleWikiDocument(doc) {
+  const normalized = normalizeRuleWikiDocument(doc);
+  setAppDataJson("rule_wiki_document_v1", normalized || defaultRuleWikiDocument());
+}
+
+function getRuleWikiEntries() {
+  const raw = getAppDataJson("rule_wiki_entries_v1");
+  const normalized = Array.isArray(raw)
+    ? raw.map((row, index) => normalizeRuleWikiEntry(row, index)).filter(Boolean)
+    : [];
+  return normalized.length ? normalized : defaultRuleWikiEntries();
+}
+
+function setRuleWikiEntries(entries) {
+  const safe = Array.isArray(entries)
+    ? entries.map((row, index) => normalizeRuleWikiEntry(row, index)).filter(Boolean)
+    : [];
+  setAppDataJson("rule_wiki_entries_v1", safe.length ? safe : defaultRuleWikiEntries());
+}
+
 ensureColumn("sessions", "last_seen_at", "last_seen_at INTEGER NOT NULL DEFAULT 0");
 ensureColumn("users", "contact_email", "contact_email TEXT");
 ensureColumn("users", "city", "city TEXT");
@@ -980,6 +1347,7 @@ ensureColumn("users", "first_name", "first_name TEXT");
 ensureColumn("users", "last_name", "last_name TEXT");
 ensureColumn("users", "phone", "phone TEXT");
 ensureColumn("users", "profile_image_url", "profile_image_url TEXT");
+ensureColumn("users", "role", "role TEXT NOT NULL DEFAULT 'user'");
 ensureColumn("qna_questions", "image_url", "image_url TEXT");
 ensureColumn("qna_questions", "category", "category TEXT NOT NULL DEFAULT 'other'");
 ensureColumn("qna_answers", "image_url", "image_url TEXT");
@@ -1002,18 +1370,32 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_important_messages_source_external_id
 const isProduction = ENV_IS_PRODUCTION;
 const configuredAdmins = getConfiguredAdmins();
 const validConfiguredAdmins = configuredAdmins.filter((admin) => admin.identifier);
+const configuredItAdmin = getConfiguredAdminFromEnv({
+  label: "IT_ADMIN",
+  emailKey: "IT_ADMIN_EMAIL",
+  usernameKey: "IT_ADMIN_USERNAME",
+  passwordKey: "IT_ADMIN_PASSWORD"
+});
+const configuredItAdminIdentifier = normalizeEmail(configuredItAdmin.identifier);
 if (validConfiguredAdmins.length !== 2) {
   throw new Error(
     "Du måste sätta två admin-konton i .env (ADMIN_* och ADMIN2_* med username eller email)."
   );
 }
-const configuredAdminIdentifierList = validConfiguredAdmins.map((admin) => normalizeEmail(admin.identifier));
-const configuredAdminIdentifierSet = new Set(configuredAdminIdentifierList);
-if (configuredAdminIdentifierSet.size !== configuredAdminIdentifierList.length) {
-  throw new Error("ADMIN_* och ADMIN2_* måste vara två olika användarnamn.");
+if (!configuredItAdminIdentifier) {
+  throw new Error("Du måste sätta ett IT-admin-konto i .env (IT_ADMIN_* med username eller email).");
 }
-if (configuredAdminIdentifierSet.has(TEST_ACCOUNT_IDENTIFIER)) {
-  throw new Error("TEST_USERNAME måste vara separat från admin-konton.");
+const configuredAdminIdentifierList = validConfiguredAdmins.map((admin) => normalizeEmail(admin.identifier));
+const configuredAdminAllIdentifierList = [...configuredAdminIdentifierList, configuredItAdminIdentifier];
+const configuredAdminAllIdentifierSet = new Set(configuredAdminAllIdentifierList);
+if (configuredAdminAllIdentifierSet.size !== configuredAdminAllIdentifierList.length) {
+  throw new Error("ADMIN_*, ADMIN2_* och IT_ADMIN_* måste vara unika användarnamn.");
+}
+if (configuredAdminAllIdentifierSet.has(TEST_ACCOUNT_IDENTIFIER)) {
+  throw new Error("TEST_USERNAME måste vara separat från admin- och IT-admin-konton.");
+}
+if (configuredAdminAllIdentifierSet.has(SECRETARY_TEST_IDENTIFIER)) {
+  throw new Error("SECRETARY_TEST_USERNAME måste vara separat från admin- och IT-admin-konton.");
 }
 const configuredAdminContactByIdentifier = new Map();
 validConfiguredAdmins.forEach((admin) => {
@@ -1021,14 +1403,22 @@ validConfiguredAdmins.forEach((admin) => {
     throw new Error(`${admin.passwordKey} saknas i .env. Båda admin-lösenord måste sättas.`);
   }
   ensureDefaultUser(admin.identifier, admin.password);
-  syncConfiguredAdminContactEmail(admin.identifier, admin.contactEmail);
   if (admin.contactEmail) {
     configuredAdminContactByIdentifier.set(normalizeEmail(admin.identifier), normalizeEmail(admin.contactEmail));
   }
 });
+if (!configuredItAdmin.password) {
+  throw new Error("IT_ADMIN_PASSWORD saknas i .env.");
+}
+ensureDefaultUser(configuredItAdminIdentifier, configuredItAdmin.password);
+if (configuredItAdmin.contactEmail) {
+  configuredAdminContactByIdentifier.set(configuredItAdminIdentifier, normalizeEmail(configuredItAdmin.contactEmail));
+}
 const primaryConfiguredAdminIdentifier = configuredAdminIdentifierList[0] || "";
+const itConfiguredAdminIdentifier = configuredItAdminIdentifier;
 const primaryConfiguredAdminContactEmail = configuredAdminContactByIdentifier.get(primaryConfiguredAdminIdentifier) || "";
 const secondaryConfiguredAdminContactEmail = configuredAdminContactByIdentifier.get(configuredAdminIdentifierList[1] || "") || "";
+const itConfiguredAdminContactEmail = configuredAdminContactByIdentifier.get(itConfiguredAdminIdentifier) || "";
 if (
   primaryConfiguredAdminContactEmail &&
   secondaryConfiguredAdminContactEmail &&
@@ -1037,20 +1427,61 @@ if (
   throw new Error("ADMIN_EMAIL och ADMIN2_EMAIL måste vara olika för separata konton.");
 }
 if (
-  TEST_ACCOUNT_CONTACT_EMAIL &&
+  itConfiguredAdminContactEmail &&
   (
-    TEST_ACCOUNT_CONTACT_EMAIL === primaryConfiguredAdminContactEmail ||
-    TEST_ACCOUNT_CONTACT_EMAIL === secondaryConfiguredAdminContactEmail
+    itConfiguredAdminContactEmail === primaryConfiguredAdminContactEmail ||
+    itConfiguredAdminContactEmail === secondaryConfiguredAdminContactEmail
   )
 ) {
-  throw new Error("TEST_EMAIL måste vara separat från ADMIN_EMAIL och ADMIN2_EMAIL.");
+  throw new Error("IT_ADMIN_EMAIL måste vara separat från ADMIN_EMAIL och ADMIN2_EMAIL.");
 }
+if (
+  TEST_ACCOUNT_CONTACT_EMAIL &&
+  [
+    primaryConfiguredAdminContactEmail,
+    secondaryConfiguredAdminContactEmail,
+    itConfiguredAdminContactEmail
+  ].includes(TEST_ACCOUNT_CONTACT_EMAIL)
+) {
+  throw new Error("TEST_EMAIL måste vara separat från ADMIN_EMAIL, ADMIN2_EMAIL och IT_ADMIN_EMAIL.");
+}
+if (
+  SECRETARY_TEST_CONTACT_EMAIL &&
+  [
+    primaryConfiguredAdminContactEmail,
+    secondaryConfiguredAdminContactEmail,
+    itConfiguredAdminContactEmail
+  ].includes(SECRETARY_TEST_CONTACT_EMAIL)
+) {
+  throw new Error("SECRETARY_TEST_EMAIL måste vara separat från ADMIN_EMAIL, ADMIN2_EMAIL och IT_ADMIN_EMAIL.");
+}
+if (
+  SECRETARY_TEST_IDENTIFIER === TEST_ACCOUNT_IDENTIFIER
+) {
+  throw new Error("SECRETARY_TEST_USERNAME måste vara separat från TEST_USERNAME.");
+}
+const allReservedContactEmailEntries = [
+  ["ADMIN_EMAIL", primaryConfiguredAdminContactEmail],
+  ["ADMIN2_EMAIL", secondaryConfiguredAdminContactEmail],
+  ["IT_ADMIN_EMAIL", itConfiguredAdminContactEmail],
+  ["TEST_EMAIL", TEST_ACCOUNT_CONTACT_EMAIL],
+  ["SECRETARY_TEST_EMAIL", SECRETARY_TEST_CONTACT_EMAIL]
+].filter((row) => !!row[1]);
+const seenReservedContactEmails = new Map();
+allReservedContactEmailEntries.forEach(([key, mail]) => {
+  const existing = seenReservedContactEmails.get(mail);
+  if (existing) {
+    throw new Error(`${key} och ${existing} måste vara olika kontaktmail.`);
+  }
+  seenReservedContactEmails.set(mail, key);
+});
 const primaryConfiguredAdminDisplayName = "admin";
 const secondaryConfiguredAdminIdentifier = configuredAdminIdentifierList[1] || "";
-const secondaryConfiguredAdminDisplayName = "IT-admin";
+const secondaryConfiguredAdminDisplayName = "admin";
+const itConfiguredAdminDisplayName = "IT-admin";
 
 function isConfiguredAdminIdentifier(value) {
-  return configuredAdminIdentifierSet.has(normalizeEmail(value));
+  return configuredAdminAllIdentifierSet.has(normalizeEmail(value));
 }
 
 function getUserDisplayNameByIdentifier(identifier) {
@@ -1058,6 +1489,7 @@ function getUserDisplayNameByIdentifier(identifier) {
   if (!normalized) return "";
   if (normalized === primaryConfiguredAdminIdentifier) return primaryConfiguredAdminDisplayName;
   if (normalized === secondaryConfiguredAdminIdentifier) return secondaryConfiguredAdminDisplayName;
+  if (normalized === itConfiguredAdminIdentifier) return itConfiguredAdminDisplayName;
   if (isConfiguredAdminIdentifier(normalized)) return primaryConfiguredAdminDisplayName;
   return String(identifier || "");
 }
@@ -1077,7 +1509,7 @@ function isContactEmailUsedByOtherConfiguredAdmin(identifier, contactEmail) {
   const normalizedId = normalizeEmail(identifier);
   const normalizedContact = normalizeEmail(contactEmail);
   if (!normalizedId || !normalizedContact || !isConfiguredAdminIdentifier(normalizedId)) return false;
-  for (const adminId of configuredAdminIdentifierList) {
+  for (const adminId of configuredAdminAllIdentifierList) {
     if (adminId === normalizedId) continue;
     const otherContact = configuredAdminContactEmailForIdentifier(adminId);
     if (otherContact && otherContact === normalizedContact) return true;
@@ -1087,7 +1519,14 @@ function isContactEmailUsedByOtherConfiguredAdmin(identifier, contactEmail) {
 
 // Fast testkonto (kan tas bort av admin i medlemshantering).
 ensureDefaultUser(TEST_ACCOUNT_IDENTIFIER, TEST_ACCOUNT_PASSWORD || "test");
+ensureDefaultUser(SECRETARY_TEST_IDENTIFIER, SECRETARY_TEST_PASSWORD || "sekreterare1");
+db.prepare("UPDATE users SET role = 'secretary' WHERE lower(email) = ?").run(SECRETARY_TEST_IDENTIFIER);
+validConfiguredAdmins.forEach((admin) => {
+  syncConfiguredAdminContactEmail(admin.identifier, admin.contactEmail);
+});
+syncConfiguredAdminContactEmail(configuredItAdminIdentifier, configuredItAdmin.contactEmail);
 syncConfiguredTestAccountContactEmail();
+syncConfiguredSecretaryContactEmail();
 
 if (!isProduction) {
   ensureDefaultUser("user1", "user1");
@@ -1099,6 +1538,7 @@ seedImportantMessagesIfEmpty();
 seedIdeaBankIfEmpty();
 ensureFsState();
 ensureRegistrationSetting();
+ensureRuleWikiEntries();
 
 app.use(express.json({ limit: "15mb" }));
 app.use(cookieParser());
@@ -1129,6 +1569,8 @@ const PUBLIC_FILE_ROUTES = new Set([
   "index.html",
   "login.html",
   "registrera.html",
+  "regelboken.html",
+  "regelboken.json",
   "medlemshantering.html",
   "messenger.html",
   "folder-system.html",
@@ -1195,7 +1637,7 @@ function getUserFromSession(req) {
 
   const row = db
     .prepare(
-      `SELECT u.id, u.email, u.created_at, s.expires_at, s.token, s.csrf_token
+      `SELECT u.id, u.email, u.role, u.created_at, s.expires_at, s.token, s.csrf_token
        FROM sessions s
        JOIN users u ON u.id = s.user_id
        WHERE s.token = ?`
@@ -1211,6 +1653,7 @@ function getUserFromSession(req) {
   return {
     id: row.id,
     email: row.email,
+    role: normalizeUserRole(row.role),
     created_at: row.created_at,
     token: row.token,
     csrfToken: String(row.csrf_token || "")
@@ -1277,6 +1720,21 @@ function isAdmin(user) {
   return isConfiguredAdminIdentifier(user && user.email || "");
 }
 
+function normalizeUserRole(value) {
+  const role = String(value || "").trim().toLowerCase();
+  return role === "secretary" ? "secretary" : "user";
+}
+
+function isSecretary(user) {
+  if (!user) return false;
+  if (isAdmin(user)) return false;
+  return normalizeUserRole(user.role) === "secretary";
+}
+
+function canManageAdminFeatures(user) {
+  return isAdmin(user) || isSecretary(user);
+}
+
 function normalizeEmail(value) {
   return String(value || "").trim().toLowerCase();
 }
@@ -1290,6 +1748,13 @@ function syncConfiguredTestAccountContactEmail() {
   if (!configuredTestContact) return;
   db.prepare("UPDATE users SET contact_email = ? WHERE lower(email) = ?")
     .run(configuredTestContact, TEST_ACCOUNT_IDENTIFIER);
+}
+
+function syncConfiguredSecretaryContactEmail() {
+  const configuredSecretaryContact = normalizeEmail(SECRETARY_TEST_CONTACT_EMAIL || "");
+  if (!configuredSecretaryContact) return;
+  db.prepare("UPDATE users SET contact_email = ? WHERE lower(email) = ?")
+    .run(configuredSecretaryContact, SECRETARY_TEST_IDENTIFIER);
 }
 
 function normalizeTaskImageUrl(url) {
@@ -2002,7 +2467,8 @@ app.get("/api/me", (req, res) => {
     email: user.email,
     display_name: displayName,
     created_at: user.created_at,
-    is_admin: isAdmin(user)
+    is_admin: isAdmin(user),
+    is_secretary: isSecretary(user)
   });
 });
 
@@ -2113,8 +2579,8 @@ app.get("/api/settings/public", (_req, res) => {
 app.get("/api/admin/settings", (req, res) => {
   const user = requireAuth(req, res);
   if (!user) return;
-  if (!isAdmin(user)) {
-    return res.status(403).json({ error: "Endast admin har åtkomst." });
+  if (!canManageAdminFeatures(user)) {
+    return res.status(403).json({ error: "Endast admin eller sekreterare har åtkomst." });
   }
   return res.json({
     allow_registrations: getAllowRegistrations(),
@@ -2122,11 +2588,49 @@ app.get("/api/admin/settings", (req, res) => {
   });
 });
 
-app.put("/api/admin/settings/registrations", (req, res) => {
+app.get("/api/rule-wiki", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+  const document = getRuleWikiDocument();
+  return res.json({
+    document: document,
+    entries: getRuleWikiEntries(),
+    source: document ? "app" : "entries"
+  });
+});
+
+app.put("/api/rule-wiki", (req, res) => {
   const user = requireAuth(req, res);
   if (!user) return;
   if (!isAdmin(user)) {
-    return res.status(403).json({ error: "Endast admin kan ändra registreringsinställningen." });
+    return res.status(403).json({ error: "Endast admin kan redigera reglerna." });
+  }
+  const documentPayload = req.body?.document;
+  if (documentPayload && typeof documentPayload === "object" && !Array.isArray(documentPayload)) {
+    const normalizedDocument = normalizeRuleWikiDocument(documentPayload);
+    if (!normalizedDocument) {
+      return res.status(400).json({ error: "Ogiltig regelboks-JSON. Minst en sida med regler krävs." });
+    }
+    setRuleWikiDocument(normalizedDocument);
+    return res.json({ ok: true, document: getRuleWikiDocument(), source: "app" });
+  }
+  const entries = Array.isArray(req.body?.entries) ? req.body.entries : null;
+  if (!entries) {
+    return res.status(400).json({ error: "Regellistan måste vara en array." });
+  }
+  const normalized = entries.map((row, index) => normalizeRuleWikiEntry(row, index)).filter(Boolean);
+  if (!normalized.length) {
+    return res.status(400).json({ error: "Minst ett regelavsnitt krävs." });
+  }
+  setRuleWikiEntries(normalized);
+  return res.json({ ok: true, entries: getRuleWikiEntries(), document: getRuleWikiDocument(), source: getRuleWikiDocument() ? "app" : "entries" });
+});
+
+app.put("/api/admin/settings/registrations", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+  if (!canManageAdminFeatures(user)) {
+    return res.status(403).json({ error: "Endast admin eller sekreterare kan ändra registreringsinställningen." });
   }
   const allow = !!req.body?.allow_registrations;
   setAllowRegistrations(allow);
@@ -2171,14 +2675,14 @@ app.get("/api/users", (req, res) => {
 app.get("/api/admin/users", (req, res) => {
   const user = requireAuth(req, res);
   if (!user) return;
-  if (!isAdmin(user)) {
-    return res.status(403).json({ error: "Endast admin har åtkomst." });
+  if (!canManageAdminFeatures(user)) {
+    return res.status(403).json({ error: "Endast admin eller sekreterare har åtkomst." });
   }
 
   const activeSince = nowTs() - ONLINE_WINDOW_SECONDS;
   const rows = db
     .prepare(
-      `SELECT u.id, u.email, u.contact_email, u.city, u.first_name, u.last_name, u.phone,
+      `SELECT u.id, u.email, u.contact_email, u.city, u.first_name, u.last_name, u.phone, u.role,
               CASE
                 WHEN EXISTS (
                   SELECT 1
@@ -2202,8 +2706,10 @@ app.get("/api/admin/users", (req, res) => {
       first_name: String(r.first_name || ""),
       last_name: String(r.last_name || ""),
       phone: String(r.phone || ""),
+      role: normalizeUserRole(r.role),
       online: !!r.is_online,
-      is_admin: isAdmin({ email: String(r.email || "") })
+      is_admin: isAdmin({ email: String(r.email || "") }),
+      is_secretary: !isAdmin({ email: String(r.email || "") }) && normalizeUserRole(r.role) === "secretary"
     }))
   });
 });
@@ -2211,15 +2717,15 @@ app.get("/api/admin/users", (req, res) => {
 app.put("/api/admin/users/:id", (req, res) => {
   const user = requireAuth(req, res);
   if (!user) return;
-  if (!isAdmin(user)) {
-    return res.status(403).json({ error: "Endast admin kan redigera användare." });
+  if (!canManageAdminFeatures(user)) {
+    return res.status(403).json({ error: "Endast admin eller sekreterare kan redigera användare." });
   }
 
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) {
     return res.status(400).json({ error: "Ogiltigt användar-id." });
   }
-  const target = db.prepare("SELECT id, email FROM users WHERE id = ?").get(id);
+  const target = db.prepare("SELECT id, email, role FROM users WHERE id = ?").get(id);
   if (!target) {
     return res.status(404).json({ error: "Användaren hittades inte." });
   }
@@ -2230,6 +2736,15 @@ app.put("/api/admin/users/:id", (req, res) => {
   const nextFirstName = String(req.body?.first_name || "").trim();
   const nextLastName = String(req.body?.last_name || "").trim();
   const nextPhone = String(req.body?.phone || "").trim();
+  const targetRole = normalizeUserRole(target.role);
+  let nextRole = targetRole;
+  const hasRoleUpdate = Object.prototype.hasOwnProperty.call(req.body || {}, "role");
+  if (hasRoleUpdate) {
+    nextRole = normalizeUserRole(req.body?.role);
+    if (!isAdmin(user) && nextRole !== targetRole) {
+      return res.status(403).json({ error: "Endast admin kan ändra sekreterarroll." });
+    }
+  }
 
   if (!nextEmail || nextEmail.length < 2) {
     return res.status(400).json({ error: "Ogiltigt användarnamn." });
@@ -2238,6 +2753,9 @@ app.put("/api/admin/users/:id", (req, res) => {
   const targetIsAdmin = isConfiguredAdminIdentifier(targetEmail);
   if (targetIsAdmin && nextEmail !== targetEmail) {
     return res.status(400).json({ error: "Admin-konton från .env kan inte byta användarnamn." });
+  }
+  if (targetIsAdmin && hasRoleUpdate && nextRole !== targetRole) {
+    return res.status(400).json({ error: "Admin-konton från .env kan inte byta roll." });
   }
   if (!targetIsAdmin && isConfiguredAdminIdentifier(nextEmail)) {
     return res.status(409).json({ error: "Användarnamnet är reserverat för admin från .env." });
@@ -2255,7 +2773,7 @@ app.put("/api/admin/users/:id", (req, res) => {
   try {
     const result = db
       .prepare(
-        "UPDATE users SET email = ?, contact_email = ?, city = ?, first_name = ?, last_name = ?, phone = ? WHERE id = ?"
+        "UPDATE users SET email = ?, contact_email = ?, city = ?, first_name = ?, last_name = ?, phone = ?, role = ? WHERE id = ?"
       )
       .run(
         nextEmail,
@@ -2264,6 +2782,7 @@ app.put("/api/admin/users/:id", (req, res) => {
         nextFirstName || null,
         nextLastName || null,
         nextPhone || null,
+        nextRole,
         id
       );
     if (result.changes === 0) {
@@ -2969,8 +3488,8 @@ app.post("/api/chat/messages", (req, res) => {
 app.put("/api/chat/messages/:id/pin", (req, res) => {
   const user = requireAuth(req, res);
   if (!user) return;
-  if (!isAdmin(user)) {
-    return res.status(403).json({ error: "Endast admin kan pinna chatinlägg." });
+  if (!canManageAdminFeatures(user)) {
+    return res.status(403).json({ error: "Endast admin eller sekreterare kan pinna chatinlägg." });
   }
 
   const id = Number(req.params.id || 0);
@@ -3022,6 +3541,131 @@ app.get("/api/chat/presence", (req, res) => {
   });
 });
 
+function attachEventAttachments(rows) {
+  if (!Array.isArray(rows) || !rows.length) return [];
+  const eventIds = rows
+    .map((r) => Number(r.id))
+    .filter((id) => Number.isInteger(id) && id > 0);
+  if (!eventIds.length) {
+    return rows.map((row) => ({ ...row, attachments: [] }));
+  }
+
+  const placeholders = eventIds.map(() => "?").join(", ");
+  const attachmentRows = db
+    .prepare(
+      `SELECT event_id, file_url, file_name, file_mime, file_size
+       FROM event_attachments
+       WHERE event_id IN (${placeholders})
+       ORDER BY id ASC`
+    )
+    .all(...eventIds);
+
+  const grouped = new Map();
+  attachmentRows.forEach((row) => {
+    const eventId = Number(row.event_id || 0);
+    if (!grouped.has(eventId)) grouped.set(eventId, []);
+    grouped.get(eventId).push({
+      url: String(row.file_url || ""),
+      name: String(row.file_name || "bilaga"),
+      mime: String(row.file_mime || ""),
+      size: row.file_size === null || row.file_size === undefined ? null : Number(row.file_size)
+    });
+  });
+
+  return rows.map((row) => {
+    const eventId = Number(row.id || 0);
+    return {
+      ...row,
+      attachments: grouped.get(eventId) || []
+    };
+  });
+}
+
+function attachEventAttendance(rows) {
+  if (!Array.isArray(rows) || !rows.length) return [];
+  const eventIds = rows
+    .map((r) => Number(r.id))
+    .filter((id) => Number.isInteger(id) && id > 0);
+  if (!eventIds.length) {
+    return rows.map((row) => ({ ...row, attendance: [] }));
+  }
+
+  const placeholders = eventIds.map(() => "?").join(", ");
+  const attendanceRows = db
+    .prepare(
+      `SELECT event_id, attendee_name, present
+       FROM event_attendance
+       WHERE event_id IN (${placeholders})
+       ORDER BY lower(attendee_name) ASC, id ASC`
+    )
+    .all(...eventIds);
+
+  const grouped = new Map();
+  attendanceRows.forEach((row) => {
+    const eventId = Number(row.event_id || 0);
+    if (!grouped.has(eventId)) grouped.set(eventId, []);
+    grouped.get(eventId).push({
+      name: String(row.attendee_name || ""),
+      present: !!row.present
+    });
+  });
+
+  return rows.map((row) => {
+    const eventId = Number(row.id || 0);
+    return {
+      ...row,
+      attendance: grouped.get(eventId) || []
+    };
+  });
+}
+
+function replaceEventAttachments(eventId, attachments, userId) {
+  const normalizedEventId = Number(eventId);
+  const normalizedUserId = Number(userId) || null;
+  db.prepare("DELETE FROM event_attachments WHERE event_id = ?").run(normalizedEventId);
+  if (!attachments.length) return;
+  const insert = db.prepare(
+    `INSERT INTO event_attachments(
+        event_id, file_url, file_name, file_mime, file_size, created_by, created_at
+     ) VALUES (?, ?, ?, ?, ?, ?, ?)`
+  );
+  const ts = nowTs();
+  attachments.forEach((item) => {
+    insert.run(
+      normalizedEventId,
+      item.url,
+      item.name,
+      item.mime || null,
+      item.size === null || item.size === undefined ? null : Number(item.size),
+      normalizedUserId,
+      ts
+    );
+  });
+}
+
+function replaceEventAttendance(eventId, attendance, userId) {
+  const normalizedEventId = Number(eventId);
+  const normalizedUserId = Number(userId) || null;
+  db.prepare("DELETE FROM event_attendance WHERE event_id = ?").run(normalizedEventId);
+  if (!attendance.length) return;
+  const insert = db.prepare(
+    `INSERT INTO event_attendance(
+        event_id, attendee_name, present, created_by, created_at, updated_at
+     ) VALUES (?, ?, ?, ?, ?, ?)`
+  );
+  const ts = nowTs();
+  attendance.forEach((item) => {
+    insert.run(
+      normalizedEventId,
+      item.name,
+      item.present ? 1 : 0,
+      normalizedUserId,
+      ts,
+      ts
+    );
+  });
+}
+
 app.get("/api/events", (req, res) => {
   const user = requireAuth(req, res);
   if (!user) return;
@@ -3042,7 +3686,8 @@ app.get("/api/events", (req, res) => {
     )
     .all(yyyymm);
 
-  return res.json({ events: rows });
+  const withAttachments = attachEventAttachments(rows);
+  return res.json({ events: attachEventAttendance(withAttachments) });
 });
 
 app.get("/api/meetings/today", (req, res) => {
@@ -3060,19 +3705,21 @@ app.get("/api/meetings/today", (req, res) => {
     )
     .all(todayKey);
 
-  return res.json({ date_key: todayKey, meetings: rows });
+  const withAttachments = attachEventAttachments(rows);
+  return res.json({ date_key: todayKey, meetings: attachEventAttendance(withAttachments) });
 });
 
 app.post("/api/events", (req, res) => {
   const user = requireAuth(req, res);
   if (!user) return;
-  if (!isAdmin(user)) {
-    return res.status(403).json({ error: "Endast admin kan skapa möten." });
+  if (!canManageAdminFeatures(user)) {
+    return res.status(403).json({ error: "Endast admin eller sekreterare kan skapa möten." });
   }
 
   const dateKey = String(req.body?.date_key || "").trim();
   const title = String(req.body?.title || "").trim();
   const link = String(req.body?.link || "").trim();
+  let attachments = [];
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) {
     return res.status(400).json({ error: "Ogiltigt datumformat. Använd YYYY-MM-DD." });
@@ -3080,10 +3727,19 @@ app.post("/api/events", (req, res) => {
   if (!title) {
     return res.status(400).json({ error: "Titel krävs." });
   }
+  try {
+    attachments = normalizeEventAttachments(req.body?.attachments);
+  } catch (err) {
+    return res.status(400).json({ error: err.message || "Ogiltiga bilagor." });
+  }
 
-  const result = db
-    .prepare("INSERT INTO events(date_key, title, link, created_by, created_at) VALUES (?, ?, ?, ?, ?)")
-    .run(dateKey, title, link || null, user.id, nowTs());
+  const result = db.transaction(() => {
+    const created = db
+      .prepare("INSERT INTO events(date_key, title, link, created_by, created_at) VALUES (?, ?, ?, ?, ?)")
+      .run(dateKey, title, link || null, user.id, nowTs());
+    replaceEventAttachments(created.lastInsertRowid, attachments, user.id);
+    return created;
+  })();
 
   return res.status(201).json({ ok: true, id: result.lastInsertRowid });
 });
@@ -3091,8 +3747,8 @@ app.post("/api/events", (req, res) => {
 app.put("/api/events/:id", (req, res) => {
   const user = requireAuth(req, res);
   if (!user) return;
-  if (!isAdmin(user)) {
-    return res.status(403).json({ error: "Endast admin kan redigera möten." });
+  if (!canManageAdminFeatures(user)) {
+    return res.status(403).json({ error: "Endast admin eller sekreterare kan redigera möten." });
   }
 
   const id = Number(req.params.id);
@@ -3103,6 +3759,7 @@ app.put("/api/events/:id", (req, res) => {
   const dateKey = String(req.body?.date_key || "").trim();
   const title = String(req.body?.title || "").trim();
   const link = String(req.body?.link || "").trim();
+  let attachments = null;
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) {
     return res.status(400).json({ error: "Ogiltigt datumformat. Använd YYYY-MM-DD." });
@@ -3110,15 +3767,80 @@ app.put("/api/events/:id", (req, res) => {
   if (!title) {
     return res.status(400).json({ error: "Titel krävs." });
   }
+  if (Object.prototype.hasOwnProperty.call(req.body || {}, "attachments")) {
+    try {
+      attachments = normalizeEventAttachments(req.body?.attachments);
+    } catch (err) {
+      return res.status(400).json({ error: err.message || "Ogiltiga bilagor." });
+    }
+  }
 
-  const result = db
-    .prepare("UPDATE events SET date_key = ?, title = ?, link = ? WHERE id = ?")
-    .run(dateKey, title, link || null, id);
+  const result = db.transaction(() => {
+    const updated = db
+      .prepare("UPDATE events SET date_key = ?, title = ?, link = ? WHERE id = ?")
+      .run(dateKey, title, link || null, id);
+    if (updated.changes > 0 && attachments !== null) {
+      replaceEventAttachments(id, attachments, user.id);
+    }
+    return updated;
+  })();
 
   if (result.changes === 0) {
     return res.status(404).json({ error: "Mötet hittades inte." });
   }
   return res.json({ ok: true });
+});
+
+app.delete("/api/events/:id", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+  if (!isAdmin(user)) {
+    return res.status(403).json({ error: "Endast admin kan ta bort möten." });
+  }
+
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ error: "Ogiltigt event-id." });
+  }
+
+  const result = db.transaction(() => {
+    db.prepare("DELETE FROM event_attachments WHERE event_id = ?").run(id);
+    db.prepare("DELETE FROM event_attendance WHERE event_id = ?").run(id);
+    return db.prepare("DELETE FROM events WHERE id = ?").run(id);
+  })();
+
+  if (result.changes === 0) {
+    return res.status(404).json({ error: "Mötet hittades inte." });
+  }
+  return res.json({ ok: true });
+});
+
+app.put("/api/events/:id/attendance", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+  if (!canManageAdminFeatures(user)) {
+    return res.status(403).json({ error: "Endast admin eller sekreterare kan uppdatera närvarolistan." });
+  }
+
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ error: "Ogiltigt event-id." });
+  }
+
+  const eventExists = db.prepare("SELECT id FROM events WHERE id = ? LIMIT 1").get(id);
+  if (!eventExists) {
+    return res.status(404).json({ error: "Mötet hittades inte." });
+  }
+
+  let attendance = [];
+  try {
+    attendance = normalizeEventAttendance(req.body?.attendance);
+  } catch (err) {
+    return res.status(400).json({ error: err.message || "Ogiltig närvarolista." });
+  }
+
+  replaceEventAttendance(id, attendance, user.id);
+  return res.json({ ok: true, count: attendance.length });
 });
 
 app.get("/api/important-messages", (req, res) => {
@@ -3133,8 +3855,8 @@ app.get("/api/important-messages", (req, res) => {
 app.post("/api/important-messages", (req, res) => {
   const user = requireAuth(req, res);
   if (!user) return;
-  if (!isAdmin(user)) {
-    return res.status(403).json({ error: "Endast admin kan skapa viktiga meddelanden." });
+  if (!canManageAdminFeatures(user)) {
+    return res.status(403).json({ error: "Endast admin eller sekreterare kan skapa viktiga meddelanden." });
   }
 
   const icon = String(req.body?.icon || "📢").trim().slice(0, 8) || "📢";
@@ -3167,8 +3889,8 @@ app.post("/api/important-messages", (req, res) => {
 app.put("/api/important-messages/:id", (req, res) => {
   const user = requireAuth(req, res);
   if (!user) return;
-  if (!isAdmin(user)) {
-    return res.status(403).json({ error: "Endast admin kan redigera viktiga meddelanden." });
+  if (!canManageAdminFeatures(user)) {
+    return res.status(403).json({ error: "Endast admin eller sekreterare kan redigera viktiga meddelanden." });
   }
 
   const id = Number(req.params.id);
@@ -3206,8 +3928,8 @@ app.put("/api/important-messages/:id", (req, res) => {
 app.delete("/api/important-messages/:id", (req, res) => {
   const user = requireAuth(req, res);
   if (!user) return;
-  if (!isAdmin(user)) {
-    return res.status(403).json({ error: "Endast admin kan ta bort viktiga meddelanden." });
+  if (!canManageAdminFeatures(user)) {
+    return res.status(403).json({ error: "Endast admin eller sekreterare kan ta bort viktiga meddelanden." });
   }
 
   const id = Number(req.params.id);
@@ -3330,8 +4052,8 @@ app.get("/api/facebook-academy/links", (req, res) => {
 app.post("/api/facebook-academy/links", (req, res) => {
   const user = requireAuth(req, res);
   if (!user) return;
-  if (!isAdmin(user)) {
-    return res.status(403).json({ error: "Endast admin kan lägga till länkar." });
+  if (!canManageAdminFeatures(user)) {
+    return res.status(403).json({ error: "Endast admin eller sekreterare kan lägga till länkar." });
   }
 
   const title = String(req.body?.title || "").trim();
@@ -3375,8 +4097,8 @@ app.post("/api/facebook-academy/links", (req, res) => {
 app.put("/api/facebook-academy/links/:id", (req, res) => {
   const user = requireAuth(req, res);
   if (!user) return;
-  if (!isAdmin(user)) {
-    return res.status(403).json({ error: "Endast admin kan redigera länkar." });
+  if (!canManageAdminFeatures(user)) {
+    return res.status(403).json({ error: "Endast admin eller sekreterare kan redigera länkar." });
   }
 
   const id = String(req.params.id || "").trim();
@@ -3424,8 +4146,8 @@ app.put("/api/facebook-academy/links/:id", (req, res) => {
 app.delete("/api/facebook-academy/links/:id", (req, res) => {
   const user = requireAuth(req, res);
   if (!user) return;
-  if (!isAdmin(user)) {
-    return res.status(403).json({ error: "Endast admin kan ta bort länkar." });
+  if (!canManageAdminFeatures(user)) {
+    return res.status(403).json({ error: "Endast admin eller sekreterare kan ta bort länkar." });
   }
 
   const id = String(req.params.id || "").trim();
@@ -3443,8 +4165,8 @@ app.delete("/api/facebook-academy/links/:id", (req, res) => {
 app.post("/api/facebook-academy/upload-pdf", (req, res) => {
   const user = requireAuth(req, res);
   if (!user) return;
-  if (!isAdmin(user)) {
-    return res.status(403).json({ error: "Endast admin kan ladda upp PDF." });
+  if (!canManageAdminFeatures(user)) {
+    return res.status(403).json({ error: "Endast admin eller sekreterare kan ladda upp PDF." });
   }
 
   const nameRaw = String(req.body?.name || "").trim();
@@ -3740,7 +4462,7 @@ app.put("/api/idea-bank/ideas/:id", (req, res) => {
     return res.status(404).json({ error: "Idén hittades inte." });
   }
 
-  const canEdit = Number(existing.user_id) === Number(user.id) || isAdmin(user);
+  const canEdit = Number(existing.user_id) === Number(user.id) || canManageAdminFeatures(user);
   if (!canEdit) {
     return res.status(403).json({ error: "Du får bara redigera dina egna idéer." });
   }
@@ -3793,7 +4515,7 @@ app.delete("/api/idea-bank/ideas/:id", (req, res) => {
     return res.status(404).json({ error: "Idén hittades inte." });
   }
 
-  const canDelete = Number(existing.user_id) === Number(user.id) || isAdmin(user);
+  const canDelete = Number(existing.user_id) === Number(user.id) || canManageAdminFeatures(user);
   if (!canDelete) {
     return res.status(403).json({ error: "Du får bara ta bort dina egna idéer." });
   }
@@ -3881,8 +4603,8 @@ app.put("/api/tasks/assignments/:id/solve", (req, res) => {
 app.post("/api/admin/tasks", (req, res) => {
   const user = requireAuth(req, res);
   if (!user) return;
-  if (!isAdmin(user)) {
-    return res.status(403).json({ error: "Endast admin kan skapa uppdrag." });
+  if (!canManageAdminFeatures(user)) {
+    return res.status(403).json({ error: "Endast admin eller sekreterare kan skapa uppdrag." });
   }
 
   const title = String(req.body?.title || "").trim();
@@ -3967,8 +4689,8 @@ app.post("/api/admin/tasks", (req, res) => {
 app.put("/api/admin/tasks/assignments/:id", (req, res) => {
   const user = requireAuth(req, res);
   if (!user) return;
-  if (!isAdmin(user)) {
-    return res.status(403).json({ error: "Endast admin kan redigera uppdrag." });
+  if (!canManageAdminFeatures(user)) {
+    return res.status(403).json({ error: "Endast admin eller sekreterare kan redigera uppdrag." });
   }
 
   const assignmentId = Number(req.params.id);
@@ -4035,8 +4757,8 @@ app.put("/api/admin/tasks/assignments/:id", (req, res) => {
 app.get("/api/admin/tasks/library", (req, res) => {
   const user = requireAuth(req, res);
   if (!user) return;
-  if (!isAdmin(user)) {
-    return res.status(403).json({ error: "Endast admin har åtkomst." });
+  if (!canManageAdminFeatures(user)) {
+    return res.status(403).json({ error: "Endast admin eller sekreterare har åtkomst." });
   }
 
   const rows = db

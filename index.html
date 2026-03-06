@@ -580,6 +580,15 @@
             background: #f8fafc;
             border-color: #94a3b8;
         }
+        .meeting-edit-btn.danger {
+            border-color: #fecaca;
+            background: #fff1f2;
+            color: #b91c1c;
+        }
+        .meeting-edit-btn.danger:hover {
+            background: #ffe4e6;
+            border-color: #fda4af;
+        }
         .meeting-actions {
             display: flex;
             align-items: center;
@@ -1651,15 +1660,55 @@
             background: #fff;
         }
         .member-manage-switch {
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 12px;
             color: #1f2937;
             font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
         }
         .member-manage-switch input {
-            width: 40px;
-            height: 20px;
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .member-manage-switch-track {
+            width: 84px;
+            height: 46px;
+            border-radius: 999px;
+            background: #d4d4d8;
+            border: 2px solid transparent;
+            position: relative;
+            transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .member-manage-switch-thumb {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: #f5f5f5;
+            border: 1px solid rgba(15, 23, 42, 0.08);
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.18);
+            transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+        }
+        .member-manage-switch input:checked + .member-manage-switch-track {
+            background: #1f0b7a;
+            border-color: #1f0b7a;
+        }
+        .member-manage-switch input:checked + .member-manage-switch-track .member-manage-switch-thumb {
+            transform: translateX(38px);
+            background: #ffffff;
+            border-color: rgba(31, 11, 122, 0.18);
+        }
+        .member-manage-switch input:focus-visible + .member-manage-switch-track {
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18);
+        }
+        .member-manage-switch-label {
+            line-height: 1.3;
         }
         .member-manage-list {
             display: flex;
@@ -2732,6 +2781,10 @@
             max-width: none;
             max-height: none;
         }
+        #ruleWikiToolIcon {
+            font-size: 1.6rem;
+            line-height: 1;
+        }
         .folder-modal-content {
             width: min(92vw, 980px);
             height: min(82vh, 620px);
@@ -3069,6 +3122,83 @@
         #eventModal .modal-content p {
             color: #6b7280;
         }
+        .event-modal-attachments {
+            margin-top: 12px;
+            padding: 10px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            background: #f7fbff;
+        }
+        .event-modal-attachments h4 {
+            margin: 0 0 8px;
+            font-size: 0.84rem;
+            color: #374151;
+        }
+        .event-modal-attachment-list {
+            margin: 0;
+            padding-left: 18px;
+            display: grid;
+            gap: 6px;
+        }
+        .event-modal-attachment-list a {
+            color: #1f4f94;
+            font-size: 0.9rem;
+            text-decoration: none;
+        }
+        .event-modal-attachment-list a:hover {
+            text-decoration: underline;
+        }
+        .event-modal-attendance {
+            margin-top: 12px;
+            padding: 10px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            background: #f9fafb;
+        }
+        .event-modal-attendance h4 {
+            margin: 0 0 8px;
+            font-size: 0.84rem;
+            color: #374151;
+        }
+        .event-attendance-admin-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .event-attendance-admin-row input {
+            flex: 1;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 7px 10px;
+            background: #fff;
+            color: #1f2937;
+        }
+        .event-attendance-list {
+            margin: 0;
+            padding-left: 0;
+            list-style: none;
+            display: grid;
+            gap: 6px;
+        }
+        .event-attendance-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            font-size: 0.9rem;
+            color: #374151;
+        }
+        .event-attendance-item label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+        .event-attendance-summary {
+            margin-top: 8px;
+            color: #6b7280;
+            font-size: 0.82rem;
+        }
         .event-editor-content {
             background: #ffffff;
             width: min(92vw, 500px);
@@ -3130,6 +3260,37 @@
         .event-editor-row input:focus {
             border-color: #4f46e5;
             box-shadow: 0 0 0 2px rgba(110, 163, 234, 0.25);
+        }
+        .event-editor-file-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+        .event-editor-file-btn {
+            border: 1px solid #d7e2f0;
+            border-radius: 8px;
+            background: #f8fbff;
+            color: #1f2937;
+            padding: 7px 12px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .event-editor-file-btn:hover {
+            background: #eef5ff;
+        }
+        .event-editor-file-hint {
+            font-size: 0.8rem;
+            color: #5f6d7e;
+        }
+        .event-editor-file-list {
+            margin: 0;
+            padding-left: 18px;
+            display: grid;
+            gap: 4px;
+            color: #475569;
+            font-size: 0.83rem;
         }
         .event-editor-actions {
             display: flex;
@@ -3470,6 +3631,217 @@
             justify-content: flex-end;
             gap: 10px;
             margin-top: 20px;
+        }
+        #ruleWikiModal {
+            background: rgba(0,0,0,0.4);
+        }
+        #ruleWikiModal .rule-wiki-content {
+            background: #fff;
+            width: min(96vw, 1100px);
+            height: min(88vh, 720px);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 18px 40px rgba(0,0,0,0.28);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        #ruleWikiModal .rule-wiki-close {
+            color: #ffffff;
+            z-index: 2;
+        }
+        #ruleWikiModal .rule-wiki-header {
+            background: #1b2a41;
+            color: #ffffff;
+            padding: 16px 20px;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+        #ruleWikiModal .rule-wiki-toolbar {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+            padding: 10px 20px;
+            border-bottom: 1px solid #d1d5db;
+            background: #fafafa;
+        }
+        #ruleWikiModal .rule-wiki-toolbar-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-left: auto;
+        }
+        #ruleWikiModal .rule-wiki-search {
+            flex: 1 1 320px;
+            padding: 9px 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            background: #fff;
+            color: #1f2937;
+        }
+        #ruleWikiModal .rule-wiki-layout {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            overflow: hidden;
+        }
+        #ruleWikiModal .rule-wiki-sidebar {
+            width: 230px;
+            border-right: 1px solid #ddd;
+            background: #fafafa;
+            padding: 10px;
+            overflow: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        #ruleWikiModal .rule-wiki-category {
+            border: none;
+            background: transparent;
+            text-align: left;
+            padding: 8px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            color: #1f2937;
+            font: inherit;
+        }
+        #ruleWikiModal .rule-wiki-category:hover,
+        #ruleWikiModal .rule-wiki-category.is-active {
+            background: #e6eefc;
+            color: #1d4ed8;
+        }
+        #ruleWikiModal .rule-wiki-main {
+            flex: 1;
+            min-width: 0;
+            padding: 20px;
+            overflow: auto;
+            background: #ffffff;
+        }
+        #ruleWikiModal .rule-wiki-page-title {
+            margin: 0 0 6px;
+            color: #0f172a;
+            font-size: 1.2rem;
+        }
+        #ruleWikiModal .rule-wiki-page-description {
+            margin: 0 0 12px;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+        #ruleWikiModal .rule-wiki-count {
+            margin-bottom: 12px;
+            color: #6b7280;
+            font-size: 0.8rem;
+        }
+        #ruleWikiModal .rule-wiki-list {
+            display: grid;
+            gap: 10px;
+        }
+        #ruleWikiModal .rule-wiki-entry {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 12px;
+            background: #ffffff;
+        }
+        #ruleWikiModal .rule-wiki-entry h3 {
+            margin: 0 0 6px;
+            color: #0f172a;
+            font-size: 0.96rem;
+        }
+        #ruleWikiModal .rule-wiki-entry p {
+            margin: 0 0 8px;
+            color: #475569;
+            font-size: 0.88rem;
+            line-height: 1.5;
+        }
+        #ruleWikiModal .rule-wiki-entry ul {
+            margin: 0;
+            padding-left: 18px;
+            color: #334155;
+            font-size: 0.84rem;
+            line-height: 1.45;
+        }
+        #ruleWikiModal .rule-wiki-explanation {
+            background: #f9f9f9;
+            border-left: 4px solid #3c7dd9;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 4px;
+            font-size: 0.88rem;
+            color: #334155;
+        }
+        #ruleWikiModal .rule-wiki-entry-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        #ruleWikiModal .rule-wiki-entry textarea,
+        #ruleWikiModal .rule-wiki-entry input {
+            width: 100%;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            background: #ffffff;
+            color: #1f2937;
+            padding: 8px 10px;
+            font: inherit;
+            margin-bottom: 8px;
+        }
+        #ruleWikiModal .rule-wiki-entry textarea {
+            resize: vertical;
+        }
+        #ruleWikiModal .rule-wiki-bullets-edit {
+            display: grid;
+            gap: 6px;
+        }
+        #ruleWikiModal .rule-wiki-empty {
+            border: 1px dashed #cbd5e1;
+            border-radius: 10px;
+            padding: 14px;
+            color: #64748b;
+            background: #f8fafc;
+        }
+        #ruleWikiModal .rule-wiki-chatbot {
+            width: 280px;
+            border-left: 1px solid #ddd;
+            background: #fafafa;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        #ruleWikiModal .rule-wiki-chat-header {
+            padding: 10px;
+            font-weight: 700;
+            border-bottom: 1px solid #ddd;
+            color: #1f2937;
+        }
+        #ruleWikiModal .rule-wiki-chat-window {
+            flex: 1;
+            padding: 10px;
+            overflow: auto;
+            font-size: 0.88rem;
+            color: #475569;
+            line-height: 1.5;
+        }
+        #ruleWikiModal .rule-wiki-chat-input {
+            border-top: 1px solid #ddd;
+            padding: 10px;
+        }
+        #ruleWikiModal .rule-wiki-chat-input input {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            background: #ffffff;
+            color: #1f2937;
+        }
+        #ruleWikiModal .rule-wiki-footer {
+            padding: 8px 20px;
+            border-top: 1px solid #ddd;
+            font-size: 0.75rem;
+            background: #fafafa;
+            color: #64748b;
         }
         #qnaModal {
             background: rgba(0,0,0,.3);
@@ -4016,6 +4388,27 @@
             border-radius: var(--radius);
             width: 400px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .coming-soon-content {
+            width: min(92vw, 360px);
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            padding: 22px;
+            box-shadow: 0 20px 46px rgba(15, 23, 42, 0.28);
+            color: #1f2937;
+            position: relative;
+        }
+        .coming-soon-content h3 {
+            margin: 0 0 8px;
+            font-size: 1.08rem;
+            color: #0f172a;
+        }
+        .coming-soon-content p {
+            margin: 0;
+            color: #64748b;
+            line-height: 1.5;
+            font-size: 0.92rem;
         }
         .modal-close { float: right; cursor: pointer; border: none; background: none; font-size: 1.2em; }
         
@@ -4951,6 +5344,9 @@
                     <div class="placeholder-icon" id="qnaToolIcon" title="QnA">
                         <img src="qna.png" alt="QnA" class="tool-icon-svg" loading="lazy" decoding="async">
                     </div>
+                    <div class="placeholder-icon" id="ruleWikiToolIcon" title="Rule-wikipedia">
+                        <span class="rule-wiki-icon" aria-hidden="true">⚖️</span>
+                    </div>
                     <div class="placeholder-icon" id="adminSettingsIcon" title="Medlemshantering" style="display:none;">
                         <img src="medlemshantering.png" alt="Medlemshantering" class="tool-icon-svg" loading="lazy" decoding="async">
                     </div>
@@ -5147,7 +5543,22 @@
             <p><strong>Händelse:</strong> <span id="modalTitle">Titel</span></p>
             <p style="color: var(--text-muted); font-size: 0.9em; margin-top: 10px;">Detta är ett online-möte.</p>
             <a href="#" id="modalLink" target="_blank" class="zoom-btn">Anslut till mötet (Zoom)</a>
+            <div id="modalAttachmentsWrap" class="event-modal-attachments" style="display:none;">
+                <h4>Filer</h4>
+                <ul id="modalAttachmentsList" class="event-modal-attachment-list"></ul>
+            </div>
+            <div id="modalAttendanceWrap" class="event-modal-attendance">
+                <h4>Närvarolista</h4>
+                <div id="modalAttendanceAdminRow" class="event-attendance-admin-row" style="display:none;">
+                    <input id="modalAttendanceNameInput" type="text" placeholder="Lägg till namn...">
+                    <button id="modalAttendanceAddBtn" class="event-editor-btn" type="button">Lägg till</button>
+                </div>
+                <ul id="modalAttendanceList" class="event-attendance-list"></ul>
+                <div id="modalAttendanceSummary" class="event-attendance-summary"></div>
+                <button id="modalAttendanceSaveBtn" class="event-editor-btn primary" style="display:none; margin-top:10px;" type="button">Spara närvarolista</button>
+            </div>
             <button id="modalEditEventBtn" class="event-editor-btn" style="display:none; margin-top:10px;" type="button">Redigera möte</button>
+            <button id="modalDeleteEventBtn" class="event-editor-btn" style="display:none; margin-top:10px; border-color:#fecaca; background:#fff1f2; color:#b91c1c;" type="button">Ta bort möte</button>
         </div>
     </div>
 
@@ -5175,6 +5586,16 @@
             <div class="event-editor-row">
                 <label for="eventEditorLink">Möteslänk</label>
                 <input id="eventEditorLink" type="url" placeholder="https://zoom.us/j/...">
+            </div>
+            <div class="event-editor-row">
+                <label>Filer till mötet</label>
+                <div class="event-editor-file-row">
+                    <button class="event-editor-file-btn" type="button" id="eventEditorFileBtn">Bifoga filer</button>
+                    <button class="event-editor-file-btn" type="button" id="eventEditorFileClearBtn">Ta bort alla</button>
+                    <span class="event-editor-file-hint" id="eventEditorFileHint"></span>
+                </div>
+                <ul class="event-editor-file-list" id="eventEditorFileList"></ul>
+                <input id="eventEditorFileInput" type="file" multiple style="display:none;">
             </div>
             <div class="event-editor-actions">
                 <button class="event-editor-btn" type="button" onclick="closeEventEditor()">Avbryt</button>
@@ -5412,6 +5833,44 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="ruleWikiModal">
+        <div class="rule-wiki-content">
+            <button class="modal-close rule-wiki-close" type="button" onclick="closeRuleWikiModal()">✖</button>
+            <div class="rule-wiki-header">📘 Partiets Regelbok</div>
+            <div class="rule-wiki-toolbar">
+                <input id="ruleWikiSearchInput" class="rule-wiki-search" type="text" placeholder="Sök regel, område eller nyckelord...">
+                <div class="rule-wiki-toolbar-actions">
+                    <button id="ruleWikiImportBtn" class="event-editor-btn" type="button" style="display:none;">Ladda upp JSON</button>
+                    <button id="ruleWikiEditBtn" class="event-editor-btn" type="button" style="display:none;">Redigera regler</button>
+                    <button id="ruleWikiAddBtn" class="event-editor-btn" type="button" style="display:none;">Lägg till avsnitt</button>
+                    <button id="ruleWikiSaveBtn" class="event-editor-btn primary" type="button" style="display:none;">Spara regler</button>
+                    <button id="ruleWikiCancelBtn" class="event-editor-btn" type="button" style="display:none;">Avbryt</button>
+                </div>
+                <input id="ruleWikiImportInput" type="file" accept="application/json,.json" style="display:none;">
+            </div>
+            <div class="rule-wiki-layout">
+                <aside class="rule-wiki-sidebar" id="ruleWikiNav"></aside>
+                <main class="rule-wiki-main">
+                    <h3 id="ruleWikiPageTitle" class="rule-wiki-page-title"></h3>
+                    <p id="ruleWikiPageDescription" class="rule-wiki-page-description"></p>
+                    <div id="ruleWikiCount" class="rule-wiki-count"></div>
+                    <div id="ruleWikiList" class="rule-wiki-list"></div>
+                </main>
+                <aside class="rule-wiki-chatbot">
+                    <div class="rule-wiki-chat-header">🤖 Regelassistent</div>
+                    <div class="rule-wiki-chat-window">
+                        Kommande feature.<br>
+                        Regelassistenten är inte aktiv ännu.
+                    </div>
+                    <div class="rule-wiki-chat-input">
+                        <input type="text" placeholder="Fråga regelassistenten..." disabled>
+                    </div>
+                </aside>
+            </div>
+            <div class="rule-wiki-footer">Pedagogisk regelbok</div>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="memberManageModal">
         <div class="member-manage-content">
             <button class="modal-close" type="button" onclick="closeMemberManageModal()">✖</button>
@@ -5421,7 +5880,10 @@
                 <input id="memberManageSearch" class="member-manage-search" type="text" placeholder="Sök medlem eller sida…">
                 <label class="member-manage-switch">
                     <input id="memberManageRegistrationSwitch" type="checkbox" checked>
-                    Tillåt nya registreringar
+                    <span class="member-manage-switch-track" aria-hidden="true">
+                        <span class="member-manage-switch-thumb"></span>
+                    </span>
+                    <span class="member-manage-switch-label">Tillåt nya registreringar</span>
                 </label>
             </div>
             <div class="member-manage-list" id="memberManageList">
@@ -5434,17 +5896,28 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="comingSoonModal">
+        <div class="coming-soon-content">
+            <button class="modal-close" type="button" onclick="closeComingSoonModal()">✖</button>
+            <h3>Kommande funktion</h3>
+            <p>Den här delen är inte klar ännu, men kommer i en kommande uppdatering.</p>
+        </div>
+    </div>
+
     <script>
         let currentUserEmail = '';
         let currentUserDisplayName = '';
         let currentUserId = 0;
         let currentUserIsAdmin = false;
+        let currentUserCanManage = false;
         let currentUserProfileImageUrl = '';
         let profileModalImageUrl = '';
         let profilePhotoUploadInProgress = false;
         let activeModalEvent = null;
         let eventEditorMode = 'create';
         let editingEventId = null;
+        let eventEditorAttachments = [];
+        let eventAttendanceDraft = [];
 
         function currentUserTitle() {
             return String(currentUserDisplayName || '').trim() || (currentUserEmail || '-');
@@ -5471,12 +5944,13 @@
                 currentUserDisplayName = String(data.display_name || '').trim();
                 rememberUserDisplayName(currentUserEmail, currentUserDisplayName);
                 currentUserIsAdmin = !!data.is_admin;
+                currentUserCanManage = !!data.is_admin || !!data.is_secretary;
                 const userBadge = document.getElementById('chatCurrentUserBadge');
                 if (userBadge) userBadge.innerText = `Inloggad som: ${currentUserTitle()}`;
-                document.getElementById('adminSettingsIcon').style.display = currentUserIsAdmin ? 'flex' : 'none';
-                document.getElementById('taskAdminToolIcon').style.display = currentUserIsAdmin ? 'flex' : 'none';
-                document.getElementById('meetingsAdminRow').style.display = currentUserIsAdmin ? 'flex' : 'none';
-                document.getElementById('importantAdminBtn').style.display = currentUserIsAdmin ? 'inline-flex' : 'none';
+                document.getElementById('adminSettingsIcon').style.display = currentUserCanManage ? 'flex' : 'none';
+                document.getElementById('taskAdminToolIcon').style.display = currentUserCanManage ? 'flex' : 'none';
+                document.getElementById('meetingsAdminRow').style.display = currentUserCanManage ? 'flex' : 'none';
+                document.getElementById('importantAdminBtn').style.display = currentUserCanManage ? 'inline-flex' : 'none';
                 return true;
             } catch (e) {
                 window.location.href = 'login.html';
@@ -5516,6 +5990,12 @@
         let taskAdminUsers = [];
         let taskLibraryUnsolved = [];
         let taskLibrarySolved = [];
+        let ruleWikiEntries = [];
+        let ruleWikiDraftEntries = [];
+        let ruleWikiEditMode = false;
+        let ruleWikiDocument = null;
+        let ruleWikiSourceMode = 'api';
+        let ruleWikiActiveCategory = 'alla';
         let activeTaskAssignmentId = 0;
         let taskAdminAttachmentUrl = '';
         let taskAdminAttachmentName = '';
@@ -5538,6 +6018,7 @@
             facebook: { label: 'Facebook', badgeClass: 'badge-fb', iconImage: 'facebook-logo.png', iconClass: 'icon-facebook', showLabelInButton: false },
             x: { label: 'X', badgeClass: 'badge-x', iconImage: 'x-logo.avif', iconClass: 'icon-x', showLabelInButton: false },
             tiktok: { label: 'TikTok', badgeClass: 'badge-tiktok', iconImage: 'tiktok-logo.svg', iconClass: 'icon-tiktok', showLabelInButton: false, showLabelInHeader: false },
+            regelboken: { label: 'Regelboken', badgeClass: 'badge-other', iconEmoji: '📘', showLabelInButton: true },
             other: { label: 'Övrigt', badgeClass: 'badge-other', iconEmoji: '📂', showLabelInButton: true }
         };
         let ideaBankIdeas = [];
@@ -6050,7 +6531,7 @@
                 const authorAvatarUrl = avatarUrlForUser(msg.email || authorLabel || 'user', msg.profile_image_url || '');
                 const cityLabel = String(msg.user_city || '').trim();
                 const classNames = ['chat-post', isMine ? 'mine' : 'theirs'];
-                if (isAdminAuthor && currentUserIsAdmin) classNames.push('admin');
+                if (isAdminAuthor && currentUserCanManage) classNames.push('admin');
                 if (msg.pinned) classNames.push('pinned');
                 post.className = classNames.join(' ');
                 const messageId = Number(msg.id || 0);
@@ -6071,7 +6552,7 @@
                 const replyBtn = !isMine
                     ? `<button class=\"chat-reply-btn\" type=\"button\" title=\"Svara\">↩</button>`
                     : '';
-                const pinBtn = currentUserIsAdmin
+                const pinBtn = currentUserCanManage
                     ? `<button class=\"chat-pin-btn ${msg.pinned ? 'is-pinned' : ''}\" type=\"button\" data-chat-pin-id=\"${Number(msg.id)}\" data-chat-pin-next=\"${msg.pinned ? '0' : '1'}\" title=\"${msg.pinned ? 'Lossa inlägget' : 'Pinna inlägget'}\">${msg.pinned ? '📌 Pinnad' : '📌 Pinna'}</button>`
                     : '';
                 post.innerHTML = `
@@ -6155,7 +6636,7 @@
         }
 
         async function toggleChatMessagePinned(messageId, shouldPin) {
-            if (!currentUserIsAdmin) return;
+            if (!currentUserCanManage) return;
             await apiSend(`/api/chat/messages/${Number(messageId)}/pin`, 'PUT', { pinned: !!shouldPin });
             await loadChatMessages();
         }
@@ -6559,7 +7040,7 @@
                 return;
             }
             const fullName = `${String(user.first_name || '').trim()} ${String(user.last_name || '').trim()}`.trim() || memberManageDisplayName(user.email);
-            const role = user.is_admin ? 'Admin' : 'Användare';
+            const role = user.is_admin ? 'Admin' : (user.is_secretary ? 'Sekreterare' : 'Användare');
             const status = user.online ? 'Inloggad' : 'Ej inloggad';
             box.innerHTML = `
                 <h4>Användardetaljer</h4>
@@ -6588,11 +7069,20 @@
                 : 'Ort:';
             const newCityRaw = prompt(cityPrompt, String(user.city || ''));
             if (newCityRaw === null) return;
+            let nextRole = String(user.role || (user.is_secretary ? 'secretary' : 'user'));
+            if (currentUserIsAdmin && !user.is_admin) {
+                const roleRaw = prompt('Roll (användare/sekreterare):', nextRole === 'secretary' ? 'sekreterare' : 'användare');
+                if (roleRaw === null) return;
+                const roleNorm = String(roleRaw || '').trim().toLowerCase();
+                if (roleNorm === 'sekreterare' || roleNorm === 'secretary') nextRole = 'secretary';
+                else nextRole = 'user';
+            }
 
             const payload = {
                 email: String(newEmailRaw || '').trim().toLowerCase(),
                 contact_email: String(newContactRaw || '').trim().toLowerCase(),
-                city: String(newCityRaw || '').trim()
+                city: String(newCityRaw || '').trim(),
+                role: nextRole
             };
             await apiSend(`/api/admin/users/${Number(userId)}`, 'PUT', payload);
             await openMemberManageModal();
@@ -6641,7 +7131,7 @@
                         </div>
                         <div class="member-manage-actions">
                             <button class="member-manage-btn" type="button" data-member-edit="${Number(user.id)}">Redigera</button>
-                            <button class="member-manage-btn delete" type="button" data-member-delete="${Number(user.id)}" ${isSelf || isRootAdmin ? 'disabled' : ''}>Ta bort</button>
+                            <button class="member-manage-btn delete" type="button" data-member-delete="${Number(user.id)}" ${!currentUserIsAdmin || isSelf || isRootAdmin ? 'disabled' : ''}>Ta bort</button>
                         </div>
                     </div>
                 `;
@@ -6694,7 +7184,7 @@
         }
 
         async function openMemberManageModal() {
-            if (!currentUserIsAdmin) return;
+            if (!currentUserCanManage) return;
             const modal = document.getElementById('memberManageModal');
             const list = document.getElementById('memberManageList');
             const searchInput = document.getElementById('memberManageSearch');
@@ -6734,6 +7224,16 @@
 
         function closeMemberManageModal() {
             const modal = document.getElementById('memberManageModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function openComingSoonModal() {
+            const modal = document.getElementById('comingSoonModal');
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function closeComingSoonModal() {
+            const modal = document.getElementById('comingSoonModal');
             if (modal) modal.style.display = 'none';
         }
 
@@ -6862,7 +7362,7 @@
             const list = document.getElementById('academyLinksList');
             const actionsBar = document.getElementById('academyActionsBar');
             if (!list) return;
-            if (actionsBar) actionsBar.style.display = currentUserIsAdmin ? 'flex' : 'none';
+            if (actionsBar) actionsBar.style.display = currentUserCanManage ? 'flex' : 'none';
 
             if (academyLinksLoadError) {
                 list.innerHTML = `<div class="card"><div class="card-icon">⚠️</div><h3>Kunde inte ladda</h3><p>${escapeHtml(academyLinksLoadError)}</p></div>`;
@@ -6887,7 +7387,7 @@
                 } else if (ytEmbed) {
                     embedHtml = `<iframe src="${escapeHtml(ytEmbed)}" title="${escapeHtml(titleText || 'YouTube-video')}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
                 }
-                const adminButtons = currentUserIsAdmin
+                const adminButtons = currentUserCanManage
                     ? `
                         <button type="button" data-academy-edit="${escapeHtml(String(item.id))}">Redigera</button>
                         <button type="button" data-academy-delete="${escapeHtml(String(item.id))}">Ta bort</button>
@@ -6913,7 +7413,7 @@
                 });
             });
 
-            if (!currentUserIsAdmin) return;
+            if (!currentUserCanManage) return;
             list.querySelectorAll('[data-academy-edit]').forEach(function(btn) {
                 btn.addEventListener('click', function() {
                     const id = String(btn.getAttribute('data-academy-edit') || '');
@@ -6974,7 +7474,7 @@
         }
 
         async function saveAcademyLink(payload) {
-            if (!currentUserIsAdmin) return;
+            if (!currentUserCanManage) return;
             if (!academyApiAvailable) {
                 throw new Error('Serverkoppling saknas. Försök igen om en stund.');
             }
@@ -7034,7 +7534,7 @@
         }
 
         async function deleteAcademyLink(id) {
-            if (!currentUserIsAdmin) return;
+            if (!currentUserCanManage) return;
             if (!academyApiAvailable) {
                 throw new Error('Serverkoppling saknas. Länken kunde inte tas bort.');
             }
@@ -7059,6 +7559,436 @@
             const modal = document.getElementById('facebookAcademyModal');
             if (modal) modal.style.display = 'none';
             resetAcademyForm();
+        }
+
+        function normalizeRuleWikiEntryClient(entry, index) {
+            if (!entry || typeof entry !== 'object') return null;
+            const idx = Number(index || 0) + 1;
+            const title = String(entry.title || '').trim();
+            const body = String(entry.body || '').trim();
+            const bullets = Array.isArray(entry.bullets)
+                ? entry.bullets.map(function(item) { return String(item || '').trim(); }).filter(Boolean).slice(0, 12)
+                : [];
+            if (!title || !body) return null;
+            return {
+                id: String(entry.id || `rule-${idx}`).trim() || `rule-${idx}`,
+                title: title,
+                body: body,
+                bullets: bullets
+            };
+        }
+
+        function normalizeRuleWikiRuleClient(rule, index) {
+            if (!rule || typeof rule !== 'object') return null;
+            const idx = Number(index || 0) + 1;
+            const title = String(rule.title || '').trim();
+            const text = String(rule.text || rule.body || '').trim();
+            const explanation = String(rule.explanation || '').trim();
+            if (!title || !text) return null;
+            return {
+                id: String(rule.id || `rule-${idx}`).trim() || `rule-${idx}`,
+                title: title,
+                text: text,
+                explanation: explanation
+            };
+        }
+
+        function normalizeRuleWikiPageClient(page, index) {
+            if (!page || typeof page !== 'object') return null;
+            const idx = Number(index || 0) + 1;
+            const title = String(page.title || '').trim();
+            const description = String(page.description || '').trim();
+            const category = String(page.category || '').trim();
+            const rules = Array.isArray(page.rules)
+                ? page.rules.map(function(rule, ruleIndex) { return normalizeRuleWikiRuleClient(rule, ruleIndex); }).filter(Boolean)
+                : [];
+            if (!title || !rules.length) return null;
+            return {
+                id: String(page.id || `page-${idx}`).trim() || `page-${idx}`,
+                title: title,
+                description: description,
+                category: category,
+                rules: rules
+            };
+        }
+
+        function buildRuleWikiDocumentFromEntries(entries) {
+            const groups = new Map();
+            (Array.isArray(entries) ? entries : []).forEach(function(entry, index) {
+                const normalized = normalizeRuleWikiEntryClient(entry, index);
+                if (!normalized) return;
+                const haystack = `${String(normalized.id || '')} ${normalized.title} ${normalized.body} ${(normalized.bullets || []).join(' ')}`.toLowerCase();
+                let groupKey = 'organisation';
+                let groupTitle = 'Organisation';
+                if (haystack.indexOf('kommunikation') !== -1 || haystack.indexOf('talesperson') !== -1 || haystack.indexOf('media') !== -1) {
+                    groupKey = 'kommunikation';
+                    groupTitle = 'Kommunikation';
+                } else if (haystack.indexOf('medlem') !== -1 || haystack.indexOf('värdegrund') !== -1) {
+                    groupKey = 'medlemskap';
+                    groupTitle = 'Medlemskap';
+                } else if (haystack.indexOf('val') !== -1 || haystack.indexOf('kandidat') !== -1 || haystack.indexOf('nominering') !== -1) {
+                    groupKey = 'valarbete';
+                    groupTitle = 'Valarbete';
+                } else if (haystack.indexOf('integritet') !== -1 || haystack.indexOf('säkerhet') !== -1 || haystack.indexOf('personuppgift') !== -1 || haystack.indexOf('visselblås') !== -1) {
+                    groupKey = 'integritet';
+                    groupTitle = 'Integritet';
+                }
+                if (!groups.has(groupKey)) {
+                    groups.set(groupKey, {
+                        id: groupKey,
+                        title: groupTitle,
+                        description: '',
+                        category: groupKey,
+                        rules: []
+                    });
+                }
+                groups.get(groupKey).rules.push({
+                    id: normalized.id,
+                    title: normalized.title,
+                    text: normalized.body,
+                    explanation: (normalized.bullets || []).join(' ')
+                });
+            });
+            return {
+                title: '📘 Partiets Regelbok',
+                subtitle: 'Intern regelbok för partiets arbetssätt, beslutsvägar och uppförandekod.',
+                assistant_text: 'Kommande feature.\nRegelassistenten är inte aktiv ännu.',
+                footer_text: 'Pedagogisk regelbok',
+                pages: Array.from(groups.values())
+            };
+        }
+
+        function normalizeRuleWikiDocumentClient(doc) {
+            if (Array.isArray(doc)) {
+                return buildRuleWikiDocumentFromEntries(doc);
+            }
+            if (doc && Array.isArray(doc.entries)) {
+                return buildRuleWikiDocumentFromEntries(doc.entries);
+            }
+            const pages = doc && Array.isArray(doc.pages)
+                ? doc.pages.map(function(page, index) { return normalizeRuleWikiPageClient(page, index); }).filter(Boolean)
+                : [];
+            if (!pages.length) return null;
+            return {
+                title: String(doc.title || '📘 Partiets Regelbok').trim() || '📘 Partiets Regelbok',
+                subtitle: String(doc.subtitle || 'Intern regelbok för partiets arbetssätt, beslutsvägar och uppförandekod.').trim(),
+                assistant_text: String(doc.assistant_text || 'Kommande feature.\nRegelassistenten är inte aktiv ännu.').trim(),
+                footer_text: String(doc.footer_text || 'Pedagogisk regelbok').trim(),
+                pages: pages
+            };
+        }
+
+        function activeRuleWikiPage() {
+            const pages = ruleWikiDocument && Array.isArray(ruleWikiDocument.pages) ? ruleWikiDocument.pages : [];
+            if (!pages.length) return null;
+            return pages.find(function(page) { return page.id === ruleWikiActiveCategory; }) || pages[0];
+        }
+
+        function ruleWikiRuleSearchText(rule, page) {
+            return [
+                String(page && page.title || ''),
+                String(page && page.description || ''),
+                String(rule && rule.title || ''),
+                String(rule && rule.text || ''),
+                String(rule && rule.explanation || '')
+            ].join(' ').toLowerCase();
+        }
+
+        function renderRuleWikiNav() {
+            const nav = document.getElementById('ruleWikiNav');
+            if (!nav) return;
+            const pages = ruleWikiDocument && Array.isArray(ruleWikiDocument.pages) ? ruleWikiDocument.pages : [];
+            nav.innerHTML = pages.map(function(page, index) {
+                const activeId = ruleWikiActiveCategory || (pages[0] ? pages[0].id : '');
+                const active = page.id === activeId;
+                return `<button class="rule-wiki-category ${active ? 'is-active' : ''}" type="button" data-rule-page="${escapeHtml(page.id)}">${escapeHtml(page.title || `Sida ${index + 1}`)}</button>`;
+            }).join('');
+        }
+
+        function updateRuleWikiCategoryButtons() {
+            document.querySelectorAll('#ruleWikiNav [data-rule-page]').forEach(function(btn) {
+                const active = String(btn.getAttribute('data-rule-page') || '') === ruleWikiActiveCategory;
+                btn.classList.toggle('is-active', active);
+            });
+        }
+
+        function renderRuleWikiEntries() {
+            const list = document.getElementById('ruleWikiList');
+            const importBtn = document.getElementById('ruleWikiImportBtn');
+            const editBtn = document.getElementById('ruleWikiEditBtn');
+            const addBtn = document.getElementById('ruleWikiAddBtn');
+            const saveBtn = document.getElementById('ruleWikiSaveBtn');
+            const cancelBtn = document.getElementById('ruleWikiCancelBtn');
+            const header = document.getElementById('ruleWikiPageTitle');
+            const description = document.getElementById('ruleWikiPageDescription');
+            const chatWindow = document.querySelector('#ruleWikiModal .rule-wiki-chat-window');
+            const modalHeader = document.querySelector('#ruleWikiModal .rule-wiki-header');
+            const footer = document.querySelector('#ruleWikiModal .rule-wiki-footer');
+            if (!list || !importBtn || !editBtn || !addBtn || !saveBtn || !cancelBtn || !header || !description) return;
+
+            const canUseInlineEditor = ruleWikiSourceMode === 'api';
+            importBtn.style.display = currentUserIsAdmin ? 'inline-flex' : 'none';
+            editBtn.style.display = currentUserIsAdmin && canUseInlineEditor && !ruleWikiEditMode ? 'inline-flex' : 'none';
+            addBtn.style.display = currentUserIsAdmin && canUseInlineEditor && ruleWikiEditMode ? 'inline-flex' : 'none';
+            saveBtn.style.display = currentUserIsAdmin && canUseInlineEditor && ruleWikiEditMode ? 'inline-flex' : 'none';
+            cancelBtn.style.display = currentUserIsAdmin && canUseInlineEditor && ruleWikiEditMode ? 'inline-flex' : 'none';
+
+            const page = activeRuleWikiPage();
+            const rules = page && Array.isArray(page.rules) ? page.rules : [];
+            if (modalHeader && ruleWikiDocument) modalHeader.textContent = ruleWikiDocument.title || '📘 Partiets Regelbok';
+            if (chatWindow && ruleWikiDocument) chatWindow.innerHTML = escapeHtml(ruleWikiDocument.assistant_text || 'Hej!').replace(/\n/g, '<br>');
+            if (footer && ruleWikiDocument) footer.textContent = ruleWikiDocument.footer_text || 'Pedagogisk regelbok';
+            header.textContent = page ? page.title : 'Regelboken';
+            description.textContent = page && page.description ? page.description : (ruleWikiDocument && ruleWikiDocument.subtitle ? ruleWikiDocument.subtitle : '');
+
+            if (!rules.length && !ruleWikiEditMode) {
+                list.innerHTML = '<div class="rule-wiki-empty">Inga regelavsnitt finns ännu.</div>';
+                renderRuleWikiNav();
+                filterRuleWikiEntries();
+                return;
+            }
+
+            if (ruleWikiEditMode) {
+                const entries = ruleWikiDraftEntries.map(function(entry, index) { return normalizeRuleWikiEntryClient(entry, index); }).filter(Boolean);
+                list.innerHTML = entries.map(function(entry, index) {
+                    const bulletsValue = (entry.bullets || []).join('\n');
+                    return `
+                        <article class="rule-wiki-entry" data-rule-entry data-rule-page="${escapeHtml(ruleWikiActiveCategory)}" data-rule-search="${escapeHtml([entry.title, entry.body, bulletsValue].join(' ').toLowerCase())}">
+                            <input type="text" data-rule-title="${index}" value="${escapeHtml(entry.title)}" maxlength="180" placeholder="Rubrik">
+                            <textarea data-rule-body="${index}" rows="4" maxlength="4000" placeholder="Brödtext">${escapeHtml(entry.body)}</textarea>
+                            <div class="rule-wiki-bullets-edit">
+                                <textarea data-rule-bullets="${index}" rows="5" maxlength="5000" placeholder="En punkt per rad">${escapeHtml(bulletsValue)}</textarea>
+                            </div>
+                            <div class="rule-wiki-entry-actions">
+                                <button class="event-editor-btn" type="button" data-rule-delete="${index}">Ta bort avsnitt</button>
+                            </div>
+                        </article>
+                    `;
+                }).join('');
+            } else {
+                list.innerHTML = rules.map(function(rule) {
+                    const explanationHtml = String(rule.explanation || '').trim()
+                        ? `<div class="rule-wiki-explanation"><b>Förklaring:</b><br>${escapeHtml(rule.explanation)}</div>`
+                        : '';
+                    return `
+                        <article class="rule-wiki-entry" data-rule-entry data-rule-page="${escapeHtml(page ? page.id : '')}" data-rule-search="${escapeHtml(ruleWikiRuleSearchText(rule, page))}">
+                            <h3>${escapeHtml(rule.title)}</h3>
+                            <p>${escapeHtml(rule.text)}</p>
+                            ${explanationHtml}
+                        </article>
+                    `;
+                }).join('');
+            }
+            renderRuleWikiNav();
+            updateRuleWikiCategoryButtons();
+            filterRuleWikiEntries();
+        }
+
+        function filterRuleWikiEntries() {
+            const input = document.getElementById('ruleWikiSearchInput');
+            const query = String(input && input.value || '').trim().toLowerCase();
+            const rows = Array.from(document.querySelectorAll('#ruleWikiList [data-rule-entry]'));
+            let visible = 0;
+            rows.forEach(function(row) {
+                const haystack = String(row.getAttribute('data-rule-search') || '').toLowerCase();
+                const pageId = String(row.getAttribute('data-rule-page') || '');
+                const matchesCategory = !ruleWikiActiveCategory || pageId === ruleWikiActiveCategory;
+                const text = String(row.textContent || '').toLowerCase();
+                const match = matchesCategory && (!query || haystack.indexOf(query) !== -1 || text.indexOf(query) !== -1);
+                row.style.display = match ? 'block' : 'none';
+                if (match) visible += 1;
+            });
+            const count = document.getElementById('ruleWikiCount');
+            if (count) count.textContent = `${visible} av ${rows.length} regelavsnitt visas`;
+        }
+
+        async function loadRuleWikiEntries() {
+            let doc = null;
+            let sourceMode = 'api';
+            const data = await apiGet('/api/rule-wiki');
+            doc = normalizeRuleWikiDocumentClient(data.document || null);
+            if (doc) {
+                sourceMode = String(data.source || 'app');
+            } else {
+                try {
+                    const staticResp = await fetch('/regelboken.json', { credentials: 'include', cache: 'no-store' });
+                    if (staticResp.ok) {
+                        const staticData = await staticResp.json();
+                        doc = normalizeRuleWikiDocumentClient(staticData);
+                        if (doc) sourceMode = 'json';
+                    }
+                } catch (_) {}
+            }
+            if (!doc) {
+                doc = normalizeRuleWikiDocumentClient(data.entries || []);
+                sourceMode = 'api';
+            }
+            ruleWikiDocument = doc;
+            ruleWikiSourceMode = sourceMode;
+            const legacyEntries = sourceMode === 'api'
+                ? ((ruleWikiDocument && Array.isArray(ruleWikiDocument.pages) ? ruleWikiDocument.pages : []).flatMap(function(page) {
+                    return (page.rules || []).map(function(rule) {
+                        return {
+                            id: rule.id,
+                            title: rule.title,
+                            body: rule.text,
+                            bullets: rule.explanation ? [rule.explanation] : []
+                        };
+                    });
+                }))
+                : [];
+            ruleWikiEntries = legacyEntries;
+            if (!ruleWikiEditMode) {
+                ruleWikiDraftEntries = ruleWikiEntries.map(function(entry) {
+                    return {
+                        id: entry.id,
+                        title: entry.title,
+                        body: entry.body,
+                        bullets: (entry.bullets || []).slice()
+                    };
+                });
+            }
+            const pages = ruleWikiDocument && Array.isArray(ruleWikiDocument.pages) ? ruleWikiDocument.pages : [];
+            ruleWikiActiveCategory = pages[0] ? pages[0].id : '';
+            renderRuleWikiEntries();
+        }
+
+        async function importRuleWikiJsonFile(file) {
+            if (!currentUserIsAdmin || !file) return;
+            const text = await file.text();
+            let parsed;
+            try {
+                parsed = JSON.parse(text);
+            } catch (_) {
+                throw new Error('JSON-filen kunde inte tolkas.');
+            }
+            const normalized = normalizeRuleWikiDocumentClient(parsed);
+            if (!normalized) {
+                throw new Error('Ogiltig regelboks-JSON. Minst en sida med regler krävs.');
+            }
+            const resp = await apiSend('/api/rule-wiki', 'PUT', {
+                document: normalized
+            });
+            ruleWikiDocument = normalizeRuleWikiDocumentClient(resp.document || normalized);
+            ruleWikiSourceMode = String(resp.source || 'app');
+            ruleWikiEditMode = false;
+            ruleWikiEntries = [];
+            ruleWikiDraftEntries = [];
+            const pages = ruleWikiDocument && Array.isArray(ruleWikiDocument.pages) ? ruleWikiDocument.pages : [];
+            ruleWikiActiveCategory = pages[0] ? pages[0].id : '';
+            renderRuleWikiEntries();
+        }
+
+        function openRuleWikiModal() {
+            const modal = document.getElementById('ruleWikiModal');
+            if (!modal) return;
+            modal.style.display = 'flex';
+            const input = document.getElementById('ruleWikiSearchInput');
+            if (input) input.value = '';
+            ruleWikiActiveCategory = 'alla';
+            ruleWikiEditMode = false;
+            loadRuleWikiEntries().catch(function(err) {
+                const list = document.getElementById('ruleWikiList');
+                if (list) list.innerHTML = `<div class="rule-wiki-empty">${escapeHtml(err.message || 'Kunde inte ladda reglerna.')}</div>`;
+                filterRuleWikiEntries();
+            });
+        }
+
+        function closeRuleWikiModal() {
+            const modal = document.getElementById('ruleWikiModal');
+            if (!modal) return;
+            modal.style.display = 'none';
+            ruleWikiEditMode = false;
+            ruleWikiActiveCategory = 'alla';
+            ruleWikiDraftEntries = ruleWikiEntries.map(function(entry) {
+                return {
+                    id: entry.id,
+                    title: entry.title,
+                    body: entry.body,
+                    bullets: (entry.bullets || []).slice()
+                };
+            });
+        }
+
+        function startRuleWikiEdit() {
+            if (!currentUserIsAdmin) return;
+            ruleWikiEditMode = true;
+            ruleWikiDraftEntries = ruleWikiEntries.map(function(entry) {
+                return {
+                    id: entry.id,
+                    title: entry.title,
+                    body: entry.body,
+                    bullets: (entry.bullets || []).slice()
+                };
+            });
+            renderRuleWikiEntries();
+        }
+
+        function cancelRuleWikiEdit() {
+            ruleWikiEditMode = false;
+            ruleWikiDraftEntries = ruleWikiEntries.map(function(entry) {
+                return {
+                    id: entry.id,
+                    title: entry.title,
+                    body: entry.body,
+                    bullets: (entry.bullets || []).slice()
+                };
+            });
+            renderRuleWikiEntries();
+        }
+
+        function addRuleWikiEntry() {
+            if (!currentUserIsAdmin || !ruleWikiEditMode) return;
+            const nextIndex = ruleWikiDraftEntries.length + 1;
+            ruleWikiDraftEntries.push({
+                id: `rule-${nextIndex}`,
+                title: `${nextIndex}. Nytt regelavsnitt`,
+                body: 'Beskriv regelavsnittet här.',
+                bullets: ['Ny punkt']
+            });
+            renderRuleWikiEntries();
+        }
+
+        async function saveRuleWikiEntries() {
+            if (!currentUserIsAdmin || !ruleWikiEditMode) return;
+            const entries = Array.from(document.querySelectorAll('#ruleWikiList [data-rule-entry]')).map(function(_row, index) {
+                const titleInput = document.querySelector(`[data-rule-title="${index}"]`);
+                const bodyInput = document.querySelector(`[data-rule-body="${index}"]`);
+                const bulletsInput = document.querySelector(`[data-rule-bullets="${index}"]`);
+                return normalizeRuleWikiEntryClient({
+                    id: `rule-${index + 1}`,
+                    title: titleInput ? titleInput.value : '',
+                    body: bodyInput ? bodyInput.value : '',
+                    bullets: String(bulletsInput ? bulletsInput.value : '')
+                        .split('\n')
+                        .map(function(item) { return item.trim(); })
+                        .filter(Boolean)
+                }, index);
+            }).filter(Boolean);
+            if (!entries.length) {
+                throw new Error('Minst ett regelavsnitt krävs.');
+            }
+            const resp = await apiSend('/api/rule-wiki', 'PUT', { entries: entries });
+            ruleWikiEntries = Array.isArray(resp.entries)
+                ? resp.entries.map(function(entry, index) { return normalizeRuleWikiEntryClient(entry, index); }).filter(Boolean)
+                : entries;
+            ruleWikiEditMode = false;
+            ruleWikiDraftEntries = ruleWikiEntries.map(function(entry) {
+                return {
+                    id: entry.id,
+                    title: entry.title,
+                    body: entry.body,
+                    bullets: (entry.bullets || []).slice()
+                };
+            });
+            renderRuleWikiEntries();
+        }
+
+        function deleteRuleWikiEntry(index) {
+            if (!currentUserIsAdmin || !ruleWikiEditMode) return;
+            if (index < 0 || index >= ruleWikiDraftEntries.length) return;
+            ruleWikiDraftEntries.splice(index, 1);
+            renderRuleWikiEntries();
         }
 
         function formatQnaTime(ts) {
@@ -7086,6 +8016,7 @@
             const explicit = String(item && item.category || '').trim().toLowerCase();
             if (qnaCategoryConfig[explicit]) return explicit;
             const text = String((item && item.question) || '').toLowerCase();
+            if (/regelbok|regelboken|stadgar|stadga/.test(text)) return 'regelboken';
             if (/(facebook|meta|annonser|ads|instagram)/.test(text)) return 'facebook';
             if (/(^|\s)(x|twitter)(\s|$)/.test(text)) return 'x';
             if (/tiktok/.test(text)) return 'tiktok';
@@ -7221,6 +8152,7 @@
                         ${qnaCategoryButtonHtml('facebook')}
                         ${qnaCategoryButtonHtml('x')}
                         ${qnaCategoryButtonHtml('tiktok')}
+                        ${qnaCategoryButtonHtml('regelboken')}
                         ${qnaCategoryButtonHtml('other')}
                     </div>
                 `;
@@ -7584,7 +8516,7 @@
             if (!detail || !detailContent || !list || !actions) return;
             const img = String(idea.img || '');
             const safeImg = escapeHtml(img || 'https://via.placeholder.com/400x200?text=Ingen+bild');
-            const canManage = currentUserIsAdmin || String(idea.user_email || '').toLowerCase() === String(currentUserEmail || '').toLowerCase();
+            const canManage = currentUserCanManage || String(idea.user_email || '').toLowerCase() === String(currentUserEmail || '').toLowerCase();
             const manageActions = canManage
                 ? `<div class="idea-bank-detail-actions">
                        <button type="button" class="idea-bank-secondary-btn" data-idea-edit="${Number(idea.id)}">Redigera</button>
@@ -7851,7 +8783,7 @@
         }
 
         async function persistImportantOrder() {
-            if (importantOrderSaving || !currentUserIsAdmin || !importantApiAvailable) return;
+            if (importantOrderSaving || !currentUserCanManage || !importantApiAvailable) return;
             importantOrderSaving = true;
             try {
                 for (let i = 0; i < importantMessages.length; i += 1) {
@@ -7941,7 +8873,7 @@
         }
 
         function openImportantAdminModal() {
-            if (!currentUserIsAdmin) return;
+            if (!currentUserCanManage) return;
             if (!importantApiAvailable) {
                 alert('Kan inte redigera nu eftersom serverkoppling saknas. Försök igen om en stund.');
                 return;
@@ -7973,7 +8905,7 @@
         }
 
         async function saveImportantMessageFromForm() {
-            if (!currentUserIsAdmin) return;
+            if (!currentUserCanManage) return;
             if (!importantApiAvailable) {
                 throw new Error('Serverkoppling saknas. Meddelandet kunde inte sparas.');
             }
@@ -8012,7 +8944,7 @@
         }
 
         async function deleteImportantMessage(id) {
-            if (!currentUserIsAdmin) return;
+            if (!currentUserCanManage) return;
             if (!importantApiAvailable) {
                 throw new Error('Serverkoppling saknas. Meddelandet kunde inte tas bort.');
             }
@@ -8100,6 +9032,7 @@
                 list.innerHTML = meetings.map(function(m) {
                     const link = String(m.link || '').trim();
                     const hasLink = /^https?:\/\//i.test(link);
+                    const attachments = normalizeEventAttachments(m.attachments || []);
                     const win = parseMeetingTimeWindow(m.title);
                     const rawTitle = String(m.title || '').trim();
                     const cleanedTitle = rawTitle
@@ -8121,9 +9054,14 @@
                             statusText = 'Snart';
                         }
                     }
-                    const editBtn = currentUserIsAdmin
+                    const editBtn = currentUserCanManage
                         ? `<button class=\"meeting-edit-btn\" type=\"button\" data-edit-event-id=\"${m.id}\" title=\"Redigera\">Redigera</button>`
                         : '';
+                    const deleteBtn = currentUserIsAdmin
+                        ? `<button class=\"meeting-edit-btn danger\" type=\"button\" data-delete-event-id=\"${m.id}\" title=\"Ta bort\">Ta bort</button>`
+                        : '';
+                    const openBtn = `<button class=\"meeting-edit-btn\" type=\"button\" data-open-event-id=\"${m.id}\" title=\"Visa detaljer\">Visa</button>`;
+                    const filesLabel = attachments.length ? `${attachments.length} fil(er)` : '';
                     const joinBtn = hasLink
                         ? `<a class=\"meeting-link\" href=\"${link}\" target=\"_blank\" rel=\"noopener\" title=\"Anslut till mötet\">Anslut till möte</a>`
                         : `<span class=\"meeting-link disabled\" title=\"Ingen möteslänk\">Ingen möteslänk</span>`;
@@ -8134,22 +9072,49 @@
                                 <span class=\"meeting-meta\">
                                     ${escapeHtml(timeLabel)}
                                     ${statusText ? `<span class=\"meeting-status ${statusClass}\">${statusText}</span>` : ''}
+                                    ${filesLabel ? `<span class=\"meeting-status\">${escapeHtml(filesLabel)}</span>` : ''}
                                 </span>
                             </span>
                             <span class=\"meeting-actions\">
+                                ${openBtn}
                                 ${joinBtn}
                                 ${editBtn}
+                                ${deleteBtn}
                             </span>
                         </div>
                     `;
                 }).join('');
 
-                if (currentUserIsAdmin) {
+                list.querySelectorAll('[data-open-event-id]').forEach(function(btn) {
+                    btn.addEventListener('click', function() {
+                        const id = Number(btn.getAttribute('data-open-event-id'));
+                        const match = meetings.find(function(x) { return Number(x.id) === id; });
+                        if (!match) return;
+                        openEventModal({
+                            dateKey: String(match.date_key || todayKeyClient),
+                            event: match
+                        });
+                    });
+                });
+
+                if (currentUserCanManage) {
                     list.querySelectorAll('[data-edit-event-id]').forEach(function(btn) {
                         btn.addEventListener('click', function() {
                             const id = Number(btn.getAttribute('data-edit-event-id'));
                             const match = meetings.find(function(x) { return x.id === id; });
                             openEventEditorEdit(match);
+                        });
+                    });
+                }
+                if (currentUserIsAdmin) {
+                    list.querySelectorAll('[data-delete-event-id]').forEach(function(btn) {
+                        btn.addEventListener('click', function() {
+                            const id = Number(btn.getAttribute('data-delete-event-id'));
+                            if (!id) return;
+                            if (!confirm('Vill du ta bort mötet?')) return;
+                            deleteEventById(id).catch(function(err) {
+                                alert(err.message || 'Kunde inte ta bort mötet.');
+                            });
                         });
                     });
                 }
@@ -8288,6 +9253,178 @@
             });
         }
 
+        function eventAttachmentNameFromUrl(url) {
+            const clean = String(url || '').split('?')[0].split('#')[0];
+            const parts = clean.split('/');
+            const last = parts[parts.length - 1] || '';
+            try {
+                return decodeURIComponent(last) || 'bilaga';
+            } catch (_) {
+                return last || 'bilaga';
+            }
+        }
+
+        function normalizeEventAttachments(raw) {
+            if (!Array.isArray(raw)) return [];
+            return raw.map(function(item) {
+                if (!item || typeof item !== 'object') return null;
+                const url = String(item.url || '').trim();
+                if (!url) return null;
+                const name = String(item.name || '').trim() || eventAttachmentNameFromUrl(url);
+                const mime = String(item.mime || '').trim();
+                const sizeRaw = Number(item.size);
+                const size = Number.isFinite(sizeRaw) && sizeRaw >= 0 ? Math.floor(sizeRaw) : null;
+                return { url: url, name: name, mime: mime, size: size };
+            }).filter(Boolean);
+        }
+
+        function normalizeEventAttendance(raw) {
+            if (!Array.isArray(raw)) return [];
+            const seen = new Set();
+            return raw.map(function(item) {
+                if (!item || typeof item !== 'object') return null;
+                const name = String(item.name || '').trim();
+                if (!name) return null;
+                const key = name.toLowerCase();
+                if (seen.has(key)) return null;
+                seen.add(key);
+                return {
+                    name: name.slice(0, 120),
+                    present: !!item.present
+                };
+            }).filter(Boolean);
+        }
+
+        function setEventEditorFileHint(text) {
+            const hint = document.getElementById('eventEditorFileHint');
+            if (!hint) return;
+            hint.innerText = String(text || '');
+        }
+
+        function renderEventEditorAttachmentList() {
+            const list = document.getElementById('eventEditorFileList');
+            if (!list) return;
+            if (!eventEditorAttachments.length) {
+                list.innerHTML = '';
+                setEventEditorFileHint('');
+                return;
+            }
+            list.innerHTML = eventEditorAttachments.map(function(file, idx) {
+                const sizeText = Number(file.size) > 0 ? ` (${Math.max(1, Math.round(Number(file.size) / 1024))} KB)` : '';
+                return `<li>${escapeHtml(file.name || 'bilaga')}${escapeHtml(sizeText)} <button class="event-editor-file-btn" type="button" data-event-attachment-remove="${idx}" style="padding:2px 8px; font-size:0.74rem;">Ta bort</button></li>`;
+            }).join('');
+        }
+
+        function clearEventEditorAttachments() {
+            eventEditorAttachments = [];
+            const input = document.getElementById('eventEditorFileInput');
+            if (input) input.value = '';
+            renderEventEditorAttachmentList();
+        }
+
+        async function handleEventEditorFileSelection(files) {
+            const list = Array.from(files || []);
+            if (!list.length) return;
+            for (let i = 0; i < list.length; i += 1) {
+                const file = list[i];
+                setEventEditorFileHint(`Laddar upp fil ${i + 1}/${list.length}...`);
+                const uploaded = await uploadFileToChat(file);
+                const uploadedUrl = String(uploaded && uploaded.url || '').trim();
+                if (!uploadedUrl) {
+                    throw new Error('Kunde inte ladda upp filen.');
+                }
+                const exists = eventEditorAttachments.some(function(item) {
+                    return String(item.url || '') === uploadedUrl;
+                });
+                if (!exists) {
+                    eventEditorAttachments.push({
+                        url: uploadedUrl,
+                        name: String(uploaded && uploaded.name || file.name || eventAttachmentNameFromUrl(uploadedUrl)),
+                        mime: String(uploaded && uploaded.mime || file.type || ''),
+                        size: Number(uploaded && uploaded.size || file.size || 0) || null
+                    });
+                }
+            }
+            const input = document.getElementById('eventEditorFileInput');
+            if (input) input.value = '';
+            setEventEditorFileHint(`${eventEditorAttachments.length} fil(er) valda.`);
+            renderEventEditorAttachmentList();
+        }
+
+        function renderEventModalAttachments(attachments) {
+            const wrap = document.getElementById('modalAttachmentsWrap');
+            const list = document.getElementById('modalAttachmentsList');
+            if (!wrap || !list) return;
+            const files = normalizeEventAttachments(attachments);
+            if (!files.length) {
+                wrap.style.display = 'none';
+                list.innerHTML = '';
+                return;
+            }
+            list.innerHTML = files.map(function(file) {
+                return `<li><a href="${escapeHtml(file.url)}" target="_blank" rel="noopener" download>${escapeHtml(file.name)}</a></li>`;
+            }).join('');
+            wrap.style.display = 'block';
+        }
+
+        function renderEventAttendance() {
+            const list = document.getElementById('modalAttendanceList');
+            const summary = document.getElementById('modalAttendanceSummary');
+            const adminRow = document.getElementById('modalAttendanceAdminRow');
+            const saveBtn = document.getElementById('modalAttendanceSaveBtn');
+            if (!list || !summary || !adminRow || !saveBtn) return;
+
+            const attendance = normalizeEventAttendance(eventAttendanceDraft);
+            eventAttendanceDraft = attendance;
+            const presentCount = attendance.filter(function(row) { return !!row.present; }).length;
+
+            if (!attendance.length) {
+                list.innerHTML = '<li class="event-attendance-item">Inga namn i listan ännu.</li>';
+            } else {
+                list.innerHTML = attendance.map(function(row, idx) {
+                    const removeBtn = currentUserCanManage
+                        ? `<button class="event-editor-btn" type="button" data-attendance-remove="${idx}" style="padding:2px 8px; font-size:0.74rem;">Ta bort</button>`
+                        : '';
+                    const checked = row.present ? 'checked' : '';
+                    const toggleInput = currentUserCanManage
+                        ? `<label><input type="checkbox" data-attendance-toggle="${idx}" ${checked}> ${escapeHtml(row.name)}</label>`
+                        : `<span>${row.present ? '✓ ' : '○ '}${escapeHtml(row.name)}</span>`;
+                    return `<li class="event-attendance-item">${toggleInput}${removeBtn}</li>`;
+                }).join('');
+            }
+
+            summary.innerText = `${presentCount}/${attendance.length} markerade som närvarande`;
+            adminRow.style.display = currentUserCanManage ? 'flex' : 'none';
+            saveBtn.style.display = currentUserCanManage ? 'inline-block' : 'none';
+        }
+
+        async function saveEventAttendance() {
+            if (!activeModalEvent || !currentUserCanManage) return;
+            const eventId = Number(activeModalEvent.id || 0);
+            if (!eventId) return;
+            const normalized = normalizeEventAttendance(eventAttendanceDraft);
+            await apiSend(`/api/events/${eventId}/attendance`, 'PUT', {
+                attendance: normalized
+            });
+            eventAttendanceDraft = normalized;
+            activeModalEvent.attendance = normalized;
+            await Promise.all([loadMonthEvents(), loadTodayMeetings()]);
+            renderCalendar();
+            renderEventAttendance();
+            alert('Närvarolistan sparades.');
+        }
+
+        async function deleteEventById(eventId) {
+            const normalizedId = Number(eventId || 0);
+            if (!currentUserIsAdmin || !normalizedId) return;
+            await apiSend(`/api/events/${normalizedId}`, 'DELETE');
+            if (activeModalEvent && Number(activeModalEvent.id || 0) === normalizedId) {
+                closeModal();
+            }
+            await Promise.all([loadMonthEvents(), loadTodayMeetings()]);
+            renderCalendar();
+        }
+
         // JS för kalender modal
         function openEventModal(payload) {
             const event = payload.event;
@@ -8295,18 +9432,29 @@
                 id: event.id,
                 date_key: payload.dateKey,
                 title: event.title,
-                link: event.link || ''
+                link: event.link || '',
+                attachments: normalizeEventAttachments(event.attachments || []),
+                attendance: normalizeEventAttendance(event.attendance || [])
             };
+            eventAttendanceDraft = normalizeEventAttendance(activeModalEvent.attendance || []);
             document.getElementById('modalDate').innerText = payload.dateKey;
             document.getElementById('modalTitle').innerText = event.title;
             document.getElementById('modalLink').href = event.link || '#';
+            renderEventModalAttachments(activeModalEvent.attachments);
+            renderEventAttendance();
             document.getElementById('eventModal').style.display = 'flex';
             const editBtn = document.getElementById('modalEditEventBtn');
-            editBtn.style.display = currentUserIsAdmin ? 'inline-block' : 'none';
+            const deleteBtn = document.getElementById('modalDeleteEventBtn');
+            editBtn.style.display = currentUserCanManage ? 'inline-block' : 'none';
+            deleteBtn.style.display = currentUserIsAdmin ? 'inline-block' : 'none';
         }
 
         function closeModal() {
             document.getElementById('eventModal').style.display = 'none';
+            const input = document.getElementById('modalAttendanceNameInput');
+            if (input) input.value = '';
+            eventAttendanceDraft = [];
+            activeModalEvent = null;
         }
 
         // Stäng modal om man klickar utanför rutan
@@ -8371,6 +9519,7 @@
         function openEventEditorCreate() {
             eventEditorMode = 'create';
             editingEventId = null;
+            clearEventEditorAttachments();
             document.getElementById('eventEditorTitle').innerText = 'Nytt möte';
             const today = new Date();
             const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
@@ -8390,6 +9539,7 @@
             if (!eventObj) return;
             eventEditorMode = 'edit';
             editingEventId = eventObj.id;
+            eventEditorAttachments = normalizeEventAttachments(eventObj.attachments || []);
             document.getElementById('eventEditorTitle').innerText = 'Redigera möte';
             document.getElementById('eventEditorDate').value = eventObj.date_key;
             const parsed = extractTimesAndTitle(eventObj.title || '');
@@ -8402,6 +9552,8 @@
             }
             document.getElementById('eventEditorText').value = parsed.title || '';
             document.getElementById('eventEditorLink').value = eventObj.link || '';
+            renderEventEditorAttachmentList();
+            setEventEditorFileHint(eventEditorAttachments.length ? `${eventEditorAttachments.length} fil(er) valda.` : '');
             document.getElementById('eventEditorModal').style.display = 'flex';
         }
 
@@ -8415,6 +9567,7 @@
             const endTime = document.getElementById('eventEditorEndTime').value;
             const title = document.getElementById('eventEditorText').value.trim();
             const link = document.getElementById('eventEditorLink').value.trim();
+            const attachments = normalizeEventAttachments(eventEditorAttachments);
             if (!dateKey || !startTime || !endTime || !title) {
                 alert('Datum, starttid, sluttid och titel krävs.');
                 return;
@@ -8455,13 +9608,15 @@
                 await apiSend(`/api/events/${editingEventId}`, 'PUT', {
                     date_key: dateKey,
                     title: fullTitle,
-                    link: link
+                    link: link,
+                    attachments: attachments
                 });
             } else {
                 await apiSend('/api/events', 'POST', {
                     date_key: dateKey,
                     title: fullTitle,
-                    link: link
+                    link: link,
+                    attachments: attachments
                 });
             }
 
@@ -8646,7 +9801,7 @@
         }
 
         function fsCanModifyItem(item, itemPathParts) {
-            if (currentUserIsAdmin) return true;
+            if (currentUserCanManage) return true;
             const inheritedSharePermission = fsGetInheritedSharePermission(itemPathParts);
             if (inheritedSharePermission) {
                 return inheritedSharePermission === 'edit';
@@ -8666,7 +9821,7 @@
                 content: isFile ? '' : null,
                 children: isFile ? null : {},
                 created_by_email: fsCurrentUserEmail() || 'unknown',
-                created_by_admin: !!currentUserIsAdmin
+                created_by_admin: !!currentUserCanManage
             };
         }
 
@@ -8763,7 +9918,7 @@
                 source_owner_email: fsNormalizeEmail(sourceNode.created_by_email),
                 share_permission: permission === 'edit' ? 'edit' : 'read',
                 created_by_email: fsCurrentUserEmail() || 'unknown',
-                created_by_admin: !!currentUserIsAdmin
+                created_by_admin: !!currentUserCanManage
             };
         }
 
@@ -10476,13 +11631,83 @@
         }
 
         document.getElementById('modalEditEventBtn').addEventListener('click', function() {
-            if (!activeModalEvent || !currentUserIsAdmin) return;
+            if (!activeModalEvent || !currentUserCanManage) return;
             openEventEditorEdit(activeModalEvent);
+        });
+        document.getElementById('modalDeleteEventBtn').addEventListener('click', function() {
+            if (!activeModalEvent || !currentUserIsAdmin) return;
+            const eventId = Number(activeModalEvent.id || 0);
+            if (!eventId) return;
+            if (!confirm('Vill du ta bort mötet?')) return;
+            deleteEventById(eventId).catch(function(err) {
+                alert(err.message || 'Kunde inte ta bort mötet.');
+            });
+        });
+        document.getElementById('modalAttendanceAddBtn').addEventListener('click', function() {
+            if (!currentUserCanManage) return;
+            const input = document.getElementById('modalAttendanceNameInput');
+            const name = String(input && input.value || '').trim();
+            if (!name) return;
+            eventAttendanceDraft = normalizeEventAttendance((eventAttendanceDraft || []).concat([{ name: name, present: false }]));
+            if (input) input.value = '';
+            renderEventAttendance();
+        });
+        document.getElementById('modalAttendanceNameInput').addEventListener('keydown', function(e) {
+            if (e.key !== 'Enter') return;
+            e.preventDefault();
+            document.getElementById('modalAttendanceAddBtn').click();
+        });
+        document.getElementById('modalAttendanceList').addEventListener('click', function(e) {
+            if (!currentUserCanManage) return;
+            const removeBtn = e.target && e.target.closest ? e.target.closest('[data-attendance-remove]') : null;
+            if (!removeBtn) return;
+            const idx = Number(removeBtn.getAttribute('data-attendance-remove'));
+            if (!Number.isInteger(idx) || idx < 0 || idx >= eventAttendanceDraft.length) return;
+            eventAttendanceDraft.splice(idx, 1);
+            renderEventAttendance();
+        });
+        document.getElementById('modalAttendanceList').addEventListener('change', function(e) {
+            if (!currentUserCanManage) return;
+            const toggle = e.target && e.target.matches && e.target.matches('[data-attendance-toggle]');
+            if (!toggle) return;
+            const idx = Number(e.target.getAttribute('data-attendance-toggle'));
+            if (!Number.isInteger(idx) || idx < 0 || idx >= eventAttendanceDraft.length) return;
+            eventAttendanceDraft[idx].present = !!e.target.checked;
+            renderEventAttendance();
+        });
+        document.getElementById('modalAttendanceSaveBtn').addEventListener('click', function() {
+            saveEventAttendance().catch(function(err) {
+                alert(err.message || 'Kunde inte spara närvarolistan.');
+            });
         });
         document.getElementById('eventEditorSaveBtn').addEventListener('click', function() {
             saveEventFromEditor().catch(function(err) {
                 alert(err.message || 'Kunde inte spara mötet.');
             });
+        });
+        document.getElementById('eventEditorFileBtn').addEventListener('click', function() {
+            const input = document.getElementById('eventEditorFileInput');
+            if (!input) return;
+            input.click();
+        });
+        document.getElementById('eventEditorFileClearBtn').addEventListener('click', function() {
+            clearEventEditorAttachments();
+        });
+        document.getElementById('eventEditorFileInput').addEventListener('change', function(e) {
+            const files = e && e.target ? e.target.files : null;
+            handleEventEditorFileSelection(files).catch(function(err) {
+                setEventEditorFileHint('');
+                alert(err.message || 'Kunde inte ladda upp filen.');
+            });
+        });
+        document.getElementById('eventEditorFileList').addEventListener('click', function(e) {
+            const btn = e.target && e.target.closest ? e.target.closest('[data-event-attachment-remove]') : null;
+            if (!btn) return;
+            const idx = Number(btn.getAttribute('data-event-attachment-remove'));
+            if (!Number.isInteger(idx) || idx < 0 || idx >= eventEditorAttachments.length) return;
+            eventEditorAttachments.splice(idx, 1);
+            renderEventEditorAttachmentList();
+            if (!eventEditorAttachments.length) setEventEditorFileHint('');
         });
         const eventEditorStartTimeInput = document.getElementById('eventEditorStartTime');
         if (eventEditorStartTimeInput) {
@@ -11002,7 +12227,7 @@
                 solved: nextSolved
             });
             await loadWeeklyTasks();
-            if (currentUserIsAdmin && document.getElementById('taskAdminModal').style.display === 'flex') {
+            if (currentUserCanManage && document.getElementById('taskAdminModal').style.display === 'flex') {
                 await loadTaskAdminLibrary();
             }
             const updated = findWeeklyTaskByAssignmentId(Number(task.assignment_id));
@@ -11098,7 +12323,7 @@
         }
 
         async function loadTaskAdminUsers() {
-            if (!currentUserIsAdmin) return [];
+            if (!currentUserCanManage) return [];
             const data = await apiGet('/api/admin/users');
             taskAdminUsers = Array.isArray(data.users) ? data.users.map(function(u) {
                 return { id: Number(u.id || 0), email: String(u.email || '') };
@@ -11143,7 +12368,7 @@
         }
 
         async function loadTaskAdminLibrary() {
-            if (!currentUserIsAdmin) return;
+            if (!currentUserCanManage) return;
             const data = await apiGet('/api/admin/tasks/library');
             taskLibraryUnsolved = Array.isArray(data.unsolved) ? data.unsolved : [];
             taskLibrarySolved = Array.isArray(data.solved) ? data.solved : [];
@@ -11203,7 +12428,7 @@
         }
 
         async function openTaskAdminModal() {
-            if (!currentUserIsAdmin) return;
+            if (!currentUserCanManage) return;
             const modal = document.getElementById('taskAdminModal');
             if (!modal) return;
             modal.style.display = 'flex';
@@ -11249,11 +12474,11 @@
             closeImportantIconPicker();
         });
         document.getElementById('academyOpenPdfBtn').addEventListener('click', function() {
-            if (!currentUserIsAdmin) return;
+            if (!currentUserCanManage) return;
             openAcademyEntryModal('pdf');
         });
         document.getElementById('academyOpenVideoBtn').addEventListener('click', function() {
-            if (!currentUserIsAdmin) return;
+            if (!currentUserCanManage) return;
             openAcademyEntryModal('video');
         });
         document.getElementById('academyPdfCancelBtn').addEventListener('click', function() {
@@ -11283,10 +12508,71 @@
         document.getElementById('facebookAcademyModal').addEventListener('click', function(e) {
             if (e.target === this) closeFacebookAcademyModal();
         });
+        document.getElementById('statisticsToolIcon').addEventListener('click', function() {
+            openComingSoonModal();
+        });
+        document.getElementById('settingsToolIcon').addEventListener('click', function() {
+            openComingSoonModal();
+        });
         document.getElementById('qnaToolIcon').addEventListener('click', function() {
             openQnaModal().catch(function(err) {
                 alert(err.message || 'Kunde inte öppna QnA.');
             });
+        });
+        document.getElementById('ruleWikiToolIcon').addEventListener('click', function() {
+            openRuleWikiModal();
+        });
+        document.getElementById('ruleWikiEditBtn').addEventListener('click', function() {
+            startRuleWikiEdit();
+        });
+        document.getElementById('ruleWikiImportBtn').addEventListener('click', function() {
+            if (!currentUserIsAdmin) return;
+            const input = document.getElementById('ruleWikiImportInput');
+            if (input) input.click();
+        });
+        document.getElementById('ruleWikiImportInput').addEventListener('change', function(e) {
+            const input = e && e.target ? e.target : null;
+            const file = input && input.files && input.files[0] ? input.files[0] : null;
+            if (!file) return;
+            importRuleWikiJsonFile(file).catch(function(err) {
+                alert(err.message || 'Kunde inte läsa in JSON-filen.');
+            }).finally(function() {
+                if (input) input.value = '';
+            });
+        });
+        document.getElementById('ruleWikiAddBtn').addEventListener('click', function() {
+            addRuleWikiEntry();
+        });
+        document.getElementById('ruleWikiSaveBtn').addEventListener('click', function() {
+            saveRuleWikiEntries().catch(function(err) {
+                alert(err.message || 'Kunde inte spara reglerna.');
+            });
+        });
+        document.getElementById('ruleWikiCancelBtn').addEventListener('click', function() {
+            cancelRuleWikiEdit();
+        });
+        document.getElementById('ruleWikiSearchInput').addEventListener('input', function() {
+            filterRuleWikiEntries();
+        });
+        document.getElementById('ruleWikiNav').addEventListener('click', function(e) {
+            const btn = e.target && e.target.closest ? e.target.closest('[data-rule-page]') : null;
+            if (!btn) return;
+            ruleWikiActiveCategory = String(btn.getAttribute('data-rule-page') || '');
+            updateRuleWikiCategoryButtons();
+            renderRuleWikiEntries();
+        });
+        document.getElementById('ruleWikiList').addEventListener('click', function(e) {
+            const deleteBtn = e.target && e.target.closest ? e.target.closest('[data-rule-delete]') : null;
+            if (!deleteBtn) return;
+            const index = Number(deleteBtn.getAttribute('data-rule-delete'));
+            if (!Number.isInteger(index)) return;
+            deleteRuleWikiEntry(index);
+        });
+        document.getElementById('ruleWikiModal').addEventListener('click', function(e) {
+            if (e.target === this) closeRuleWikiModal();
+        });
+        document.getElementById('comingSoonModal').addEventListener('click', function(e) {
+            if (e.target === this) closeComingSoonModal();
         });
         document.getElementById('qnaModal').addEventListener('click', function(e) {
             if (e.target === this) closeQnaModal();

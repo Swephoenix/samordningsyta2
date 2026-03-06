@@ -1,0 +1,72 @@
+{
+  "title": "📘 Partiets Regelbok",
+  "subtitle": "Intern regelbok för partiets arbetssätt, beslutsvägar och uppförandekod.",
+  "assistant_text": "Kommande feature.\nRegelassistenten är inte aktiv ännu.",
+  "footer_text": "Pedagogisk regelbok",
+  "pages": [
+    {
+      "id": "organisation",
+      "title": "Organisation",
+      "description": "Grundstruktur för hur partiet är organiserat och hur beslut fattas.",
+      "rules": [
+        {
+          "id": "organisation-1",
+          "title": "1. Organisation",
+          "text": "Partiet organiseras i nationell nivå, regionnivå och lokal nivå.",
+          "explanation": "Det betyder att partiet har tre nivåer av beslut. Lokala föreningar hanterar lokala frågor medan nationella beslut tas centralt."
+        },
+        {
+          "id": "organisation-2",
+          "title": "2. Mötesordning och beslutsprocess",
+          "text": "Partiets beslut fattas i demokratiska forum med tydlig beredning, mötesordning och protokoll.",
+          "explanation": "Kallelser, underlag och ansvarsfördelning ska vara tydliga så att beslut går att följa upp."
+        }
+      ]
+    },
+    {
+      "id": "medlemskap",
+      "title": "Medlemskap",
+      "description": "Regler för medlemskap, värdegrund och disciplinära frågor.",
+      "rules": [
+        {
+          "id": "membership-1",
+          "title": "1. Medlemskap",
+          "text": "Medlemskap beviljas personer som accepterar partiets stadgar och värdegrund.",
+          "explanation": "Medlemskap innebär rätt att delta i möten och bidra till partiets arbete."
+        },
+        {
+          "id": "membership-2",
+          "title": "2. Uppförandekod",
+          "text": "Partiet accepterar inte hot, hat, trakasserier eller diskriminering inom organisationen.",
+          "explanation": "Alla medlemmar förväntas bidra till ett tryggt och professionellt arbetsklimat."
+        }
+      ]
+    },
+    {
+      "id": "kommunikation",
+      "title": "Kommunikation",
+      "description": "Regler för extern och intern kommunikation.",
+      "rules": [
+        {
+          "id": "communication-1",
+          "title": "1. Kommunikation",
+          "text": "Officiella uttalanden görs av utsedda talespersoner.",
+          "explanation": "Detta förhindrar att olika budskap sprids samtidigt och skapar tydlighet externt."
+        }
+      ]
+    },
+    {
+      "id": "valarbete",
+      "title": "Valarbete",
+      "description": "Regler för nomineringar, kandidaturer och valorganisation.",
+      "rules": [
+        {
+          "id": "election-1",
+          "title": "1. Valarbete",
+          "text": "Valorganisationen ansvarar för kampanjstrategi och material.",
+          "explanation": "Valgruppen samordnar aktiviteter, budskap och resurser inför val."
+        }
+      ]
+    }
+  ]
+}
