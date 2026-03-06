@@ -6552,7 +6552,7 @@
                 const authorRoleLabel = String(msg.author_role_label || '').trim();
                 const authorEmail = String(msg.email || '').trim().toLowerCase();
                 const canOpenAuthorProfile = authorEmail.indexOf('@') !== -1;
-                const authorAvatarUrl = avatarUrlForUser(msg.email || authorLabel || 'user', msg.profile_image_url || '');
+                const authorAvatarUrl = avatarUrlForUser(msg.email || authorLabel || 'user', msg.profile_image_url || '', authorLabel);
                 const cityLabel = String(msg.user_city || '').trim();
                 const classNames = ['chat-post', isMine ? 'mine' : 'theirs'];
                 if (isAdminAuthor && currentUserCanManage) classNames.push('admin');
@@ -6712,7 +6712,7 @@
                 if (thread.id === MESSENGER_GROUP_THREAD_ID) {
                     avatarEl.innerText = 'SA';
                 } else {
-                    avatarEl.innerHTML = `<img src="${escapeHtml(thread.avatar || messengerAvatarUrl(thread.name || '?'))}" alt="${escapeHtml(thread.name || 'Chatt')}">`;
+                    avatarEl.innerHTML = `<img src="${escapeHtml(thread.avatar || messengerAvatarUrl(thread.name || '?', thread.name || ''))}" alt="${escapeHtml(thread.name || 'Chatt')}">`;
                 }
             }
             if (inputEl) {
@@ -6906,7 +6906,7 @@
             const last = String(profileData && profileData.last_name || '').trim();
             const fullName = `${first} ${last}`.trim() || messengerDisplayName(username || 'användare');
             const city = String(profileData && profileData.city || '').trim();
-            const avatar = avatarUrlForUser(username || fullName, String(profileData && profileData.profile_image_url || ''));
+            const avatar = avatarUrlForUser(username || fullName, String(profileData && profileData.profile_image_url || ''), fullName);
             if (nameEl) nameEl.innerText = fullName;
             if (usernameEl) usernameEl.innerText = username || '-';
             if (cityEl) cityEl.innerText = city || '-';
@@ -6934,7 +6934,7 @@
             if (!previewEl || !removeBtn || !hintEl) return;
             const username = String(document.getElementById('profileUsername')?.value || currentUserEmail || 'user');
             const hasImage = !!normalizeProfileImageUrl(profileModalImageUrl);
-            previewEl.src = avatarUrlForUser(username, profileModalImageUrl);
+            previewEl.src = avatarUrlForUser(username, profileModalImageUrl, currentUserDisplayName);
             removeBtn.disabled = !hasImage || profilePhotoUploadInProgress;
             if (profilePhotoUploadInProgress) {
                 hintEl.innerText = 'Laddar upp foto...';
@@ -10524,14 +10524,29 @@
             });
         }
 
-        function messengerAvatarUrl(email) {
-            return `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(email)}`;
+        function avatarInitialSeed(identifier, displayName) {
+            const explicit = String(displayName || '').trim();
+            if (explicit) {
+                const firstWord = explicit.split(/\s+/).filter(Boolean)[0] || '';
+                const firstChar = Array.from(firstWord)[0] || Array.from(explicit)[0] || '';
+                if (firstChar) return firstChar.toUpperCase();
+            }
+            const raw = String(identifier || '').trim();
+            const local = raw.indexOf('@') !== -1 ? raw.split('@')[0] : raw;
+            const simplified = local.replace(/[._-]+/g, '').trim();
+            const firstChar = Array.from(simplified)[0] || Array.from(raw)[0] || '?';
+            return String(firstChar || '?').toUpperCase();
         }
 
-        function avatarUrlForUser(email, profileImageUrl) {
+        function messengerAvatarUrl(identifier, displayName) {
+            const seed = avatarInitialSeed(identifier, displayName);
+            return `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(seed)}&chars=1`;
+        }
+
+        function avatarUrlForUser(email, profileImageUrl, displayName) {
             const explicitUrl = normalizeProfileImageUrl(profileImageUrl);
             if (explicitUrl) return explicitUrl;
-            return messengerAvatarUrl(email || 'user');
+            return messengerAvatarUrl(email || 'user', displayName || '');
         }
 
         function getLatestGroupChatMessageId() {
@@ -10926,7 +10941,7 @@
                         name: displayName,
                         avatar: isGroup
                             ? ('https://api.dicebear.com/9.x/initials/svg?seed=' + encodeURIComponent(displayName))
-                            : avatarUrlForUser(email, threadData.profile_image_url || ''),
+                            : avatarUrlForUser(email, threadData.profile_image_url || '', displayName),
                         online: !!threadData.online,
                         unread: Number(threadData.unread_count || 0),
                         isGroup: isGroup,
