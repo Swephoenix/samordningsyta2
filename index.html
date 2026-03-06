@@ -1106,6 +1106,33 @@
             pointer-events: auto;
             transform: translateY(0);
         }
+        .chat-delete-btn {
+            border: 1px solid #fecaca;
+            background: #fff1f2;
+            color: #b91c1c;
+            border-radius: 999px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            cursor: pointer;
+            line-height: 1.2;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transform: translateY(-2px);
+            transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s ease;
+        }
+        .chat-delete-btn:hover {
+            background: #ffe4e6;
+            border-color: #fda4af;
+        }
+        .chat-post:hover .chat-delete-btn,
+        .chat-post:focus-within .chat-delete-btn {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
         .chat-post-header strong {
             font-weight: 700;
             color: inherit;
@@ -6576,6 +6603,9 @@
                 const replyBtn = !isMine
                     ? `<button class=\"chat-reply-btn\" type=\"button\" title=\"Svara\">↩</button>`
                     : '';
+                const deleteBtn = (isMine || currentUserIsAdmin)
+                    ? `<button class=\"chat-delete-btn\" type=\"button\" data-chat-delete-id=\"${Number(msg.id)}\" title=\"Ta bort inlägget\">Ta bort</button>`
+                    : '';
                 const pinBtn = currentUserCanManage
                     ? `<button class=\"chat-pin-btn ${msg.pinned ? 'is-pinned' : ''}\" type=\"button\" data-chat-pin-id=\"${Number(msg.id)}\" data-chat-pin-next=\"${msg.pinned ? '0' : '1'}\" title=\"${msg.pinned ? 'Lossa inlägget' : 'Pinna inlägget'}\">${msg.pinned ? '📌 Pinnad' : '📌 Pinna'}</button>`
                     : '';
@@ -6583,6 +6613,7 @@
                     <div class=\"chat-post-header\">
                         <strong class=\"chat-post-author ${canOpenAuthorProfile ? 'is-open-profile' : ''}\" ${canOpenAuthorProfile ? `data-chat-author-email=\"${escapeHtml(authorEmail)}\" title=\"Dubbelklicka för profil\"` : ''}>${authorRoleLabel ? `<span class=\"chat-author-role\">${escapeHtml(authorRoleLabel)}</span>` : ''}<img class=\"chat-post-author-avatar\" src=\"${escapeHtml(authorAvatarUrl)}\" alt=\"${escapeHtml(authorLabel)}\">${escapeHtml(authorLabel)}${cityLabel ? ` <span class=\"chat-author-city\">· ${escapeHtml(cityLabel)}</span>` : ''}</strong>
                         <span class=\"chat-post-meta\">
+                            ${deleteBtn}
                             ${pinBtn}
                             <span>${formatTimeFromUnix(msg.created_at)}</span>
                         </span>
@@ -6654,9 +6685,28 @@
                         });
                     });
                 }
+                const deleteBtnEl = post.querySelector('[data-chat-delete-id]');
+                if (deleteBtnEl) {
+                    deleteBtnEl.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const id = Number(deleteBtnEl.getAttribute('data-chat-delete-id') || 0);
+                        if (!id) return;
+                        deleteChatMessage(id).catch(function(err) {
+                            alert(err.message || 'Kunde inte ta bort chattinlägget.');
+                        });
+                    });
+                }
                 feed.appendChild(post);
             });
             feed.scrollTop = feed.scrollHeight;
+        }
+
+        async function deleteChatMessage(messageId) {
+            const id = Number(messageId || 0);
+            if (!id) return;
+            if (!window.confirm('Vill du ta bort detta chattinlägg?')) return;
+            await apiSend(`/api/chat/messages/${id}`, 'DELETE');
+            await loadChatMessages();
         }
 
         async function toggleChatMessagePinned(messageId, shouldPin) {

@@ -960,6 +960,28 @@ function normalizeEventAttachments(payload) {
   return normalized;
 }
 
+function getLocalChatUploadPathsFromMessage(message) {
+  const text = String(message || "");
+  const paths = new Set();
+  const attachmentRegex = /\[attachment\|([A-Za-z0-9+/=]+)\]\n?/g;
+  let match;
+  while ((match = attachmentRegex.exec(text)) !== null) {
+    try {
+      const parsed = JSON.parse(Buffer.from(match[1], "base64").toString("utf8"));
+      [parsed?.url, parsed?.preview_url].forEach((urlValue) => {
+        const url = String(urlValue || "").trim();
+        const uploadMatch = url.match(/^\/uploads\/chat\/([a-zA-Z0-9._-]+)(?:[?#].*)?$/);
+        if (!uploadMatch) return;
+        const targetPath = path.join(UPLOAD_DIR, uploadMatch[1]);
+        if (path.dirname(targetPath) !== UPLOAD_DIR) return;
+        paths.add(targetPath);
+      });
+    } catch (_) {
+    }
+  }
+  return Array.from(paths);
+}
+
 function normalizeEventAttendance(payload) {
   if (payload === undefined || payload === null || payload === "") return [];
   if (!Array.isArray(payload)) {
@@ -3510,6 +3532,41 @@ app.post("/api/chat/messages", (req, res) => {
   );
 
   return res.status(201).json({ ok: true });
+});
+
+app.delete("/api/chat/messages/:id", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+
+  const id = Number(req.params.id || 0);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ error: "Ogiltigt meddelande-id." });
+  }
+
+  const existing = db
+    .prepare("SELECT id, user_id, message FROM chat_messages WHERE id = ?")
+    .get(id);
+  if (!existing) {
+    return res.status(404).json({ error: "Meddelandet finns inte." });
+  }
+
+  const canDelete = Number(existing.user_id) === Number(user.id) || isAdmin(user);
+  if (!canDelete) {
+    return res.status(403).json({ error: "Du får inte ta bort det här chattinlägget." });
+  }
+
+  const uploadPaths = getLocalChatUploadPathsFromMessage(existing.message);
+  db.prepare("DELETE FROM chat_messages WHERE id = ?").run(id);
+  uploadPaths.forEach((targetPath) => {
+    try {
+      if (fs.existsSync(targetPath)) {
+        fs.unlinkSync(targetPath);
+      }
+    } catch (_) {
+    }
+  });
+
+  return res.json({ ok: true });
 });
 
 app.put("/api/chat/messages/:id/pin", (req, res) => {
