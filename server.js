@@ -1487,6 +1487,11 @@ function isConfiguredAdminIdentifier(value) {
 function getUserDisplayNameByIdentifier(identifier) {
   const normalized = normalizeEmail(identifier);
   if (!normalized) return "";
+  const row = db
+    .prepare("SELECT first_name, last_name FROM users WHERE lower(email) = ? LIMIT 1")
+    .get(normalized);
+  const fullName = `${String(row && row.first_name || "").trim()} ${String(row && row.last_name || "").trim()}`.trim();
+  if (fullName) return fullName;
   if (normalized === primaryConfiguredAdminIdentifier) return primaryConfiguredAdminDisplayName;
   if (normalized === secondaryConfiguredAdminIdentifier) return secondaryConfiguredAdminDisplayName;
   if (normalized === itConfiguredAdminIdentifier) return itConfiguredAdminDisplayName;
