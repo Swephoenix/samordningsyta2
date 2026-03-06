@@ -214,6 +214,27 @@
             animation: codeHintGlow 1.8s ease-in-out infinite, codeHintShift 3.2s linear infinite;
         }
         .code-delivery-hint.visible { display: block; }
+        .code-countdown {
+            display: none;
+            margin-top: 14px;
+            text-align: center;
+            font-size: clamp(2.8rem, 8vw, 4.8rem);
+            line-height: 1;
+            font-weight: 800;
+            letter-spacing: -0.04em;
+            color: #4338ca;
+            text-shadow: 0 10px 24px rgba(79, 70, 229, 0.18);
+            font-variant-numeric: tabular-nums;
+        }
+        .code-countdown.visible {
+            display: block;
+            animation: countdownPulse 1s ease-in-out infinite;
+        }
+        .code-countdown.is-finished {
+            color: #94a3b8;
+            text-shadow: none;
+            animation: none;
+        }
         @keyframes codeHintGlow {
             0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.20); transform: translateY(0); }
             50% { box-shadow: 0 8px 18px -8px rgba(245, 158, 11, 0.45); transform: translateY(-1px); }
@@ -221,6 +242,10 @@
         @keyframes codeHintShift {
             0% { background-position: 0% 50%; }
             100% { background-position: 100% 50%; }
+        }
+        @keyframes countdownPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.04); opacity: 0.9; }
         }
         @keyframes gradientShift {
             0% { background-position: 0% 50%; }
@@ -272,6 +297,7 @@
         <p class="foot">Ingen användare? <a class="link" href="/registrera">Skapa konto</a></p>
         <p class="notice" id="notice"></p>
         <p class="code-delivery-hint" id="codeDeliveryHint">Det kan ta upp till 60 sekunder innan du får din kod på mejlen</p>
+        <div class="code-countdown" id="codeCountdown">60</div>
     </main>
 
     <script>
@@ -284,8 +310,11 @@
         const codeField = document.getElementById('codeField');
         const resendCodeBtn = document.getElementById('resendCodeBtn');
         const codeDeliveryHint = document.getElementById('codeDeliveryHint');
+        const codeCountdown = document.getElementById('codeCountdown');
         const loginExtras = document.getElementById('loginExtras');
         let codeRequested = false;
+        let countdownTimerId = 0;
+        let countdownSeconds = 60;
 
         function getPostLoginRedirect() {
             const path = String(nextParamRaw || '').trim();
@@ -302,6 +331,34 @@
         function setCodeDeliveryHint(visible) {
             if (!codeDeliveryHint) return;
             codeDeliveryHint.classList.toggle('visible', !!visible);
+        }
+
+        function renderCodeCountdown() {
+            if (!codeCountdown) return;
+            codeCountdown.textContent = String(Math.max(0, countdownSeconds));
+            codeCountdown.classList.toggle('visible', codeRequested);
+            codeCountdown.classList.toggle('is-finished', countdownSeconds <= 0);
+        }
+
+        function stopCodeCountdown() {
+            if (countdownTimerId) {
+                window.clearInterval(countdownTimerId);
+                countdownTimerId = 0;
+            }
+        }
+
+        function startCodeCountdown(seconds) {
+            countdownSeconds = Number.isFinite(Number(seconds)) ? Math.max(0, Math.floor(Number(seconds))) : 60;
+            renderCodeCountdown();
+            stopCodeCountdown();
+            if (countdownSeconds <= 0) return;
+            countdownTimerId = window.setInterval(function() {
+                countdownSeconds -= 1;
+                renderCodeCountdown();
+                if (countdownSeconds <= 0) {
+                    stopCodeCountdown();
+                }
+            }, 1000);
         }
 
         async function postJson(path, payload) {
@@ -324,6 +381,11 @@
             resendCodeBtn.style.display = codeRequested ? 'inline-block' : 'none';
             submitBtn.textContent = codeRequested ? 'Logga in med kod' : 'Skicka kod';
             setCodeDeliveryHint(codeRequested);
+            if (!codeRequested) {
+                stopCodeCountdown();
+                countdownSeconds = 60;
+            }
+            renderCodeCountdown();
             if (codeRequested) {
                 if (loginExtras) {
                     const text = loginExtras.querySelector('.remember');
@@ -361,6 +423,7 @@
                 if (!codeRequested) {
                     const result = await postJson('/api/login/code/request', { identifier: username });
                     setCodeStep(true);
+                    startCodeCountdown(60);
                     setNotice(result.message || 'Om användaren finns har en kod skickats till din e-post.', 'ok');
                 } else {
                     if (!/^\d{6}$/.test(code)) {
@@ -383,6 +446,8 @@
             resendCodeBtn.disabled = true;
             try {
                 const result = await postJson('/api/login/code/request', { identifier: identifier });
+                setCodeStep(true);
+                startCodeCountdown(60);
                 setNotice(result.message || 'Om användaren finns har en kod skickats till din e-post.', 'ok');
             } catch (err) {
                 setNotice(err.message || 'Kunde inte skicka kod just nu.', 'error');
