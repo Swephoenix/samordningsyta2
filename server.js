@@ -555,9 +555,18 @@ function syncConfiguredAdminContactEmail(identifier, contactEmail) {
   const id = String(identifier || "").trim().toLowerCase();
   const mail = String(contactEmail || "").trim().toLowerCase();
   if (!id || !mail) return;
-  db.prepare(
-    "UPDATE users SET contact_email = ? WHERE lower(email) = ?"
-  ).run(mail, id);
+  const owner = db
+    .prepare("SELECT id FROM users WHERE lower(email) = ? LIMIT 1")
+    .get(id);
+  if (!owner || !Number(owner.id)) return;
+  const conflict = db
+    .prepare("SELECT email FROM users WHERE lower(contact_email) = ? AND id != ? LIMIT 1")
+    .get(mail, Number(owner.id));
+  if (conflict && conflict.email) {
+    console.warn(`Hoppar över kontaktmail-sync för ${id}: ${mail} används redan av ${String(conflict.email || "").trim().toLowerCase()}.`);
+    return;
+  }
+  db.prepare("UPDATE users SET contact_email = ? WHERE id = ?").run(mail, Number(owner.id));
 }
 
 function seedEventsIfEmpty() {
@@ -1751,15 +1760,13 @@ function isTestAccountIdentifier(value) {
 function syncConfiguredTestAccountContactEmail() {
   const configuredTestContact = normalizeEmail(TEST_ACCOUNT_CONTACT_EMAIL || "");
   if (!configuredTestContact) return;
-  db.prepare("UPDATE users SET contact_email = ? WHERE lower(email) = ?")
-    .run(configuredTestContact, TEST_ACCOUNT_IDENTIFIER);
+  syncConfiguredAdminContactEmail(TEST_ACCOUNT_IDENTIFIER, configuredTestContact);
 }
 
 function syncConfiguredSecretaryContactEmail() {
   const configuredSecretaryContact = normalizeEmail(SECRETARY_TEST_CONTACT_EMAIL || "");
   if (!configuredSecretaryContact) return;
-  db.prepare("UPDATE users SET contact_email = ? WHERE lower(email) = ?")
-    .run(configuredSecretaryContact, SECRETARY_TEST_IDENTIFIER);
+  syncConfiguredAdminContactEmail(SECRETARY_TEST_IDENTIFIER, configuredSecretaryContact);
 }
 
 function normalizeTaskImageUrl(url) {
