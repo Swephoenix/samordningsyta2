@@ -3110,6 +3110,11 @@ app.get("/api/admin/users", (req, res) => {
   const rows = db
     .prepare(
       `SELECT u.id, u.email, u.contact_email, u.city, u.first_name, u.last_name, u.phone, u.role,
+              (
+                SELECT MAX(lh.login_at)
+                FROM login_history lh
+                WHERE lh.user_id = u.id
+              ) AS last_login_at,
               CASE
                 WHEN EXISTS (
                   SELECT 1
@@ -3134,6 +3139,7 @@ app.get("/api/admin/users", (req, res) => {
       last_name: String(r.last_name || ""),
       phone: String(r.phone || ""),
       role: normalizeUserRole(r.role),
+      last_login_at: Number(r.last_login_at || 0) || 0,
       online: !!r.is_online,
       is_admin: isAdmin({ email: String(r.email || "") }),
       is_secretary: !isAdmin({ email: String(r.email || "") }) && normalizeUserRole(r.role) === "secretary"

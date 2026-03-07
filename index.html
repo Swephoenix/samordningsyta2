@@ -1822,6 +1822,10 @@
             font-size: 13px;
             color: #6b7280;
         }
+        .member-manage-last-login {
+            font-size: 12px;
+            color: #64748b;
+        }
         .member-manage-lamp {
             width: 10px;
             height: 10px;
@@ -7624,6 +7628,7 @@
             const fullName = `${String(user.first_name || '').trim()} ${String(user.last_name || '').trim()}`.trim() || memberManageDisplayName(user.email);
             const role = user.is_admin ? 'Admin' : (user.is_secretary ? 'Sekreterare' : 'Användare');
             const status = user.online ? 'Inloggad' : 'Ej inloggad';
+            const lastLogin = Number(user.last_login_at || 0) > 0 ? formatHistoryDateTime(user.last_login_at) : 'Aldrig';
             box.innerHTML = `
                 <h4>Användardetaljer</h4>
                 <div class="member-manage-detail-grid">
@@ -7631,6 +7636,7 @@
                     <div><strong>Roll</strong><div>${escapeHtml(role)}</div></div>
                     <div><strong>Användarnamn</strong><div>${escapeHtml(String(user.email || '-'))}</div></div>
                     <div><strong>Status</strong><div>${escapeHtml(status)}</div></div>
+                    <div><strong>Senast inloggad</strong><div>${escapeHtml(lastLogin)}</div></div>
                     <div><strong>E-post</strong><div>${escapeHtml(String(user.contact_email || '-'))}</div></div>
                     <div><strong>Telefon</strong><div>${escapeHtml(String(user.phone || '-'))}</div></div>
                     <div><strong>Ort</strong><div>${escapeHtml(String(user.city || '-'))}</div></div>
@@ -7696,6 +7702,7 @@
                 const name = memberManageDisplayName(email);
                 const isOnline = !!user.online;
                 const statusText = isOnline ? 'Inloggad' : 'Ej inloggad';
+                const lastLoginText = Number(user.last_login_at || 0) > 0 ? formatHistoryDateTime(user.last_login_at) : 'Aldrig';
                 const lampClass = isOnline ? 'online' : '';
                 const isSelf = Number(user.id) === Number(currentUserId) || email === currentUserEmail;
                 const isRootAdmin = !!user.is_admin;
@@ -7710,6 +7717,7 @@
                                 <div class="member-manage-lamp ${lampClass}"></div>
                                 ${statusText}
                             </div>
+                            <div class="member-manage-last-login">Senast inloggad: ${escapeHtml(lastLoginText)}</div>
                         </div>
                         <div class="member-manage-actions">
                             <button class="member-manage-btn" type="button" data-member-edit="${Number(user.id)}">Redigera</button>
