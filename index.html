@@ -3621,6 +3621,25 @@
             border-radius: 8px;
             padding: 20px;
             overflow-y: auto;
+            position: relative;
+        }
+        #facebookAcademyModal > .modal-close {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            width: 36px;
+            height: 36px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            color: #475569;
+            z-index: 1;
+        }
+        #facebookAcademyModal > .modal-close:hover {
+            background: #f8fafc;
+            color: #0f172a;
         }
         #facebookAcademyModal h1 {
             margin: 0 0 8px;
@@ -4024,8 +4043,22 @@
             flex-direction: column;
         }
         #ruleWikiModal .rule-wiki-close {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            width: 36px;
+            height: 36px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             color: #ffffff;
+            background: transparent;
             z-index: 2;
+        }
+        #ruleWikiModal .rule-wiki-close:hover {
+            background: rgba(255,255,255,0.12);
+            color: #ffffff;
         }
         #ruleWikiModal .rule-wiki-header {
             background: #1b2a41;
@@ -6207,6 +6240,7 @@
     </div>
 
     <div class="modal-overlay" id="facebookAcademyModal">
+        <button class="modal-close" type="button" onclick="closeFacebookAcademyModal()" aria-label="Stäng Medieakademin">✖</button>
         <div class="academy-modal-content">
             <h1>Medieakademin</h1>
             <p class="sub">Utbildningskort med video eller PDF</p>
