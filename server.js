@@ -45,6 +45,7 @@ const app = express();
 const PORT = Number(process.env.PORT || 8000);
 const DB_PATH = path.join(__dirname, "data", "app.db");
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
+const LOGIN_HISTORY_RETENTION_SECONDS = 60 * 60 * 24 * 7;
 const PASSWORD_RESET_TTL_SECONDS = 60 * 30;
 const PASSWORD_RESET_RATE_LIMIT_WINDOW_SECONDS = 60 * 10;
 const PASSWORD_RESET_RATE_LIMIT_MAX_ATTEMPTS = 5;
@@ -415,6 +416,17 @@ CREATE TABLE IF NOT EXISTS login_code_tokens (
   created_at INTEGER NOT NULL,
   FOREIGN KEY(user_id) REFERENCES users(id)
 );
+
+CREATE TABLE IF NOT EXISTS login_history (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  session_token TEXT NOT NULL,
+  user_id INTEGER NOT NULL,
+  email_snapshot TEXT NOT NULL DEFAULT '',
+  login_at INTEGER NOT NULL,
+  last_seen_at INTEGER NOT NULL,
+  logout_at INTEGER,
+  FOREIGN KEY(user_id) REFERENCES users(id)
+);
 `);
 
 db.exec(`
@@ -468,10 +480,21 @@ CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user_exp
 
 CREATE INDEX IF NOT EXISTS idx_login_code_tokens_user_exp
   ON login_code_tokens(user_id, expires_at);
+
+CREATE INDEX IF NOT EXISTS idx_login_history_user_login
+  ON login_history(user_id, login_at DESC);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_login_history_session_token
+  ON login_history(session_token);
 `);
 
 function nowTs() {
   return Math.floor(Date.now() / 1000);
+}
+
+function cleanupOldLoginHistory() {
+  const cutoff = nowTs() - LOGIN_HISTORY_RETENTION_SECONDS;
+  db.prepare("DELETE FROM login_history WHERE login_at < ?").run(cutoff);
 }
 
 function localDateKey(date = new Date()) {
@@ -615,43 +638,120 @@ function removeLegacySeededDemoEvents() {
 }
 
 function seedImportantMessagesIfEmpty() {
+  const count = Number(db.prepare("SELECT COUNT(*) AS c FROM important_messages").get().c || 0);
+  if (count > 0) return;
+
   const now = nowTs();
   const demoMessages = [
-    { icon: "🚨", text: "Systemuppdatering inatt kl 02:00." },
-    { icon: "📢", text: "Deadline för Q3-rapporten är på fredag." },
-    { icon: "🛠️", text: "Planerat underhåll av filsystemet söndag 09:00-10:00." },
-    { icon: "✅", text: "Nya rutiner för delade mappar är nu aktiva." },
-    { icon: "🔒", text: "Säkerhetsgranskning genomförs den här veckan." },
-    { icon: "🎯", text: "Mål: 100% uppdaterade kundcase innan månadsskifte." }
+    {
+      icon: "📣",
+      text: "Dagens fokus: publicera ett lokalt Facebook-inlägg före kl. 18 och svara på kommentarer inom 30 minuter.",
+      color: "info",
+      source: "admin",
+      source_label: "Valledning",
+      external_id: "demo_facebook_push_local_post"
+    },
+    {
+      icon: "🎯",
+      text: "Veckomål: få ut 3 kandidatklipp och 1 sakpolitisk grafik på Facebook med tydlig uppmaning att följa sidan.",
+      color: "success",
+      source: "admin",
+      source_label: "Valledning",
+      external_id: "demo_facebook_weekly_content_goal"
+    },
+    {
+      icon: "🗳️",
+      text: "Påminnelse: lyft vår huvudfråga i kvällens Facebook-inlägg och länka vidare till anmälningssidan för volontärer.",
+      color: "warning",
+      source: "admin",
+      source_label: "Kampanjstab",
+      external_id: "demo_facebook_issue_and_volunteers"
+    },
+    {
+      icon: "📸",
+      text: "Använd gärna bilder från torgmöten och dörrknackning i Facebook-flödet. Inlägg med människor får oftast bättre räckvidd.",
+      color: "info",
+      source: "admin",
+      source_label: "Kampanjstab",
+      external_id: "demo_facebook_real_campaign_photos"
+    },
+    {
+      icon: "⚡",
+      text: "Om ett inlägg börjar ta fart: dela det snabbt i kandidatens profil och i relevanta lokala grupper för extra spridning.",
+      color: "warning",
+      source: "admin",
+      source_label: "Digitalt team",
+      external_id: "demo_facebook_boost_reach"
+    },
+    {
+      icon: "💬",
+      text: "Svarston i kommentarsfältet ska vara saklig, varm och tydlig. Prioritera frågor från nya följare först.",
+      color: "success",
+      source: "admin",
+      source_label: "Digitalt team",
+      external_id: "demo_facebook_comment_moderation"
+    }
   ];
 
-  const findByText = db.prepare("SELECT id FROM important_messages WHERE text = ? LIMIT 1");
+  const findByExternalId = db.prepare(
+    "SELECT id FROM important_messages WHERE source = ? AND external_id = ? LIMIT 1"
+  );
   const nextSortOrderStmt = db.prepare(
     "SELECT COALESCE(MAX(sort_order), -1) + 1 AS next_order FROM important_messages"
   );
   const insStmt = db.prepare(
-    "INSERT INTO important_messages(icon, text, sort_order, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)"
+    `INSERT INTO important_messages(
+        icon, text, color, sort_order, created_by, created_at, updated_at, source, source_label, external_id
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   );
   demoMessages.forEach((msg, idx) => {
-    const exists = findByText.get(msg.text);
+    const exists = findByExternalId.get(String(msg.source || "admin"), String(msg.external_id || ""));
     if (exists) return;
     const nextOrder = Number(nextSortOrderStmt.get().next_order);
     const sortOrder = Number.isInteger(nextOrder) ? nextOrder : idx;
-    insStmt.run(msg.icon, msg.text, sortOrder, null, now, now);
+    insStmt.run(
+      msg.icon,
+      msg.text,
+      normalizeImportantColor(msg.color),
+      sortOrder,
+      null,
+      now,
+      now,
+      normalizeImportantSource(msg.source),
+      normalizeImportantSourceLabel(msg.source_label, normalizeImportantSource(msg.source)),
+      normalizeImportantExternalId(msg.external_id)
+    );
   });
 }
 
-function seedIdeaBankIfEmpty() {
-  const count = Number(db.prepare("SELECT COUNT(*) AS c FROM idea_bank_ideas").get().c || 0);
-  if (count > 0) return;
+function removeLegacySeededImportantMessages() {
+  const legacyDemoTexts = [
+    "Systemuppdatering inatt kl 02:00.",
+    "Deadline för Q3-rapporten är på fredag.",
+    "Planerat underhåll av filsystemet söndag 09:00-10:00.",
+    "Nya rutiner för delade mappar är nu aktiva.",
+    "Säkerhetsgranskning genomförs den här veckan.",
+    "Mål: 100% uppdaterade kundcase innan månadsskifte."
+  ];
+  const deleteByText = db.prepare(
+    "DELETE FROM important_messages WHERE created_by IS NULL AND source = 'admin' AND text = ?"
+  );
+  const tx = db.transaction(() => {
+    legacyDemoTexts.forEach((text) => {
+      deleteByText.run(text);
+    });
+  });
+  tx();
+}
 
-  const admin = db.prepare("SELECT id FROM users WHERE email = ? LIMIT 1").get("admin");
-  const fallbackUser = db.prepare("SELECT id FROM users ORDER BY id ASC LIMIT 1").get();
-  const userId = Number((admin && admin.id) || (fallbackUser && fallbackUser.id) || 0);
-  if (!userId) return;
+function clearImportantDemoMessages() {
+  return db.prepare(
+    "DELETE FROM important_messages WHERE source = 'admin' AND external_id LIKE 'demo_%'"
+  ).run();
+}
 
-  const now = nowTs();
-  const rows = [
+function defaultIdeaBankRows() {
+  return [
     {
       title: "Grönare kontor",
       description: "Vi borde införa fler växter och automatisk bevattning för att förbättra luftkvaliteten.",
@@ -671,21 +771,53 @@ function seedIdeaBankIfEmpty() {
       image_url: "https://images.unsplash.com/photo-1507035895480-2b3156c31fc8?w=400"
     }
   ];
+}
+
+function ensureIdeaBankDemoRows() {
+  const count = Number(db.prepare("SELECT COUNT(*) AS c FROM idea_bank_ideas").get().c || 0);
+  if (count > 0) return;
+
+  const admin = db.prepare("SELECT id FROM users WHERE email = ? LIMIT 1").get("admin");
+  const fallbackUser = db.prepare("SELECT id FROM users ORDER BY id ASC LIMIT 1").get();
+  const userId = Number((admin && admin.id) || (fallbackUser && fallbackUser.id) || 0);
+  if (!userId) return;
+
+  const now = nowTs();
+  const rows = defaultIdeaBankRows();
 
   const ins = db.prepare(
-    "INSERT INTO idea_bank_ideas(user_id, title, description, tag, image_url, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
+    "INSERT INTO idea_bank_ideas(user_id, title, description, tag, image_url, created_at, updated_at, demo_seed) VALUES (?, ?, ?, ?, ?, ?, ?, 1)"
+  );
+  const existsStmt = db.prepare(
+    `SELECT id FROM idea_bank_ideas
+     WHERE title = ? AND description = ? AND tag = ?
+     LIMIT 1`
   );
   rows.forEach((row) => {
-    ins.run(
-      userId,
-      row.title,
-      row.description,
-      row.tag,
-      row.image_url,
-      now,
-      now
-    );
+    const exists = existsStmt.get(row.title, row.description, row.tag);
+    if (exists) return;
+    ins.run(userId, row.title, row.description, row.tag, row.image_url, now, now);
   });
+}
+
+function markSeedIdeaBankRows() {
+  const demoRows = defaultIdeaBankRows().map((row) => ({
+    title: row.title,
+    description: row.description,
+    tag: row.tag
+  }));
+  const stmt = db.prepare(
+    `UPDATE idea_bank_ideas
+     SET demo_seed = 1
+     WHERE title = ? AND description = ? AND tag = ?`
+  );
+  demoRows.forEach((row) => {
+    stmt.run(row.title, row.description, row.tag);
+  });
+}
+
+function deleteIdeaBankDemoRows() {
+  return db.prepare("DELETE FROM idea_bank_ideas WHERE demo_seed = 1").run();
 }
 
 function ensureColumn(table, column, ddl) {
@@ -877,6 +1009,12 @@ function ensureRegistrationSetting() {
 function ensureRuleWikiEntries() {
   if (!Array.isArray(getAppDataJson("rule_wiki_entries_v1"))) {
     setRuleWikiEntries(defaultRuleWikiEntries());
+  }
+}
+
+function ensureRuleWikiDocument() {
+  if (!normalizeRuleWikiDocument(getAppDataJson("rule_wiki_document_v1"))) {
+    setRuleWikiDocument(defaultRuleWikiDocument());
   }
 }
 
@@ -1088,18 +1226,23 @@ function normalizeAcademyLink(row) {
   if (!row || typeof row !== "object") return null;
   const id = String(row.id || "").trim();
   const title = String(row.title || "").trim();
+  const body = String(row.body || "").trim();
   const url = String(row.url || "").trim();
+  const imageUrl = normalizeTaskImageUrl(row.image_url || "");
   const typeRaw = String(row.type || "").trim().toLowerCase();
   const inferredType = inferAcademyLinkType(url);
-  const type = typeRaw === "video" || typeRaw === "pdf" ? typeRaw : inferredType;
+  const type = typeRaw === "video" || typeRaw === "pdf" || typeRaw === "text" ? typeRaw : inferredType;
   if (!id) return null;
-  if (!title && !url) return null;
+  if (!title && !body && !url) return null;
   if (url && !type) return null;
-  if (!url && type) return null;
+  if (!url && type && type !== "text") return null;
+  if (type === "text" && url) return null;
   return {
     id: id,
     title: title.slice(0, 140),
+    body: body.slice(0, 1200),
     url: url ? url.slice(0, 2000) : "",
+    image_url: imageUrl,
     type: type || "",
     created_at: Number(row.created_at || 0) || nowTs(),
     updated_at: Number(row.updated_at || 0) || nowTs(),
@@ -1107,13 +1250,78 @@ function normalizeAcademyLink(row) {
   };
 }
 
+function defaultFacebookAcademyLinks() {
+  const now = nowTs();
+  return [
+    {
+      id: "aca_demo_fb_growth_1",
+      title: "Bygg en sida som folk direkt vill följa",
+      body: "**Det första intrycket avgör mycket.**\n- Skriv en tydlig bio med vad sidan handlar om\n- Ha profilbild och omslagsbild som känns aktiva och aktuella\n- Fäst ett välskrivet inlägg som visar vad nya följare får\n\nNär syftet är tydligt blir det lättare för nya besökare att trycka på Följ.",
+      url: "",
+      image_url: "https://images.unsplash.com/photo-1611162616475-46b635cb6868?auto=format&fit=crop&w=1200&q=80",
+      type: "text",
+      created_at: now,
+      updated_at: now,
+      created_by: null
+    },
+    {
+      id: "aca_demo_fb_growth_2",
+      title: "Skapa innehåll som får räckvidd och delningar",
+      body: "Inlägg som växer organiskt brukar ofta vara enkla att förstå och enkla att reagera på.\n- Använd korta videos med textning\n- Lyft lokala frågor med tydlig rubrik\n- Avsluta med en enkel fråga eller uppmaning\n\n**Målet är inte bara likes utan att fler hittar sidan och väljer att följa den.**",
+      url: "",
+      image_url: "https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1200&q=80",
+      type: "text",
+      created_at: now,
+      updated_at: now,
+      created_by: null
+    },
+    {
+      id: "aca_demo_fb_growth_3",
+      title: "Använd en enkel veckorytm för att växa snabbare",
+      body: "En ojämn sida känns ofta övergiven. Testa i stället ett fast upplägg:\n- Måndag: kort video med ansikte och budskap\n- Onsdag: bildkort med lokal fråga eller nyhet\n- Fredag: inlägg som bjuder in till kommentar eller delning\n\nNär följarna vet att sidan är aktiv ökar chansen att de stannar kvar.",
+      url: "",
+      image_url: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80",
+      type: "text",
+      created_at: now,
+      updated_at: now,
+      created_by: null
+    },
+    {
+      id: "aca_demo_fb_growth_4",
+      title: "Gör det lätt att gå från besökare till följare",
+      body: "Tänk på varje inlägg som en väg in till sidan.\n- Använd igenkännbart bildspråk\n- Håll rubriken tydlig redan i första raden\n- Svara snabbt på kommentarer så sidan känns levande\n\n**Många följer inte efter första inlägget de ser.** Men om sidan känns aktiv och konsekvent ökar sannolikheten snabbt.",
+      url: "",
+      image_url: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1200&q=80",
+      type: "text",
+      created_at: now,
+      updated_at: now,
+      created_by: null
+    }
+  ].map((row) => normalizeAcademyLink(row)).filter(Boolean);
+}
+
+function isFacebookAcademyDemoLinkId(id) {
+  return String(id || "").trim().toLowerCase().startsWith("aca_demo_");
+}
+
 function getFacebookAcademyLinks() {
   const value = getAppDataJson("facebook_academy_links_v1");
-  if (!Array.isArray(value)) return [];
-  return value
+  if (!Array.isArray(value) || !value.length) return defaultFacebookAcademyLinks();
+  const links = value
     .map((row) => normalizeAcademyLink(row))
     .filter(Boolean)
     .sort((a, b) => Number(b.updated_at || 0) - Number(a.updated_at || 0));
+  if (!links.length) return defaultFacebookAcademyLinks();
+
+  const customLinks = links.filter((row) => !isFacebookAcademyDemoLinkId(row.id));
+  const hadDemoLinks = customLinks.length !== links.length;
+  if (!hadDemoLinks) return links;
+
+  const merged = defaultFacebookAcademyLinks()
+    .concat(customLinks)
+    .sort((a, b) => Number(b.updated_at || 0) - Number(a.updated_at || 0));
+  setFacebookAcademyLinks(merged);
+  return merged;
 }
 
 function setFacebookAcademyLinks(links) {
@@ -1123,11 +1331,18 @@ function setFacebookAcademyLinks(links) {
   setAppDataJson("facebook_academy_links_v1", safe);
 }
 
+function ensureFacebookAcademyDemoLinks() {
+  const value = getAppDataJson("facebook_academy_links_v1");
+  if (Array.isArray(value) && value.length) return;
+  setFacebookAcademyLinks(defaultFacebookAcademyLinks());
+}
+
 function defaultRuleWikiEntries() {
   return [
     {
       id: "membership-values",
       title: "1. Medlemskap och värdegrund",
+      is_demo: true,
       body: "Medlemskap i partiet innebär att medlemmen följer stadgar, partiprogram och intern uppförandekod.",
       bullets: [
         "Medlem förväntas bidra konstruktivt i lokal eller nationell verksamhet.",
@@ -1138,6 +1353,7 @@ function defaultRuleWikiEntries() {
     {
       id: "meeting-process",
       title: "2. Mötesordning och beslutsprocess",
+      is_demo: true,
       body: "Partiets beslut fattas i demokratiska forum med tydlig beredning, mötesordning och protokoll.",
       bullets: [
         "Kallelse, dagordning och underlag ska publiceras i rimlig tid före mötet.",
@@ -1148,6 +1364,7 @@ function defaultRuleWikiEntries() {
     {
       id: "nominations",
       title: "3. Nomineringar och kandidaturer",
+      is_demo: true,
       body: "Nominering till uppdrag och vallistor ska ske öppet, transparent och enligt fastställd kandidatpolicy.",
       bullets: [
         "Valberedningens arbete ska vara sakligt, opartiskt och dokumenterat.",
@@ -1158,6 +1375,7 @@ function defaultRuleWikiEntries() {
     {
       id: "public-communication",
       title: "4. Offentlig kommunikation",
+      is_demo: true,
       body: "Partiets externa kommunikation ska vara faktabaserad, respektfull och följa beslutad politisk linje.",
       bullets: [
         "Officiella uttalanden görs av utsedda talespersoner eller ansvariga företrädare.",
@@ -1168,6 +1386,7 @@ function defaultRuleWikiEntries() {
     {
       id: "conduct-discipline",
       title: "5. Uppförandekod och disciplin",
+      is_demo: true,
       body: "Partiet accepterar inte hot, hat, trakasserier eller diskriminering inom den egna organisationen.",
       bullets: [
         "Alla medlemmar ska bidra till ett tryggt och professionellt arbetsklimat.",
@@ -1178,6 +1397,7 @@ function defaultRuleWikiEntries() {
     {
       id: "finance-reporting",
       title: "6. Ekonomi, bidrag och redovisning",
+      is_demo: true,
       body: "Partiets ekonomi ska hanteras med full spårbarhet, intern kontroll och efterlevnad av gällande regelverk.",
       bullets: [
         "Alla utbetalningar kräver korrekt attest enligt fastställd delegationsordning.",
@@ -1188,6 +1408,7 @@ function defaultRuleWikiEntries() {
     {
       id: "privacy-security",
       title: "7. Integritet, säkerhet och visselblåsning",
+      is_demo: true,
       body: "Partiet skyddar personuppgifter och intern information genom tydliga rutiner för säkerhet och rapportering.",
       bullets: [
         "Åtkomst till medlemsdata ges enbart till behöriga roller.",
@@ -1208,17 +1429,20 @@ function defaultRuleWikiDocument() {
       {
         id: "organisation",
         title: "Organisation",
+        is_demo: true,
         description: "Grundstruktur för hur partiet är organiserat och hur beslut fattas.",
         rules: [
           {
             id: "organisation-1",
             title: "1. Organisation",
+            is_demo: true,
             text: "Partiet organiseras i nationell nivå, regionnivå och lokal nivå.",
             explanation: "Det betyder att partiet har tre nivåer av beslut. Lokala föreningar hanterar lokala frågor medan nationella beslut tas centralt."
           },
           {
             id: "organisation-2",
             title: "2. Mötesordning och beslutsprocess",
+            is_demo: true,
             text: "Partiets beslut fattas i demokratiska forum med tydlig beredning, mötesordning och protokoll.",
             explanation: "Kallelser, underlag och ansvarsfördelning ska vara tydliga så att beslut går att följa upp."
           }
@@ -1227,17 +1451,20 @@ function defaultRuleWikiDocument() {
       {
         id: "medlemskap",
         title: "Medlemskap",
+        is_demo: true,
         description: "Regler för medlemskap, värdegrund och disciplinära frågor.",
         rules: [
           {
             id: "membership-1",
             title: "1. Medlemskap",
+            is_demo: true,
             text: "Medlemskap beviljas personer som accepterar partiets stadgar och värdegrund.",
             explanation: "Medlemskap innebär rätt att delta i möten och bidra till partiets arbete."
           },
           {
             id: "membership-2",
             title: "2. Uppförandekod",
+            is_demo: true,
             text: "Partiet accepterar inte hot, hat, trakasserier eller diskriminering inom organisationen.",
             explanation: "Alla medlemmar förväntas bidra till ett tryggt och professionellt arbetsklimat."
           }
@@ -1246,11 +1473,13 @@ function defaultRuleWikiDocument() {
       {
         id: "kommunikation",
         title: "Kommunikation",
+        is_demo: true,
         description: "Regler för extern och intern kommunikation.",
         rules: [
           {
             id: "communication-1",
             title: "1. Kommunikation",
+            is_demo: true,
             text: "Officiella uttalanden görs av utsedda talespersoner.",
             explanation: "Detta förhindrar att olika budskap sprids samtidigt och skapar tydlighet externt."
           }
@@ -1259,11 +1488,13 @@ function defaultRuleWikiDocument() {
       {
         id: "valarbete",
         title: "Valarbete",
+        is_demo: true,
         description: "Regler för nomineringar, kandidaturer och valorganisation.",
         rules: [
           {
             id: "election-1",
             title: "1. Valarbete",
+            is_demo: true,
             text: "Valorganisationen ansvarar för kampanjstrategi och material.",
             explanation: "Valgruppen samordnar aktiviteter, budskap och resurser inför val."
           }
@@ -1288,7 +1519,8 @@ function normalizeRuleWikiEntry(row, index) {
     id: safeId,
     title: title,
     body: body,
-    bullets: bullets
+    bullets: bullets,
+    is_demo: !!row.is_demo
   };
 }
 
@@ -1305,7 +1537,8 @@ function normalizeRuleWikiRule(row, index) {
     id: safeId,
     title: title,
     text: text,
-    explanation: explanation
+    explanation: explanation,
+    is_demo: !!row.is_demo
   };
 }
 
@@ -1326,7 +1559,8 @@ function normalizeRuleWikiPage(row, index) {
     title: title,
     description: description,
     category: category,
-    rules: rules
+    rules: rules,
+    is_demo: !!row.is_demo
   };
 }
 
@@ -1343,6 +1577,42 @@ function normalizeRuleWikiDocument(value) {
     footer_text: String(value.footer_text || "").trim().slice(0, 200),
     pages: pages
   };
+}
+
+function stripRuleWikiDemoFlagsFromDocument(doc) {
+  if (!doc || typeof doc !== "object") return doc;
+  return {
+    title: doc.title,
+    subtitle: doc.subtitle,
+    assistant_text: doc.assistant_text,
+    footer_text: doc.footer_text,
+    pages: Array.isArray(doc.pages)
+      ? doc.pages.map((page) => ({
+          id: page.id,
+          title: page.title,
+          description: page.description,
+          category: page.category,
+          rules: Array.isArray(page.rules)
+            ? page.rules.map((rule) => ({
+                id: rule.id,
+                title: rule.title,
+                text: rule.text,
+                explanation: rule.explanation
+              }))
+            : []
+        }))
+      : []
+  };
+}
+
+function stripRuleWikiDemoFlagsFromEntries(entries) {
+  if (!Array.isArray(entries)) return [];
+  return entries.map((entry) => ({
+    id: entry.id,
+    title: entry.title,
+    body: entry.body,
+    bullets: Array.isArray(entry.bullets) ? entry.bullets.slice() : []
+  }));
 }
 
 function getRuleWikiDocument() {
@@ -1371,6 +1641,82 @@ function setRuleWikiEntries(entries) {
   setAppDataJson("rule_wiki_entries_v1", safe.length ? safe : defaultRuleWikiEntries());
 }
 
+function markSeedRuleWikiData() {
+  const defaultEntriesById = new Map(
+    defaultRuleWikiEntries().map((entry) => [String(entry.id || ""), entry])
+  );
+  const currentEntries = getAppDataJson("rule_wiki_entries_v1");
+  if (Array.isArray(currentEntries)) {
+    let changed = false;
+    const nextEntries = currentEntries.map((entry) => {
+      if (!entry || typeof entry !== "object") return entry;
+      const match = defaultEntriesById.get(String(entry.id || ""));
+      if (
+        match &&
+        String(entry.title || "").trim() === String(match.title || "").trim() &&
+        String(entry.body || "").trim() === String(match.body || "").trim() &&
+        JSON.stringify(Array.isArray(entry.bullets) ? entry.bullets : []) === JSON.stringify(match.bullets || []) &&
+        !entry.is_demo
+      ) {
+        changed = true;
+        return Object.assign({}, entry, { is_demo: true });
+      }
+      return entry;
+    });
+    if (changed) setAppDataJson("rule_wiki_entries_v1", nextEntries);
+  }
+
+  const defaultDoc = defaultRuleWikiDocument();
+  const defaultPagesById = new Map(
+    defaultDoc.pages.map((page) => [String(page.id || ""), page])
+  );
+  const currentDoc = getAppDataJson("rule_wiki_document_v1");
+  if (currentDoc && typeof currentDoc === "object" && Array.isArray(currentDoc.pages)) {
+    let docChanged = false;
+    const nextPages = currentDoc.pages.map((page) => {
+      if (!page || typeof page !== "object") return page;
+      const pageMatch = defaultPagesById.get(String(page.id || ""));
+      let nextPage = page;
+      if (
+        pageMatch &&
+        String(page.title || "").trim() === String(pageMatch.title || "").trim() &&
+        String(page.description || "").trim() === String(pageMatch.description || "").trim() &&
+        !page.is_demo
+      ) {
+        nextPage = Object.assign({}, nextPage, { is_demo: true });
+        docChanged = true;
+      }
+      const defaultRulesById = new Map(
+        Array.isArray(pageMatch && pageMatch.rules) ? pageMatch.rules.map((rule) => [String(rule.id || ""), rule]) : []
+      );
+      if (Array.isArray(page.rules)) {
+        const nextRules = page.rules.map((rule) => {
+          if (!rule || typeof rule !== "object") return rule;
+          const ruleMatch = defaultRulesById.get(String(rule.id || ""));
+          if (
+            ruleMatch &&
+            String(rule.title || "").trim() === String(ruleMatch.title || "").trim() &&
+            String(rule.text || rule.body || "").trim() === String(ruleMatch.text || ruleMatch.body || "").trim() &&
+            String(rule.explanation || "").trim() === String(ruleMatch.explanation || "").trim() &&
+            !rule.is_demo
+          ) {
+            docChanged = true;
+            return Object.assign({}, rule, { is_demo: true });
+          }
+          return rule;
+        });
+        if (nextRules !== page.rules) {
+          nextPage = Object.assign({}, nextPage, { rules: nextRules });
+        }
+      }
+      return nextPage;
+    });
+    if (docChanged) {
+      setAppDataJson("rule_wiki_document_v1", Object.assign({}, currentDoc, { pages: nextPages }));
+    }
+  }
+}
+
 ensureColumn("sessions", "last_seen_at", "last_seen_at INTEGER NOT NULL DEFAULT 0");
 ensureColumn("users", "contact_email", "contact_email TEXT");
 ensureColumn("users", "city", "city TEXT");
@@ -1382,6 +1728,7 @@ ensureColumn("users", "role", "role TEXT NOT NULL DEFAULT 'user'");
 ensureColumn("qna_questions", "image_url", "image_url TEXT");
 ensureColumn("qna_questions", "category", "category TEXT NOT NULL DEFAULT 'other'");
 ensureColumn("qna_answers", "image_url", "image_url TEXT");
+ensureColumn("idea_bank_ideas", "demo_seed", "demo_seed INTEGER NOT NULL DEFAULT 0");
 ensureColumn("important_messages", "color", "color TEXT NOT NULL DEFAULT 'info'");
 ensureColumn("important_messages", "source", "source TEXT NOT NULL DEFAULT 'admin'");
 ensureColumn("important_messages", "source_label", "source_label TEXT NOT NULL DEFAULT 'admin'");
@@ -1391,6 +1738,8 @@ ensureColumn("chat_messages", "pinned_at", "pinned_at INTEGER");
 ensureColumn("chat_messages", "pinned_by", "pinned_by INTEGER");
 ensureColumn("sessions", "csrf_token", "csrf_token TEXT");
 ensureColumn("tasks", "priority", "priority TEXT NOT NULL DEFAULT 'low'");
+ensureColumn("login_history", "email_snapshot", "email_snapshot TEXT NOT NULL DEFAULT ''");
+cleanupOldLoginHistory();
 ensureUniqueContactEmailIndex();
 db.exec(`
 CREATE UNIQUE INDEX IF NOT EXISTS idx_important_messages_source_external_id
@@ -1582,11 +1931,16 @@ if (!isProduction) {
 }
 seedEventsIfEmpty();
 removeLegacySeededDemoEvents();
+removeLegacySeededImportantMessages();
 seedImportantMessagesIfEmpty();
-seedIdeaBankIfEmpty();
+markSeedIdeaBankRows();
+ensureIdeaBankDemoRows();
 ensureFsState();
 ensureRegistrationSetting();
 ensureRuleWikiEntries();
+ensureRuleWikiDocument();
+markSeedRuleWikiData();
+ensureFacebookAcademyDemoLinks();
 
 app.use(express.json({ limit: "15mb" }));
 app.use(cookieParser());
@@ -1662,14 +2016,32 @@ app.get("/:publicFile", (req, res, next) => {
 });
 
 function createSession(userId) {
+  cleanupOldLoginHistory();
   const rawToken = crypto.randomBytes(48).toString("base64url");
   const token = `${rawToken}.${signSessionRaw(rawToken)}`;
   const csrfToken = makeCsrfToken();
-  const expiresAt = nowTs() + SESSION_TTL_SECONDS;
+  const createdAt = nowTs();
+  const expiresAt = createdAt + SESSION_TTL_SECONDS;
+  const userRow = db.prepare("SELECT email FROM users WHERE id = ? LIMIT 1").get(userId);
+  const emailSnapshot = String((userRow && userRow.email) || "");
   db.prepare(
     "INSERT INTO sessions(token, user_id, expires_at, last_seen_at, created_at, csrf_token) VALUES (?, ?, ?, ?, ?, ?)"
-  ).run(token, userId, expiresAt, nowTs(), nowTs(), csrfToken);
+  ).run(token, userId, expiresAt, createdAt, createdAt, csrfToken);
+  db.prepare(
+    `INSERT INTO login_history(session_token, user_id, email_snapshot, login_at, last_seen_at, logout_at)
+     VALUES (?, ?, ?, ?, ?, NULL)`
+  ).run(token, userId, emailSnapshot, createdAt, createdAt);
   return { token, csrfToken };
+}
+
+function closeLoginHistoryForSession(token, endedAt) {
+  const ended = Number(endedAt) || nowTs();
+  db.prepare(
+    `UPDATE login_history
+     SET logout_at = COALESCE(logout_at, ?),
+         last_seen_at = CASE WHEN last_seen_at < ? THEN ? ELSE last_seen_at END
+     WHERE session_token = ?`
+  ).run(ended, ended, ended, String(token || ""));
 }
 
 function getUserFromSession(req) {
@@ -1694,6 +2066,7 @@ function getUserFromSession(req) {
 
   if (!row) return null;
   if (row.expires_at <= nowTs()) {
+    closeLoginHistoryForSession(tokenStr, Number(row.expires_at || nowTs()));
     db.prepare("DELETE FROM sessions WHERE token = ?").run(token);
     return null;
   }
@@ -1761,6 +2134,7 @@ function requireAuth(req, res) {
     }
   }
   db.prepare("UPDATE sessions SET last_seen_at = ? WHERE token = ?").run(nowTs(), user.token);
+  db.prepare("UPDATE login_history SET last_seen_at = ? WHERE session_token = ?").run(nowTs(), user.token);
   return user;
 }
 
@@ -2485,6 +2859,10 @@ app.post("/api/password/reset-confirm", (req, res) => {
       .run(passwordHash, salt, PBKDF2_ITERATIONS, Number(row.user_id));
     db.prepare("UPDATE password_reset_tokens SET used_at = ? WHERE id = ?")
       .run(now, Number(row.id));
+    const activeSessions = db.prepare("SELECT token FROM sessions WHERE user_id = ?").all(Number(row.user_id));
+    activeSessions.forEach((sessionRow) => {
+      closeLoginHistoryForSession(String(sessionRow.token || ""), now);
+    });
     db.prepare("DELETE FROM sessions WHERE user_id = ?")
       .run(Number(row.user_id));
   });
@@ -2496,6 +2874,7 @@ app.post("/api/password/reset-confirm", (req, res) => {
 app.post("/api/logout", (req, res) => {
   const token = req.cookies[SESSION_COOKIE];
   if (token) {
+    closeLoginHistoryForSession(token, nowTs());
     db.prepare("DELETE FROM sessions WHERE token = ?").run(token);
   }
   clearSessionCookie(res);
@@ -2653,7 +3032,7 @@ app.put("/api/rule-wiki", (req, res) => {
   }
   const documentPayload = req.body?.document;
   if (documentPayload && typeof documentPayload === "object" && !Array.isArray(documentPayload)) {
-    const normalizedDocument = normalizeRuleWikiDocument(documentPayload);
+    const normalizedDocument = normalizeRuleWikiDocument(stripRuleWikiDemoFlagsFromDocument(documentPayload));
     if (!normalizedDocument) {
       return res.status(400).json({ error: "Ogiltig regelboks-JSON. Minst en sida med regler krävs." });
     }
@@ -2664,7 +3043,9 @@ app.put("/api/rule-wiki", (req, res) => {
   if (!entries) {
     return res.status(400).json({ error: "Regellistan måste vara en array." });
   }
-  const normalized = entries.map((row, index) => normalizeRuleWikiEntry(row, index)).filter(Boolean);
+  const normalized = stripRuleWikiDemoFlagsFromEntries(entries)
+    .map((row, index) => normalizeRuleWikiEntry(row, index))
+    .filter(Boolean);
   if (!normalized.length) {
     return res.status(400).json({ error: "Minst ett regelavsnitt krävs." });
   }
@@ -2756,6 +3137,41 @@ app.get("/api/admin/users", (req, res) => {
       online: !!r.is_online,
       is_admin: isAdmin({ email: String(r.email || "") }),
       is_secretary: !isAdmin({ email: String(r.email || "") }) && normalizeUserRole(r.role) === "secretary"
+    }))
+  });
+});
+
+app.get("/api/admin/login-history", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+  if (!canManageAdminFeatures(user)) {
+    return res.status(403).json({ error: "Endast admin eller sekreterare har åtkomst." });
+  }
+
+  const limit = Math.max(1, Math.min(500, Number(req.query.limit) || 200));
+  const rows = db
+    .prepare(
+      `SELECT lh.id, lh.email_snapshot, lh.login_at, lh.last_seen_at, lh.logout_at,
+              u.id AS user_id, u.email, u.first_name, u.last_name, u.role
+       FROM login_history lh
+       LEFT JOIN users u ON u.id = lh.user_id
+       ORDER BY lh.login_at DESC, lh.id DESC
+       LIMIT ?`
+    )
+    .all(limit);
+
+  return res.json({
+    history: rows.map((r) => ({
+      id: Number(r.id),
+      user_id: Number(r.user_id),
+      email: String(r.email || r.email_snapshot || ""),
+      display_name: getUserDisplayNameByIdentifier(String(r.email || r.email_snapshot || "")),
+      role: normalizeUserRole(r.role),
+      is_admin: isAdmin({ email: String(r.email || r.email_snapshot || "") }),
+      is_secretary: !isAdmin({ email: String(r.email || r.email_snapshot || "") }) && normalizeUserRole(r.role) === "secretary",
+      login_at: Number(r.login_at || 0),
+      last_seen_at: Number(r.last_seen_at || 0),
+      logout_at: r.logout_at == null ? null : Number(r.logout_at)
     }))
   });
 });
@@ -3222,9 +3638,9 @@ app.get("/api/messenger/groups/:groupId/members", (req, res) => {
   return res.json({
     members: rows.map((r) => ({
       id: Number(r.id || 0),
-      email: String(r.email || ""),
       display_name: getUserDisplayNameByIdentifier(r.email),
-      online: !!r.is_online
+      online: !!r.is_online,
+      is_self: Number(r.id || 0) === Number(user.id)
     }))
   });
 });
@@ -4027,6 +4443,16 @@ app.delete("/api/important-messages/:id", (req, res) => {
   return res.json({ ok: true });
 });
 
+app.post("/api/important-messages/demo/clear", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+  if (!canManageAdminFeatures(user)) {
+    return res.status(403).json({ error: "Endast admin eller sekreterare kan rensa demodata." });
+  }
+  const result = clearImportantDemoMessages();
+  return res.json({ ok: true, removed: Number(result.changes || 0) });
+});
+
 app.get("/api/integrations/partikansliet/important-messages", (req, res) => {
   if (!requirePartikanslietIntegration(req, res)) return;
   const rows = listImportantMessages("source = ?", ["partikansliet"]);
@@ -4141,10 +4567,12 @@ app.post("/api/facebook-academy/links", (req, res) => {
   }
 
   const title = String(req.body?.title || "").trim();
+  const body = String(req.body?.body || "").trim();
   const url = String(req.body?.url || "").trim();
+  const imageUrl = normalizeTaskImageUrl(req.body?.image_url || "");
   const typeRaw = String(req.body?.type || "").trim().toLowerCase();
 
-  if (!title && !url) {
+  if (!title && !body && !url) {
     return res.status(400).json({ error: "Ange text, länk eller båda." });
   }
   if (url && !isAllowedAcademyUrl(url)) {
@@ -4154,11 +4582,16 @@ app.post("/api/facebook-academy/links", (req, res) => {
   }
 
   let type = "";
-  if (url) {
+  if (typeRaw === "text") {
+    type = "text";
+  } else if (url) {
     type = typeRaw === "video" || typeRaw === "pdf" ? typeRaw : inferAcademyLinkType(url);
   }
   if (url && !type) {
     return res.status(400).json({ error: "Kunde inte avgöra länktyp. Välj video eller pdf." });
+  }
+  if (type === "text" && url) {
+    return res.status(400).json({ error: "Textkort ska inte ha någon länk." });
   }
 
   const now = nowTs();
@@ -4166,7 +4599,9 @@ app.post("/api/facebook-academy/links", (req, res) => {
   const item = normalizeAcademyLink({
     id: "aca_" + crypto.randomBytes(8).toString("hex"),
     title: title,
+    body: body,
     url: url,
+    image_url: imageUrl,
     type: type,
     created_at: now,
     updated_at: now,
@@ -4189,9 +4624,11 @@ app.put("/api/facebook-academy/links/:id", (req, res) => {
   if (!id) return res.status(400).json({ error: "Ogiltigt id." });
 
   const title = String(req.body?.title || "").trim();
+  const body = String(req.body?.body || "").trim();
   const url = String(req.body?.url || "").trim();
+  const imageUrl = normalizeTaskImageUrl(req.body?.image_url || "");
   const typeRaw = String(req.body?.type || "").trim().toLowerCase();
-  if (!title && !url) {
+  if (!title && !body && !url) {
     return res.status(400).json({ error: "Ange text, länk eller båda." });
   }
   if (url && !isAllowedAcademyUrl(url)) {
@@ -4200,11 +4637,16 @@ app.put("/api/facebook-academy/links/:id", (req, res) => {
     });
   }
   let type = "";
-  if (url) {
+  if (typeRaw === "text") {
+    type = "text";
+  } else if (url) {
     type = typeRaw === "video" || typeRaw === "pdf" ? typeRaw : inferAcademyLinkType(url);
   }
   if (url && !type) {
     return res.status(400).json({ error: "Kunde inte avgöra länktyp. Välj video eller pdf." });
+  }
+  if (type === "text" && url) {
+    return res.status(400).json({ error: "Textkort ska inte ha någon länk." });
   }
 
   const links = getFacebookAcademyLinks();
@@ -4215,7 +4657,9 @@ app.put("/api/facebook-academy/links/:id", (req, res) => {
   const updated = normalizeAcademyLink({
     id: current.id,
     title: title,
+    body: body,
     url: url,
+    image_url: imageUrl,
     type: type,
     created_at: current.created_at,
     updated_at: nowTs(),
@@ -4244,6 +4688,20 @@ app.delete("/api/facebook-academy/links/:id", (req, res) => {
   }
   setFacebookAcademyLinks(next);
   return res.json({ ok: true });
+});
+
+app.post("/api/facebook-academy/demo/clear", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+  if (!canManageAdminFeatures(user)) {
+    return res.status(403).json({ error: "Endast admin eller sekreterare kan rensa demodata." });
+  }
+
+  const links = getFacebookAcademyLinks();
+  const next = links.filter((x) => !isFacebookAcademyDemoLinkId(x.id));
+  const removed = links.length - next.length;
+  setFacebookAcademyLinks(next);
+  return res.json({ ok: true, removed: removed });
 });
 
 app.post("/api/facebook-academy/upload-pdf", (req, res) => {
@@ -4606,6 +5064,16 @@ app.delete("/api/idea-bank/ideas/:id", (req, res) => {
 
   db.prepare("DELETE FROM idea_bank_ideas WHERE id = ?").run(id);
   return res.json({ ok: true });
+});
+
+app.post("/api/idea-bank/demo/clear", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+  if (!canManageAdminFeatures(user)) {
+    return res.status(403).json({ error: "Endast admin eller sekreterare kan rensa demodata." });
+  }
+  const result = deleteIdeaBankDemoRows();
+  return res.json({ ok: true, removed: Number(result.changes || 0) });
 });
 
 app.get("/api/tasks/my", (req, res) => {

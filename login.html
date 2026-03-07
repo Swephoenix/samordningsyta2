@@ -150,6 +150,37 @@
         }
 
         .link:hover { text-decoration: underline; }
+        .back-corner-btn {
+            position: absolute;
+            top: -18px;
+            left: 18px;
+            display: none;
+            z-index: 2;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.95);
+            color: var(--text);
+            font-size: 0.82rem;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            line-height: 1;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            text-decoration: none;
+        }
+        .back-corner-btn:hover {
+            text-decoration: none;
+            background: #eef2ff;
+            border-color: #c7d2fe;
+            color: #4338ca;
+        }
+        .back-corner-btn::before {
+            content: "←";
+            font-size: 1rem;
+            line-height: 1;
+        }
 
         .btn {
             width: 100%;
@@ -179,6 +210,11 @@
             .login-card::before {
                 top: -15px;
                 right: 12px;
+                font-size: 0.9rem;
+            }
+            .back-corner-btn {
+                top: -15px;
+                left: 12px;
                 font-size: 0.9rem;
             }
             h1 { font-size: 2rem; }
@@ -272,6 +308,7 @@
 </head>
 <body>
     <main class="login-card">
+        <button class="back-corner-btn" id="backToUsernameBtn" type="button" style="display:none;">Tillbaka</button>
         <h1 id="title">Välkommen tillbaka</h1>
         <p class="subtitle" id="subtitle">Ange ditt användarnamn så skickas en engångskod till din e-post.</p>
 
@@ -308,6 +345,7 @@
         const usernameInput = document.getElementById('username');
         const codeInput = document.getElementById('loginCode');
         const codeField = document.getElementById('codeField');
+        const backToUsernameBtn = document.getElementById('backToUsernameBtn');
         const resendCodeBtn = document.getElementById('resendCodeBtn');
         const codeDeliveryHint = document.getElementById('codeDeliveryHint');
         const codeCountdown = document.getElementById('codeCountdown');
@@ -378,6 +416,7 @@
         function setCodeStep(enabled) {
             codeRequested = !!enabled;
             codeField.style.display = codeRequested ? 'block' : 'none';
+            backToUsernameBtn.style.display = codeRequested ? 'inline-block' : 'none';
             resendCodeBtn.style.display = codeRequested ? 'inline-block' : 'none';
             submitBtn.textContent = codeRequested ? 'Logga in med kod' : 'Skicka kod';
             setCodeDeliveryHint(codeRequested);
@@ -393,7 +432,12 @@
                 }
                 codeInput.focus();
             } else {
+                if (loginExtras) {
+                    const text = loginExtras.querySelector('.remember');
+                    if (text) text.textContent = 'Steg 1: Skicka kod';
+                }
                 codeInput.value = '';
+                usernameInput.focus();
             }
         }
 
@@ -454,6 +498,11 @@
             } finally {
                 resendCodeBtn.disabled = false;
             }
+        });
+
+        backToUsernameBtn.addEventListener('click', function() {
+            setNotice('', '');
+            setCodeStep(false);
         });
 
         if (new URLSearchParams(window.location.search).get('register') === 'closed') {

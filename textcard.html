@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<title>Nytt textkort</title>
+
+<style>
+
+body{
+font-family: Arial, Helvetica, sans-serif;
+background:#f4f4f6;
+margin:0;
+padding:40px;
+}
+
+/* popup */
+
+.popup{
+width:560px;
+background:white;
+border-radius:8px;
+box-shadow:0 10px 30px rgba(0,0,0,0.15);
+padding:22px;
+}
+
+/* titel */
+
+.popup h2{
+margin:0 0 18px 0;
+font-size:22px;
+font-weight:600;
+}
+
+/* labels */
+
+label{
+font-size:14px;
+font-weight:600;
+display:block;
+margin-bottom:6px;
+}
+
+/* input */
+
+input[type="text"]{
+width:100%;
+padding:10px;
+border:1px solid #d6d6dc;
+border-radius:5px;
+font-size:14px;
+margin-bottom:14px;
+}
+
+/* editor */
+
+.editor{
+border:1px solid #d6d6dc;
+border-radius:6px;
+overflow:hidden;
+}
+
+/* toolbar */
+
+.toolbar{
+background:#f1f1f4;
+border-bottom:1px solid #d6d6dc;
+padding:6px;
+display:flex;
+gap:6px;
+flex-wrap:wrap;
+}
+
+.toolbar button{
+background:white;
+border:1px solid #cfcfd6;
+border-radius:4px;
+padding:5px 10px;
+font-size:13px;
+cursor:pointer;
+}
+
+.toolbar button:hover{
+background:#ececf1;
+}
+
+/* editor area */
+
+.editable{
+min-height:160px;
+padding:10px;
+font-size:14px;
+line-height:1.5;
+outline:none;
+}
+
+/* image buttons */
+
+.image-buttons{
+margin-top:12px;
+display:flex;
+gap:10px;
+}
+
+.image-buttons button{
+padding:8px 14px;
+border-radius:5px;
+border:1px solid #cfcfd6;
+background:#f5f5f7;
+cursor:pointer;
+font-size:13px;
+}
+
+.image-buttons button:hover{
+background:#ececf1;
+}
+
+/* footer */
+
+.footer{
+margin-top:20px;
+display:flex;
+justify-content:flex-end;
+gap:10px;
+}
+
+.cancel{
+background:#f3f3f6;
+border:1px solid #cfcfd6;
+padding:8px 16px;
+border-radius:6px;
+cursor:pointer;
+}
+
+.save{
+background:#5b4df4;
+border:none;
+color:white;
+padding:8px 16px;
+border-radius:6px;
+cursor:pointer;
+}
+
+.save:hover{
+background:#4a3ee0;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="popup">
+
+<h2>Nytt textkort</h2>
+
+<label>Rubrik</label>
+<input type="text">
+
+<label>Brödtext</label>
+
+<div class="editor">
+
+<div class="toolbar">
+<button onclick="format('bold')">Bold</button>
+<button onclick="format('italic')">Italic</button>
+<button onclick="format('insertUnorderedList')">Punktlista</button>
+<button onclick="createLink()">🔗 Länk</button>
+</div>
+
+<div class="editable" contenteditable="true"></div>
+
+</div>
+
+<div class="image-buttons">
+<button>Lägg till omslagsbild</button>
+<button>Ta bort bild</button>
+</div>
+
+<div style="font-size:12px;color:#777;margin-top:6px;">
+JPG/PNG/WebP, max 10 MB
+</div>
+
+<div class="footer">
+<button class="cancel">Avbryt</button>
+<button class="save">Spara</button>
+</div>
+
+</div>
+
+<script>
+
+function format(command){
+document.execCommand(command,false,null)
+}
+
+function createLink(){
+let url=prompt("Ange länk:")
+if(url){
+document.execCommand("createLink",false,url)
+}
+}
+
+</script>
+
+</body>
+</html>
