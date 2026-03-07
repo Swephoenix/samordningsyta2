@@ -3623,7 +3623,7 @@
             overflow-y: auto;
             position: relative;
         }
-        #facebookAcademyModal > .modal-close {
+        #facebookAcademyModal .academy-modal-content > .modal-close {
             position: absolute;
             top: 14px;
             right: 14px;
@@ -3637,7 +3637,7 @@
             color: #475569;
             z-index: 1;
         }
-        #facebookAcademyModal > .modal-close:hover {
+        #facebookAcademyModal .academy-modal-content > .modal-close:hover {
             background: #f8fafc;
             color: #0f172a;
         }
@@ -6240,8 +6240,8 @@
     </div>
 
     <div class="modal-overlay" id="facebookAcademyModal">
-        <button class="modal-close" type="button" onclick="closeFacebookAcademyModal()" aria-label="Stäng Medieakademin">✖</button>
         <div class="academy-modal-content">
+            <button class="modal-close" type="button" onclick="closeFacebookAcademyModal()" aria-label="Stäng Medieakademin">✖</button>
             <h1>Medieakademin</h1>
             <p class="sub">Utbildningskort med video eller PDF</p>
 
