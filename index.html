@@ -6980,12 +6980,13 @@
         }
 
         function currentUserTitle() {
-            return 'Du';
+            const visibleName = String(currentUserDisplayName || '').trim();
+            return visibleName ? `Du (${visibleName})` : 'Du';
         }
 
         function chatVisibleAuthorLabel(options) {
             const roleLabel = String(options && options.roleLabel || '').trim();
-            if (options && options.isSelf) return 'Du';
+            if (options && options.isSelf) return currentUserTitle();
             if (roleLabel) return roleLabel;
             if (options && options.isAdmin) return 'Admin';
             return 'Medlem';
@@ -7040,7 +7041,7 @@
                 currentUserIsAdmin = !!data.is_admin;
                 currentUserCanManage = !!data.is_admin || !!data.is_secretary;
                 const userBadge = document.getElementById('chatCurrentUserBadge');
-                if (userBadge) userBadge.innerText = 'Inloggad';
+                if (userBadge) userBadge.innerText = `Inloggad som: ${currentUserTitle()}`;
                 document.getElementById('adminSettingsIcon').style.display = currentUserCanManage ? 'flex' : 'none';
                 document.getElementById('taskAdminToolIcon').style.display = currentUserCanManage ? 'flex' : 'none';
                 document.getElementById('loginHistoryToolIcon').style.display = currentUserCanManage ? 'flex' : 'none';
@@ -8034,7 +8035,7 @@
                 sendBtn.title = readOnlySystemThread ? 'Systemtråden är skrivskyddad' : 'Skicka';
             }
             if (userBadge) {
-                userBadge.innerText = 'Inloggad';
+                userBadge.innerText = `Inloggad som: ${currentUserTitle()}`;
             }
             if (membersChip) {
                 membersChip.style.display = isMembersEligibleThread(thread) ? 'inline-flex' : 'none';
