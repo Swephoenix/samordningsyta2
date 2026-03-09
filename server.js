@@ -78,6 +78,8 @@ const TEST_ACCOUNT_CONTACT_EMAIL = normalizeEmail(
 const SECRETARY_TEST_IDENTIFIER = normalizeEmail(process.env.SECRETARY_TEST_USERNAME || "sekreterare1") || "sekreterare1";
 const SECRETARY_TEST_PASSWORD = String(process.env.SECRETARY_TEST_PASSWORD || "sekreterare1");
 const SECRETARY_TEST_CONTACT_EMAIL = normalizeEmail(process.env.SECRETARY_TEST_EMAIL || "");
+const SYSTEM_CHAT_IDENTIFIER = normalizeEmail(process.env.SYSTEM_CHAT_IDENTIFIER || "__system__") || "__system__";
+const SYSTEM_CHAT_PASSWORD = String(process.env.SYSTEM_CHAT_PASSWORD || "system-chat-disabled");
 const PARTIKANSLIET_API_KEY = String(process.env.PARTIKANSLIET_API_KEY || "").trim();
 const passwordResetRateLimit = new Map();
 const registerRateLimit = new Map();
@@ -548,6 +550,18 @@ function ensureDefaultUser(email, password) {
      VALUES (?, ?, ?, ?, ?)
      ON CONFLICT(email) DO NOTHING`
   ).run(email, passwordHash, salt, PBKDF2_ITERATIONS, nowTs());
+}
+
+function ensureSystemChatUser() {
+  ensureDefaultUser(SYSTEM_CHAT_IDENTIFIER, SYSTEM_CHAT_PASSWORD);
+  const row = db
+    .prepare("SELECT id FROM users WHERE lower(email) = ? LIMIT 1")
+    .get(SYSTEM_CHAT_IDENTIFIER);
+  if (!row || !Number(row.id)) {
+    throw new Error("Kunde inte säkerställa systemanvändare för chatt.");
+  }
+  db.prepare("UPDATE users SET role = 'system', contact_email = '' WHERE id = ?").run(Number(row.id));
+  return Number(row.id);
 }
 
 function getConfiguredAdminFromEnv({ emailKey, usernameKey, passwordKey, label }) {
@@ -1775,6 +1789,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_important_messages_source_external_id
 CREATE INDEX IF NOT EXISTS idx_chat_message_likes_message_id
   ON chat_message_likes(message_id);
 `);
+const SYSTEM_CHAT_USER_ID = ensureSystemChatUser();
 
 const isProduction = ENV_IS_PRODUCTION;
 const configuredAdmins = getConfiguredAdmins();
@@ -3397,6 +3412,15 @@ app.get("/api/messenger/threads", (req, res) => {
          ) AS unread_count
        FROM users u
        WHERE u.id != ?
+         AND (
+           lower(u.email) != ?
+           OR EXISTS (
+             SELECT 1
+             FROM direct_messages dm
+             WHERE (dm.sender_id = u.id AND dm.recipient_id = ?)
+                OR (dm.sender_id = ? AND dm.recipient_id = u.id)
+           )
+         )
        ORDER BY COALESCE(last_message_at, 0) DESC, u.email ASC`
     )
     .all(
@@ -3408,6 +3432,9 @@ app.get("/api/messenger/threads", (req, res) => {
       user.id,
       user.id,
       user.id,
+      user.id,
+      user.id,
+      SYSTEM_CHAT_IDENTIFIER,
       user.id,
       user.id
     );
@@ -3466,7 +3493,7 @@ app.get("/api/messenger/threads", (req, res) => {
     id: String(r.id),
     email: r.email,
     profile_image_url: String(r.profile_image_url || ""),
-    name: getUserDisplayNameByIdentifier(r.email),
+    name: normalizeEmail(r.email) === SYSTEM_CHAT_IDENTIFIER ? "System" : getUserDisplayNameByIdentifier(r.email),
     online: !!r.is_online,
     unread_count: Number(r.unread_count || 0),
     last_message_text: r.last_message_text || "",
@@ -3536,8 +3563,8 @@ app.get("/api/messenger/messages/:userId", (req, res) => {
       created_at: m.created_at,
       from_me: m.sender_id === user.id,
       sender_email: String(m.sender_email || ""),
-      sender_display_name: getUserDisplayNameByIdentifier(m.sender_email),
-      sender_role_label: getUserRoleLabelByIdentifier(m.sender_email),
+      sender_display_name: normalizeEmail(m.sender_email) === SYSTEM_CHAT_IDENTIFIER ? "System" : getUserDisplayNameByIdentifier(m.sender_email),
+      sender_role_label: normalizeEmail(m.sender_email) === SYSTEM_CHAT_IDENTIFIER ? "System" : getUserRoleLabelByIdentifier(m.sender_email),
       profile_image_url: String(m.sender_profile_image_url || "")
     }))
   });
@@ -3561,10 +3588,13 @@ app.post("/api/messenger/messages", (req, res) => {
   }
 
   const recipient = db
-    .prepare("SELECT id FROM users WHERE id = ?")
+    .prepare("SELECT id, email FROM users WHERE id = ?")
     .get(recipientId);
   if (!recipient) {
     return res.status(404).json({ error: "Mottagaren hittades inte." });
+  }
+  if (normalizeEmail(recipient.email) === SYSTEM_CHAT_IDENTIFIER) {
+    return res.status(403).json({ error: "Systemtråden är skrivskyddad." });
   }
 
   db.prepare(
@@ -3751,10 +3781,10 @@ app.post("/api/messenger/groups", (req, res) => {
       ).run(groupId, user.id, invitee.id, token, now);
 
       const link = `${req.protocol}://${req.get("host")}/group-invite/${groupId}?token=${token}`;
-      const message = `Du är inbjuden till gruppen "${name}". Gå med via länken: ${link}`;
+      const message = `Systemmeddelande: Du är inbjuden till gruppchatten "${name}". Gå med via länken: ${link}`;
       db.prepare(
         "INSERT INTO direct_messages(sender_id, recipient_id, message, created_at, read_at) VALUES (?, ?, ?, ?, NULL)"
-      ).run(user.id, invitee.id, message, now);
+      ).run(SYSTEM_CHAT_USER_ID, invitee.id, message, now);
     }
   });
   tx();

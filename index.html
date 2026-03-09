@@ -1468,6 +1468,17 @@
         .chat-post-body li + li {
             margin-top: 4px;
         }
+        .chat-post-body a,
+        .msgp-message-body a {
+            text-decoration: underline;
+            word-break: break-word;
+        }
+        .chat-post-body a {
+            color: #dbeafe;
+        }
+        .chat-post.theirs .chat-post-body a {
+            color: #1d4ed8;
+        }
         .chat-preview-overlay {
             position: fixed;
             inset: 0;
@@ -5452,6 +5463,27 @@
             font-size: 0.7rem;
             opacity: 0.8;
         }
+        .msgp-message-body p,
+        .msgp-message-body ul {
+            margin: 0;
+        }
+        .msgp-message-body p + p,
+        .msgp-message-body p + ul,
+        .msgp-message-body ul + p,
+        .msgp-message-body ul + ul {
+            margin-top: 8px;
+        }
+        .msgp-message-body ul {
+            padding-left: 18px;
+        }
+        .msgp-reply-preview {
+            margin-bottom: 8px;
+            padding: 6px 8px;
+            border-radius: 10px;
+            background: rgba(15, 23, 42, 0.08);
+            font-size: 0.72rem;
+            line-height: 1.35;
+        }
         .msgp-sender {
             font-size: 0.68rem;
             font-weight: 700;
@@ -6086,7 +6118,7 @@
                     <span class="chat-notify-badge" id="mainChatUnreadBadge">0</span>
                 </div>
                 <div class="chat-header-actions">
-                    <span class="chat-auth-badge" id="chatCurrentUserBadge">Inloggad som: -</span>
+                    <span class="chat-auth-badge" id="chatCurrentUserBadge">Inloggad</span>
                     <button class="chat-profile-btn" id="openProfileBtn" type="button">Min profil</button>
                     <button class="chat-header-btn" type="button" title="Info">ℹ</button>
                 </div>
@@ -6923,7 +6955,7 @@
                 hint.textContent = 'Texten skickas till den öppna gruppchatten.';
                 return;
             }
-            hint.textContent = `Texten skickas till ${thread.name}.`;
+            hint.textContent = `Texten skickas till ${chatVisibleThreadName(thread)}.`;
         }
 
         function openLongPostComposer() {
@@ -6948,14 +6980,37 @@
         }
 
         function currentUserTitle() {
-            return String(currentUserDisplayName || '').trim() || (currentUserEmail || '-');
+            return 'Du';
         }
 
-        function chatAuthorTitle(email, isAdminAuthor, displayName) {
-            const explicit = String(displayName || '').trim();
-            if (explicit) return explicit;
-            if (isAdminAuthor) return 'admin';
-            return String(email || 'okänd');
+        function chatVisibleAuthorLabel(options) {
+            const roleLabel = String(options && options.roleLabel || '').trim();
+            if (options && options.isSelf) return 'Du';
+            if (roleLabel) return roleLabel;
+            if (options && options.isAdmin) return 'Admin';
+            return 'Medlem';
+        }
+
+        function chatVisibleThreadName(thread) {
+            if (!thread) return 'Chatt';
+            if (String(thread.id || '') === MESSENGER_GROUP_THREAD_ID || !!thread.isGroup) return 'Gruppchatt';
+            if (String(thread.email || '').trim().toLowerCase() === '__system__') return 'System';
+            const directThreads = messengerThreads.filter(function(entry) {
+                return !entry.isGroup && String(entry.id || '') !== MESSENGER_GROUP_THREAD_ID;
+            });
+            const idx = directThreads.findIndex(function(entry) {
+                return String(entry.id || '') === String(thread.id || '');
+            });
+            return idx >= 0 ? `Privat chatt ${idx + 1}` : 'Privat chatt';
+        }
+
+        function chatVisibleMemberLabel(member, index) {
+            if (member && member.is_self) return 'Du';
+            return `Medlem ${Number(index || 0) + 1}`;
+        }
+
+        function isSystemChatThread(thread) {
+            return !!thread && !thread.isGroup && String(thread.email || '').trim().toLowerCase() === '__system__';
         }
 
         async function requireAuth() {
@@ -6974,7 +7029,7 @@
                 currentUserIsAdmin = !!data.is_admin;
                 currentUserCanManage = !!data.is_admin || !!data.is_secretary;
                 const userBadge = document.getElementById('chatCurrentUserBadge');
-                if (userBadge) userBadge.innerText = `Inloggad som: ${currentUserTitle()}`;
+                if (userBadge) userBadge.innerText = 'Inloggad';
                 document.getElementById('adminSettingsIcon').style.display = currentUserCanManage ? 'flex' : 'none';
                 document.getElementById('taskAdminToolIcon').style.display = currentUserCanManage ? 'flex' : 'none';
                 document.getElementById('loginHistoryToolIcon').style.display = currentUserCanManage ? 'flex' : 'none';
@@ -7266,6 +7321,61 @@
             if (body) body.innerHTML = '';
         }
 
+        function decodeEscapedChatText(text) {
+            return String(text || '')
+                .replace(/&amp;/g, '&')
+                .replace(/&lt;/g, '<')
+                .replace(/&gt;/g, '>')
+                .replace(/&quot;/g, '"')
+                .replace(/&#39;/g, "'");
+        }
+
+        function sanitizeExternalUrl(rawUrl) {
+            const decoded = decodeEscapedChatText(String(rawUrl || '').trim());
+            if (!decoded) return '';
+            try {
+                const url = new URL(decoded);
+                if (url.protocol !== 'http:' && url.protocol !== 'https:') return '';
+                return url.toString();
+            } catch (_) {
+                return '';
+            }
+        }
+
+        function linkifyEscapedChatText(htmlText) {
+            return String(htmlText || '').replace(/https?:\/\/[^\s<]+/g, function(match) {
+                let candidate = String(match || '');
+                let trailing = '';
+                while (candidate && /[),.!?:;\]]$/.test(candidate)) {
+                    trailing = candidate.slice(-1) + trailing;
+                    candidate = candidate.slice(0, -1);
+                }
+                const safeUrl = sanitizeExternalUrl(candidate);
+                if (!safeUrl) return match;
+                return `<a href="${escapeHtml(safeUrl)}" data-external-url="${escapeHtml(safeUrl)}" rel="noopener">${candidate}</a>${trailing}`;
+            });
+        }
+
+        function linkifyRenderedChatHtml(html) {
+            return String(html || '').split(/(<[^>]+>)/g).map(function(part) {
+                if (!part || part.startsWith('<')) return part;
+                return linkifyEscapedChatText(part);
+            }).join('');
+        }
+
+        function openExternalChatLink(url) {
+            const safeUrl = sanitizeExternalUrl(url);
+            if (!safeUrl) return;
+            let host = safeUrl;
+            try {
+                host = new URL(safeUrl).host || safeUrl;
+            } catch (_) {
+            }
+            const ok = window.confirm(`Du är på väg att öppna en extern sida utanför plattformen (${host}). Vill du fortsätta?`);
+            if (!ok) return;
+            window.open(safeUrl, '_blank', 'noopener');
+        }
+
         function renderFormattedChatInline(text) {
             const placeholders = [];
             let html = escapeHtml(String(text || ''));
@@ -7282,7 +7392,7 @@
             placeholders.forEach(function(replacement, index) {
                 html = html.replace(`__CHAT_TOKEN_${index}__`, replacement);
             });
-            return html;
+            return linkifyRenderedChatHtml(html);
         }
 
         function renderFormattedChatBody(text) {
@@ -7661,10 +7771,14 @@
                 const post = document.createElement('div');
                 const isMine = msg.email === currentUserEmail;
                 const isAdminAuthor = !!msg.author_is_admin || String(msg.email || '').toLowerCase() === 'admin';
-                const authorLabel = chatAuthorTitle(msg.email, isAdminAuthor, msg.author_display_name);
                 const authorRoleLabel = String(msg.author_role_label || '').trim();
+                const authorLabel = chatVisibleAuthorLabel({
+                    isSelf: isMine,
+                    isAdmin: isAdminAuthor,
+                    roleLabel: authorRoleLabel
+                });
                 const authorEmail = String(msg.email || '').trim().toLowerCase();
-                const canOpenAuthorProfile = authorEmail.indexOf('@') !== -1;
+                const canOpenAuthorProfile = false;
                 const authorAvatarUrl = avatarUrlForUser(msg.email || authorLabel || 'user', msg.profile_image_url || '', authorLabel);
                 const cityLabel = String(msg.user_city || '').trim();
                 const classNames = ['chat-post', isMine ? 'mine' : 'theirs'];
@@ -7684,7 +7798,7 @@
                     : '';
                 const attachmentHtml = parsed.attachment ? renderAttachmentHtml(parsed.attachment) : '';
                 const replyPreview = parsed.replyTo
-                    ? `<div class=\"chat-reply-preview is-jumpable\" ${parsed.replyTo.messageId ? `data-chat-jump-id=\"${Number(parsed.replyTo.messageId)}\"` : ''} data-chat-reply-author=\"${escapeHtml(String(parsed.replyTo.author || ''))}\" data-chat-reply-snippet=\"${escapeHtml(String(parsed.replyTo.snippet || ''))}\">Svar på ${escapeHtml(parsed.replyTo.author || 'okänd')}: ${escapeHtml(parsed.replyTo.snippet || '')}</div>`
+                    ? `<div class=\"chat-reply-preview is-jumpable\" ${parsed.replyTo.messageId ? `data-chat-jump-id=\"${Number(parsed.replyTo.messageId)}\"` : ''} data-chat-reply-author=\"\" data-chat-reply-snippet=\"${escapeHtml(String(parsed.replyTo.snippet || ''))}\">Svar på tidigare inlägg: ${escapeHtml(parsed.replyTo.snippet || '')}</div>`
                     : '';
                 const replyBtn = !isMine
                     ? `<button class=\"chat-reply-btn\" type=\"button\" title=\"Svara\">↩</button>`
@@ -7702,7 +7816,7 @@
                     : '';
                 post.innerHTML = `
                     <div class=\"chat-post-header\">
-                        <strong class=\"chat-post-author ${canOpenAuthorProfile ? 'is-open-profile' : ''}\" ${canOpenAuthorProfile ? `data-chat-author-email=\"${escapeHtml(authorEmail)}\" title=\"Dubbelklicka för profil\"` : ''}>${authorRoleLabel ? `<span class=\"chat-author-role\">${escapeHtml(authorRoleLabel)}</span>` : ''}<img class=\"chat-post-author-avatar\" src=\"${escapeHtml(authorAvatarUrl)}\" alt=\"${escapeHtml(authorLabel)}\">${escapeHtml(authorLabel)}${cityLabel ? ` <span class=\"chat-author-city\">· ${escapeHtml(cityLabel)}</span>` : ''}</strong>
+                        <strong class=\"chat-post-author\"><img class=\"chat-post-author-avatar\" src=\"${escapeHtml(authorAvatarUrl)}\" alt=\"${escapeHtml(authorLabel)}\">${escapeHtml(authorLabel)}${cityLabel ? ` <span class=\"chat-author-city\">· ${escapeHtml(cityLabel)}</span>` : ''}</strong>
                         <span class=\"chat-post-meta\">
                             ${deleteBtn}
                             ${pinBtn}
@@ -7859,11 +7973,11 @@
                 if (selected.length === 0) {
                     document.getElementById('groupChatFeed').innerHTML = '<div class=\"date-divider\"><span>Välj en eller flera mottagare i To:</span></div>';
                 } else if (selected.length === 1 && !hasExistingConversation(selected[0])) {
-                    document.getElementById('groupChatFeed').innerHTML = `<div class=\"date-divider\"><span>Ingen chatt med ${escapeHtml(selected[0].name)} ännu. Skriv nedan och skicka för att skapa en ny chatt.</span></div>`;
+                    document.getElementById('groupChatFeed').innerHTML = `<div class=\"date-divider\"><span>Ingen tidigare historik i ${escapeHtml(chatVisibleThreadName(selected[0]))}. Skriv nedan och skicka för att starta chatten.</span></div>`;
                 } else if (selected.length > 1) {
                     document.getElementById('groupChatFeed').innerHTML = '<div class=\"date-divider\"><span>Skicka första meddelandet för att skapa gruppchatten.</span></div>';
                 } else {
-                    document.getElementById('groupChatFeed').innerHTML = `<div class=\"date-divider\"><span>Befintlig chatt med ${escapeHtml(selected[0].name)} hittad. Skriv nedan och skicka.</span></div>`;
+                    document.getElementById('groupChatFeed').innerHTML = `<div class=\"date-divider\"><span>${escapeHtml(chatVisibleThreadName(selected[0]))} är öppen. Skriv nedan och skicka.</span></div>`;
                 }
                 setActiveReply(null);
                 renderComposeBar();
@@ -7875,32 +7989,41 @@
             const presenceEl = document.getElementById('groupChatPresence');
             const avatarEl = document.querySelector('.chat-title-avatar');
             const inputEl = document.getElementById('groupChatInput');
+            const sendBtn = document.getElementById('groupChatSendBtn');
             const userBadge = document.getElementById('chatCurrentUserBadge');
             const membersChip = document.getElementById('groupMembersChip');
             const onlineChip = document.getElementById('onlineMembersChip');
+            const readOnlySystemThread = isSystemChatThread(thread);
 
             if (titleEl) {
-                titleEl.innerText = thread.id === MESSENGER_GROUP_THREAD_ID ? 'Chatt' : thread.name;
+                titleEl.innerText = thread.id === MESSENGER_GROUP_THREAD_ID ? 'Chatt' : chatVisibleThreadName(thread);
             }
             if (presenceEl) {
                 presenceEl.innerText = thread.id === MESSENGER_GROUP_THREAD_ID
                     ? `${Number((window.__presenceCount || 0))} online`
-                    : (thread.isGroup ? (thread.statusText || 'Grupp') : (thread.online ? 'Aktiv nu' : 'Offline'));
+                    : (readOnlySystemThread ? 'Systemmeddelanden' : (thread.isGroup ? (thread.statusText || 'Grupp') : (thread.online ? 'Aktiv nu' : 'Offline')));
             }
             if (avatarEl) {
                 if (thread.id === MESSENGER_GROUP_THREAD_ID) {
                     avatarEl.innerHTML = '';
                 } else {
-                    avatarEl.innerHTML = `<img src="${escapeHtml(thread.avatar || messengerAvatarUrl(thread.name || '?', thread.name || ''))}" alt="${escapeHtml(thread.name || 'Chatt')}">`;
+                    avatarEl.innerHTML = `<img src="${escapeHtml(thread.avatar || messengerAvatarUrl(chatVisibleThreadName(thread), chatVisibleThreadName(thread)))}" alt="${escapeHtml(chatVisibleThreadName(thread))}">`;
                 }
             }
             if (inputEl) {
-                inputEl.placeholder = thread.id === MESSENGER_GROUP_THREAD_ID
-                    ? 'Skriv i gruppchatten...'
-                    : `Skriv till ${thread.name}...`;
+                inputEl.disabled = readOnlySystemThread;
+                inputEl.placeholder = readOnlySystemThread
+                    ? 'Systemmeddelanden kan inte besvaras.'
+                    : (thread.id === MESSENGER_GROUP_THREAD_ID
+                        ? 'Skriv i gruppchatten...'
+                        : 'Skriv i privat chatten...');
+            }
+            if (sendBtn) {
+                sendBtn.disabled = readOnlySystemThread;
+                sendBtn.title = readOnlySystemThread ? 'Systemtråden är skrivskyddad' : 'Skicka';
             }
             if (userBadge) {
-                userBadge.innerText = `Inloggad som: ${currentUserTitle()}`;
+                userBadge.innerText = 'Inloggad';
             }
             if (membersChip) {
                 membersChip.style.display = isMembersEligibleThread(thread) ? 'inline-flex' : 'none';
@@ -7920,7 +8043,7 @@
                 return {
                     id: Number(m.id || 0),
                     created_at: Math.floor(Number(m.at || 0) / 1000),
-                    email: m.from === 'me' ? (currentUserEmail || 'Du') : (m.sender || thread.email || thread.name || 'Okänd'),
+                    email: m.from === 'me' ? (currentUserEmail || 'du') : (m.sender || thread.email || chatVisibleThreadName(thread) || 'okänd'),
                     message: m.text || '',
                     profile_image_url: m.from === 'me'
                         ? (m.profile_image_url || currentUserProfileImageUrl || '')
@@ -7998,6 +8121,13 @@
             const message = input.value.trim();
             const hasAttachment = !!(pendingChatAttachment && pendingChatAttachment.url);
             if (!message && !hasAttachment) return;
+            if (!composeState.active) {
+                const activeThread = getThreadById(messengerState.activeThreadId || MESSENGER_GROUP_THREAD_ID);
+                if (isSystemChatThread(activeThread)) {
+                    alert('Systemtråden är skrivskyddad.');
+                    return;
+                }
+            }
             if (composeState.active) {
                 const ids = composeState.selectedIds
                     .filter(function(id) { return !!getThreadById(String(id)); });
@@ -10840,6 +10970,9 @@
             const activeId = messengerState.activeThreadId || MESSENGER_GROUP_THREAD_ID;
             const targetThread = thread || getThreadById(activeId);
             if (!targetThread) return;
+            if (isSystemChatThread(targetThread)) {
+                throw new Error('Systemtråden är skrivskyddad.');
+            }
             if (activeId === MESSENGER_GROUP_THREAD_ID) {
                 await apiSend('/api/chat/messages', 'POST', { message: payloadMessage });
                 return;
@@ -10871,6 +11004,9 @@
             const activeId = messengerState.activeThreadId || MESSENGER_GROUP_THREAD_ID;
             const currentThread = getThreadById(activeId);
             if (!currentThread) throw new Error('Ingen aktiv chatt vald.');
+            if (isSystemChatThread(currentThread)) {
+                throw new Error('Systemtråden är skrivskyddad.');
+            }
 
             const attachment = await uploadAttachmentWithPreview(file);
             setPendingChatAttachment(attachment);
@@ -10958,6 +11094,12 @@
                 if (picker.contains(e.target)) return;
                 if (e.target === toggleBtn || toggleBtn.contains(e.target)) return;
                 picker.style.display = 'none';
+            });
+            document.addEventListener('click', function(e) {
+                const externalLink = e.target.closest('a[data-external-url]');
+                if (!externalLink) return;
+                e.preventDefault();
+                openExternalChatLink(String(externalLink.getAttribute('data-external-url') || externalLink.getAttribute('href') || ''));
             });
         }
 
@@ -12381,7 +12523,9 @@
 
         function getComposeCandidates() {
             return messengerThreads.filter(function(t) {
-                return !t.isGroup && t.id !== MESSENGER_GROUP_THREAD_ID;
+                return !t.isGroup
+                    && t.id !== MESSENGER_GROUP_THREAD_ID
+                    && String(t.email || '').trim().toLowerCase() !== '__system__';
             });
         }
 
@@ -12423,9 +12567,9 @@
             const candidates = getComposeCandidates();
             const selected = candidates.filter(function(t) { return composeState.selectedIds.includes(String(t.id)); });
             const chips = selected.map(function(t) {
-                return `<span class="chat-compose-chip">${escapeHtml(t.name)}<button type="button" data-remove-compose-id="${t.id}" title="Ta bort">×</button></span>`;
+                return `<span class="chat-compose-chip">${escapeHtml(chatVisibleThreadName(t))}<button type="button" data-remove-compose-id="${t.id}" title="Ta bort">×</button></span>`;
             }).join('');
-            recipients.innerHTML = chips + `<input id="chatComposeInput" class="chat-compose-input" type="text" placeholder="Skriv ett namn..." value="${escapeHtml(composeState.query)}">`;
+            recipients.innerHTML = chips + `<input id="chatComposeInput" class="chat-compose-input" type="text" placeholder="Sök mottagare..." value="${escapeHtml(composeState.query)}">`;
             renderComposeStage();
 
             recipients.querySelectorAll('[data-remove-compose-id]').forEach(function(btn) {
@@ -12506,7 +12650,7 @@
             }
             sendBtn.disabled = false;
             if (selected.length === 1) {
-                title.textContent = `Nytt chattinlägg till ${selected[0].name}`;
+                title.textContent = `Nytt chattinlägg till ${chatVisibleThreadName(selected[0])}`;
                 text.textContent = 'Det här stora skrivläget är tänkt för längre meddelanden. Shift+Enter lägger till radbrytning, Enter skickar.';
                 sendBtn.textContent = 'Skicka till chatten';
                 return;
@@ -12569,7 +12713,7 @@
                 return;
             }
             box.innerHTML = filtered.slice(0, 8).map(function(t) {
-                return `<button class="chat-compose-suggestion" type="button" data-compose-id="${t.id}">${escapeHtml(t.name)} (${escapeHtml(t.email)})</button>`;
+                return `<button class="chat-compose-suggestion" type="button" data-compose-id="${t.id}">${escapeHtml(chatVisibleThreadName(t))}</button>`;
             }).join('');
             box.style.display = 'block';
             box.querySelectorAll('[data-compose-id]').forEach(function(btn) {
@@ -12879,15 +13023,15 @@
                 return String(a.sort_name || '').localeCompare(String(b.sort_name || ''), 'sv');
             });
 
-            titleEl.innerText = `Gruppmedlemmar: ${String(thread && thread.name || 'Gruppchatt')}`;
+            titleEl.innerText = 'Gruppmedlemmar';
             subtitleEl.innerText = `${normalized.length} medlemmar`;
 
             if (!normalized.length) {
                 listEl.innerHTML = '<div class="group-members-empty">Inga medlemmar hittades.</div>';
                 return;
             }
-            listEl.innerHTML = normalized.map(function(member) {
-                const displayName = String(member.display_name || '') + (member.is_self ? ' (du)' : '');
+            listEl.innerHTML = normalized.map(function(member, index) {
+                const displayName = chatVisibleMemberLabel(member, index);
                 return `
                     <div class="group-members-row">
                         <div>
@@ -12909,15 +13053,15 @@
                 .filter(function(member) { return !!member.online; })
                 .sort(function(a, b) { return String(a.sort_name || '').localeCompare(String(b.sort_name || ''), 'sv'); });
 
-            titleEl.innerText = `Medlemmar online: ${String(thread && thread.name || 'Gruppchatt')}`;
+            titleEl.innerText = 'Medlemmar online';
             subtitleEl.innerText = `${normalized.length} inloggade just nu`;
 
             if (!normalized.length) {
                 listEl.innerHTML = '<div class="group-members-empty">Inga medlemmar är online just nu.</div>';
                 return;
             }
-            listEl.innerHTML = normalized.map(function(member) {
-                const displayName = String(member.display_name || '') + (member.is_self ? ' (du)' : '');
+            listEl.innerHTML = normalized.map(function(member, index) {
+                const displayName = chatVisibleMemberLabel(member, index);
                 return `
                     <div class="group-members-row">
                         <div>
@@ -12938,7 +13082,7 @@
             const thread = getThreadById(messengerState.activeThreadId || MESSENGER_GROUP_THREAD_ID);
             if (!isMembersEligibleThread(thread)) return;
 
-            titleEl.innerText = `Gruppmedlemmar: ${String(thread.name || 'Gruppchatt')}`;
+            titleEl.innerText = 'Gruppmedlemmar';
             subtitleEl.innerText = 'Laddar...';
             listEl.innerHTML = '<div class="group-members-empty">Laddar medlemmar...</div>';
             modal.style.display = 'flex';
@@ -12960,7 +13104,7 @@
             const thread = getThreadById(messengerState.activeThreadId || MESSENGER_GROUP_THREAD_ID);
             if (!isMembersEligibleThread(thread)) return;
 
-            titleEl.innerText = `Medlemmar online: ${String(thread.name || 'Gruppchatt')}`;
+            titleEl.innerText = 'Medlemmar online';
             subtitleEl.innerText = 'Laddar...';
             listEl.innerHTML = '<div class="group-members-empty">Laddar inloggade medlemmar...</div>';
             modal.style.display = 'flex';
@@ -13037,9 +13181,9 @@
                 const unread = thread.unread > 0 ? '<span class="msgp-unread">' + thread.unread + '</span>' : '';
                 return `
                     <button class="msgp-item${activeClass}" type="button" data-thread-id="${thread.id}">
-                        <div class="msgp-avatar"><img src="${escapeHtml(thread.avatar)}" alt="${escapeHtml(thread.name)}"></div>
+                        <div class="msgp-avatar"><img src="${escapeHtml(thread.avatar)}" alt="${escapeHtml(chatVisibleThreadName(thread))}"></div>
                         <div class="msgp-text">
-                            <strong>${escapeHtml(thread.name)}</strong>
+                            <strong>${escapeHtml(chatVisibleThreadName(thread))}</strong>
                             <span>${escapeHtml(previewClipped)}</span>
                         </div>
                         <div class="msgp-meta">
@@ -13097,11 +13241,11 @@
                 return `
                     <button class="chat-thread-row${active}" type="button" data-main-thread-id="${thread.id}">
                         <div class="chat-thread-avatar">
-                            <img src="${escapeHtml(thread.avatar)}" alt="${escapeHtml(thread.name)}">
+                            <img src="${escapeHtml(thread.avatar)}" alt="${escapeHtml(chatVisibleThreadName(thread))}">
                             ${statusDot}
                         </div>
                         <div class="chat-thread-text">
-                            <strong>${escapeHtml(thread.name)}</strong>
+                            <strong>${escapeHtml(chatVisibleThreadName(thread))}</strong>
                             <span>${escapeHtml(preview)}</span>
                         </div>
                         <div class="chat-thread-meta">${unread}</div>
@@ -13170,12 +13314,25 @@
             const nameEl = document.getElementById('msgpThreadName');
             const avatarEl = document.getElementById('msgpThreadAvatar');
             const statusEl = document.getElementById('msgpThreadStatus');
+            const inputEl = document.getElementById('msgpMessageInput');
+            const sendBtn = document.getElementById('msgpSendBtn');
             if (!msgList || !nameEl || !avatarEl || !statusEl) return;
-            nameEl.innerText = thread.name;
+            const readOnlySystemThread = isSystemChatThread(thread);
+            nameEl.innerText = chatVisibleThreadName(thread);
             avatarEl.src = thread.avatar;
-            statusEl.innerText = thread.isGroup
+            statusEl.innerText = readOnlySystemThread
+                ? 'Systemmeddelanden'
+                : thread.isGroup
                 ? thread.statusText
                 : (thread.online ? 'Aktiv nu' : 'Offline');
+            if (inputEl) {
+                inputEl.disabled = readOnlySystemThread;
+                inputEl.placeholder = readOnlySystemThread ? 'Systemmeddelanden kan inte besvaras.' : 'Skriv ett meddelande...';
+            }
+            if (sendBtn) {
+                sendBtn.disabled = readOnlySystemThread;
+                sendBtn.title = readOnlySystemThread ? 'Systemtråden är skrivskyddad' : 'Skicka';
+            }
 
             if (!thread.messages.length) {
                 msgList.innerHTML = '<div class="msgp-empty">Inga meddelanden än.</div>';
@@ -13183,13 +13340,20 @@
             }
 
             msgList.innerHTML = thread.messages.map(function(message) {
+                const parsed = parseReplyPayload(String(message.text || ''));
+                const replyPreview = parsed.replyTo
+                    ? `<div class="msgp-reply-preview">Svar på tidigare inlägg: ${escapeHtml(String(parsed.replyTo.snippet || ''))}</div>`
+                    : '';
+                const attachmentHtml = parsed.attachment ? renderAttachmentHtml(parsed.attachment) : '';
                 const sender = thread.isGroup && message.from !== 'me'
-                    ? `<div class="msgp-sender">${message.sender_role_label ? `<span class="msgp-sender-role">${escapeHtml(String(message.sender_role_label || ''))}</span>` : ''}${escapeHtml(String(message.sender_display_name || messengerDisplayName(message.sender || 'Okänd')))}</div>`
+                    ? `<div class="msgp-sender">${escapeHtml(chatVisibleAuthorLabel({ isSelf: false, isAdmin: false, roleLabel: String(message.sender_role_label || '') }))}</div>`
                     : '';
                 return `
                     <div class="msgp-bubble ${message.from === 'me' ? 'me' : 'them'}">
                         ${sender}
-                        ${escapeHtml(message.text)}
+                        ${replyPreview}
+                        ${attachmentHtml}
+                        <div class="msgp-message-body">${renderFormattedChatBody(parsed.body)}</div>
                         <span class="msgp-bubble-time">${formatMessengerTime(message.at)}</span>
                     </div>
                 `;
@@ -13254,7 +13418,7 @@
                 return `
                     <label class="group-create-item">
                         <input type="checkbox" value="${thread.id}">
-                        <span>${escapeHtml(thread.name)} (${escapeHtml(thread.email)})</span>
+                        <span>${escapeHtml(chatVisibleThreadName(thread))}</span>
                     </label>
                 `;
             }).join('');
@@ -13304,6 +13468,10 @@
             const text = input.value.trim();
             const thread = getThreadById(messengerState.activeThreadId);
             if (!thread || !text) return;
+            if (isSystemChatThread(thread)) {
+                alert('Systemtråden är skrivskyddad.');
+                return;
+            }
 
             if (thread.id === MESSENGER_GROUP_THREAD_ID) {
                 await apiSend('/api/chat/messages', 'POST', { message: text });
