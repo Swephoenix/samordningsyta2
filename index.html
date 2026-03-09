@@ -7690,7 +7690,7 @@
                     ? `<button class=\"chat-reply-btn\" type=\"button\" title=\"Svara\">↩</button>`
                     : '';
                 const likeCount = Number(msg.like_count || 0);
-                const supportsLikes = isSharedGroupThread && messageId > 0;
+                const supportsLikes = isSharedGroupThread && messageId > 0 && !isMine;
                 const likeBtn = supportsLikes
                     ? `<button class=\"chat-like-btn ${msg.liked_by_me ? 'is-liked' : ''}\" type=\"button\" data-chat-like-id=\"${messageId}\" title=\"${msg.liked_by_me ? 'Ta bort gillning' : 'Gilla inlägget'}\">👍 <span>${likeCount > 0 ? String(likeCount) : 'Gilla'}</span></button>`
                     : '';
