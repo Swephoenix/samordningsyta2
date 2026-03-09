@@ -7137,6 +7137,11 @@
             "💯","❤️","✨","💡","📌","✅","⚡","🚀",
             "📣","📎","📷","🧠","📝","🕒","🤝","😅"
         ];
+        const chatEmojiPickerState = {
+            mode: '',
+            triggerStart: -1,
+            triggerEnd: -1
+        };
         const loadInFlight = {
             chatMessages: null,
             chatPresence: null,
@@ -11083,29 +11088,87 @@
             const input = document.getElementById('groupChatInput');
             if (!picker || !toggleBtn || !input) return;
 
+            function hidePicker() {
+                picker.style.display = 'none';
+                chatEmojiPickerState.mode = '';
+                chatEmojiPickerState.triggerStart = -1;
+                chatEmojiPickerState.triggerEnd = -1;
+            }
+
+            function showPicker(mode) {
+                chatEmojiPickerState.mode = mode;
+                picker.style.display = 'grid';
+            }
+
+            function updatePickerFromColonTrigger() {
+                const caret = Number(input.selectionStart || 0);
+                const beforeCaret = String(input.value || '').slice(0, caret);
+                const triggerMatch = beforeCaret.match(/(^|[\s(]):([^\s:]*)$/);
+                if (!triggerMatch) {
+                    if (chatEmojiPickerState.mode === 'trigger') hidePicker();
+                    return;
+                }
+                chatEmojiPickerState.triggerStart = caret - String(triggerMatch[2] || '').length - 1;
+                chatEmojiPickerState.triggerEnd = caret;
+                showPicker('trigger');
+            }
+
             picker.innerHTML = chatEmojiSet.map(function(e) {
                 return `<button class="chat-emoji-btn" type="button" data-emoji="${e}">${e}</button>`;
             }).join('');
 
             toggleBtn.addEventListener('click', function(e) {
                 e.preventDefault();
-                picker.style.display = picker.style.display === 'grid' ? 'none' : 'grid';
+                if (picker.style.display === 'grid' && chatEmojiPickerState.mode === 'manual') {
+                    hidePicker();
+                    return;
+                }
+                input.focus();
+                showPicker('manual');
             });
 
             picker.addEventListener('click', function(e) {
                 const btn = e.target.closest('[data-emoji]');
                 if (!btn) return;
                 const emoji = btn.getAttribute('data-emoji') || '';
-                input.value += emoji;
+                const value = String(input.value || '');
+                if (chatEmojiPickerState.mode === 'trigger' && chatEmojiPickerState.triggerStart >= 0) {
+                    const before = value.slice(0, chatEmojiPickerState.triggerStart);
+                    const after = value.slice(chatEmojiPickerState.triggerEnd);
+                    input.value = `${before}${emoji} ${after}`;
+                    const nextCaret = before.length + emoji.length + 1;
+                    input.setSelectionRange(nextCaret, nextCaret);
+                } else {
+                    const start = Number(input.selectionStart || value.length);
+                    const end = Number(input.selectionEnd || start);
+                    input.value = `${value.slice(0, start)}${emoji}${value.slice(end)}`;
+                    const nextCaret = start + emoji.length;
+                    input.setSelectionRange(nextCaret, nextCaret);
+                }
                 input.focus();
-                picker.style.display = 'none';
+                hidePicker();
+            });
+
+            input.addEventListener('input', function() {
+                updatePickerFromColonTrigger();
+            });
+            input.addEventListener('click', function() {
+                updatePickerFromColonTrigger();
+            });
+            input.addEventListener('keyup', function(e) {
+                if (e.key === 'Escape') {
+                    hidePicker();
+                    return;
+                }
+                updatePickerFromColonTrigger();
             });
 
             document.addEventListener('click', function(e) {
                 if (picker.style.display !== 'grid') return;
                 if (picker.contains(e.target)) return;
                 if (e.target === toggleBtn || toggleBtn.contains(e.target)) return;
-                picker.style.display = 'none';
+                if (e.target === input) return;
+                hidePicker();
             });
             document.addEventListener('click', function(e) {
                 const externalLink = e.target.closest('a[data-external-url]');
