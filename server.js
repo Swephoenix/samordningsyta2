@@ -3052,6 +3052,72 @@ app.get("/api/admin/settings", (req, res) => {
   });
 });
 
+app.get("/api/admin/healthcheck", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+  if (!canManageAdminFeatures(user)) {
+    return res.status(403).json({ error: "Endast admin eller sekreterare har åtkomst." });
+  }
+
+  const checkedAt = nowTs();
+  const activeSince = checkedAt - ONLINE_WINDOW_SECONDS;
+  let databaseOk = false;
+  let userCount = 0;
+  let activeSessionCount = 0;
+  let groupCount = 0;
+
+  try {
+    databaseOk = Number(db.prepare("SELECT 1 AS ok").get()?.ok || 0) === 1;
+    userCount = Number(db.prepare("SELECT COUNT(*) AS count FROM users").get()?.count || 0);
+    activeSessionCount = Number(
+      db.prepare("SELECT COUNT(*) AS count FROM sessions WHERE expires_at > ? AND last_seen_at >= ?").get(checkedAt, activeSince)?.count || 0
+    );
+    groupCount = Number(db.prepare("SELECT COUNT(*) AS count FROM chat_groups").get()?.count || 0);
+  } catch (_err) {
+    databaseOk = false;
+  }
+
+  const dataDir = path.dirname(DB_PATH);
+  const uploadsDir = UPLOAD_DIR;
+  const dataDirExists = fs.existsSync(dataDir);
+  const uploadsDirExists = fs.existsSync(uploadsDir);
+  let dataDirWritable = false;
+  let uploadsDirWritable = false;
+
+  try {
+    fs.accessSync(dataDir, fs.constants.W_OK);
+    dataDirWritable = true;
+  } catch (_err) {}
+  try {
+    fs.accessSync(uploadsDir, fs.constants.W_OK);
+    uploadsDirWritable = true;
+  } catch (_err) {}
+
+  return res.json({
+    ok: databaseOk && dataDirExists && uploadsDirExists && dataDirWritable && uploadsDirWritable,
+    checked_at: checkedAt,
+    checked_at_iso: new Date(checkedAt * 1000).toISOString(),
+    environment: isProduction ? "production" : "development",
+    node_version: process.version,
+    uptime_seconds: Math.floor(process.uptime()),
+    database: {
+      ok: databaseOk,
+      path: DB_PATH,
+      user_count: userCount,
+      active_session_count: activeSessionCount,
+      group_count: groupCount
+    },
+    storage: {
+      data_dir: dataDir,
+      data_dir_exists: dataDirExists,
+      data_dir_writable: dataDirWritable,
+      uploads_dir: uploadsDir,
+      uploads_dir_exists: uploadsDirExists,
+      uploads_dir_writable: uploadsDirWritable
+    }
+  });
+});
+
 app.get("/api/rule-wiki", (req, res) => {
   const user = requireAuth(req, res);
   if (!user) return;

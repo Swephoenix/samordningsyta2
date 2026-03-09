@@ -2289,6 +2289,96 @@
             color: #64748b;
             background: #f8fafc;
         }
+        .healthcheck-content {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            width: min(94vw, 760px);
+            border-radius: 12px;
+            padding: 22px;
+            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+            color: #1f2937;
+            max-height: 86vh;
+            overflow: auto;
+            position: relative;
+        }
+        .healthcheck-content h3 {
+            margin-bottom: 8px;
+            font-size: 1.12rem;
+            color: #0f172a;
+        }
+        .healthcheck-subtitle {
+            margin-bottom: 16px;
+            color: #64748b;
+            font-size: 0.86rem;
+        }
+        .healthcheck-summary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            font-weight: 700;
+            font-size: 0.86rem;
+            margin-bottom: 16px;
+            background: #ecfdf5;
+            color: #166534;
+        }
+        .healthcheck-summary.is-error {
+            background: #fef2f2;
+            color: #b91c1c;
+        }
+        .healthcheck-grid {
+            display: grid;
+            gap: 12px;
+        }
+        .healthcheck-card {
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 14px;
+        }
+        .healthcheck-card h4 {
+            margin: 0 0 10px;
+            font-size: 0.94rem;
+            color: #0f172a;
+        }
+        .healthcheck-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 6px 0;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 0.88rem;
+        }
+        .healthcheck-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        .healthcheck-row strong {
+            color: #475569;
+            font-weight: 600;
+        }
+        .healthcheck-row span {
+            text-align: right;
+            word-break: break-word;
+        }
+        .healthcheck-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 16px;
+        }
+        .healthcheck-refresh-btn {
+            border: none;
+            border-radius: 10px;
+            padding: 10px 14px;
+            background: #1d4ed8;
+            color: #fff;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .healthcheck-refresh-btn:hover {
+            background: #1e40af;
+        }
         @media (max-width: 720px) {
             .login-history-item {
                 font-size: 0.8rem;
@@ -6883,6 +6973,24 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="healthcheckModal">
+        <div class="healthcheck-content">
+            <button class="modal-close" type="button" onclick="closeHealthcheckModal()">✖</button>
+            <h3>Systemstatus</h3>
+            <div class="healthcheck-subtitle">Snabb healthcheck för server, databas och lagring.</div>
+            <div class="healthcheck-summary" id="healthcheckSummary">Kontrollerar...</div>
+            <div class="healthcheck-grid" id="healthcheckGrid">
+                <div class="healthcheck-card">
+                    <h4>Laddar</h4>
+                    <div class="healthcheck-row"><strong>Status</strong><span>Hämtar healthcheck...</span></div>
+                </div>
+            </div>
+            <div class="healthcheck-actions">
+                <button class="healthcheck-refresh-btn" type="button" id="healthcheckRefreshBtn">Uppdatera</button>
+            </div>
+        </div>
+    </div>
+
     <div class="chat-longpost-overlay" id="chatLongPostOverlay">
         <div class="chat-longpost-dialog">
             <div class="chat-longpost-head">
@@ -8659,6 +8767,73 @@
 
         function closeComingSoonModal() {
             const modal = document.getElementById('comingSoonModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function formatHealthDuration(totalSeconds) {
+            const seconds = Math.max(0, Number(totalSeconds || 0));
+            const days = Math.floor(seconds / 86400);
+            const hours = Math.floor((seconds % 86400) / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            if (days > 0) return `${days}d ${hours}h ${minutes}m`;
+            if (hours > 0) return `${hours}h ${minutes}m`;
+            return `${minutes}m`;
+        }
+
+        function renderHealthcheckModal(data) {
+            const summary = document.getElementById('healthcheckSummary');
+            const grid = document.getElementById('healthcheckGrid');
+            if (!summary || !grid) return;
+            const overallOk = !!(data && data.ok);
+            summary.classList.toggle('is-error', !overallOk);
+            summary.textContent = overallOk ? 'Alla huvudkontroller ser friska ut' : 'Minst en kontroll kräver åtgärd';
+            grid.innerHTML = `
+                <div class="healthcheck-card">
+                    <h4>App</h4>
+                    <div class="healthcheck-row"><strong>Miljö</strong><span>${escapeHtml(String(data.environment || '-'))}</span></div>
+                    <div class="healthcheck-row"><strong>Node</strong><span>${escapeHtml(String(data.node_version || '-'))}</span></div>
+                    <div class="healthcheck-row"><strong>Upptid</strong><span>${escapeHtml(formatHealthDuration(data.uptime_seconds))}</span></div>
+                    <div class="healthcheck-row"><strong>Senast kollad</strong><span>${escapeHtml(String(data.checked_at_iso || '-'))}</span></div>
+                </div>
+                <div class="healthcheck-card">
+                    <h4>Databas</h4>
+                    <div class="healthcheck-row"><strong>Status</strong><span>${data.database && data.database.ok ? 'OK' : 'Fel'}</span></div>
+                    <div class="healthcheck-row"><strong>Användare</strong><span>${escapeHtml(String(data.database && data.database.user_count || 0))}</span></div>
+                    <div class="healthcheck-row"><strong>Aktiva sessioner</strong><span>${escapeHtml(String(data.database && data.database.active_session_count || 0))}</span></div>
+                    <div class="healthcheck-row"><strong>Gruppchattar</strong><span>${escapeHtml(String(data.database && data.database.group_count || 0))}</span></div>
+                    <div class="healthcheck-row"><strong>Databasfil</strong><span>${escapeHtml(String(data.database && data.database.path || '-'))}</span></div>
+                </div>
+                <div class="healthcheck-card">
+                    <h4>Lagring</h4>
+                    <div class="healthcheck-row"><strong>Datamapp</strong><span>${data.storage && data.storage.data_dir_exists && data.storage.data_dir_writable ? 'OK' : 'Problem'}</span></div>
+                    <div class="healthcheck-row"><strong>Datakatalog</strong><span>${escapeHtml(String(data.storage && data.storage.data_dir || '-'))}</span></div>
+                    <div class="healthcheck-row"><strong>Uploads</strong><span>${data.storage && data.storage.uploads_dir_exists && data.storage.uploads_dir_writable ? 'OK' : 'Problem'}</span></div>
+                    <div class="healthcheck-row"><strong>Uploadskatalog</strong><span>${escapeHtml(String(data.storage && data.storage.uploads_dir || '-'))}</span></div>
+                </div>
+            `;
+        }
+
+        async function openHealthcheckModal() {
+            const modal = document.getElementById('healthcheckModal');
+            const summary = document.getElementById('healthcheckSummary');
+            const grid = document.getElementById('healthcheckGrid');
+            if (!modal || !summary || !grid) return;
+            modal.style.display = 'flex';
+            summary.classList.remove('is-error');
+            summary.textContent = 'Kontrollerar...';
+            grid.innerHTML = '<div class="healthcheck-card"><h4>Laddar</h4><div class="healthcheck-row"><strong>Status</strong><span>Hämtar healthcheck...</span></div></div>';
+            try {
+                const data = await apiGet('/api/admin/healthcheck');
+                renderHealthcheckModal(data);
+            } catch (err) {
+                summary.classList.add('is-error');
+                summary.textContent = 'Healthcheck kunde inte hämtas';
+                grid.innerHTML = `<div class="healthcheck-card"><h4>Fel</h4><div class="healthcheck-row"><strong>Meddelande</strong><span>${escapeHtml(String(err && err.message || 'Okänt fel.'))}</span></div></div>`;
+            }
+        }
+
+        function closeHealthcheckModal() {
+            const modal = document.getElementById('healthcheckModal');
             if (modal) modal.style.display = 'none';
         }
 
@@ -14699,10 +14874,24 @@
         document.getElementById('facebookAcademyModal').addEventListener('click', function(e) {
             if (e.target === this) closeFacebookAcademyModal();
         });
+        document.getElementById('healthcheckModal').addEventListener('click', function(e) {
+            if (e.target === this) closeHealthcheckModal();
+        });
+        document.getElementById('healthcheckRefreshBtn').addEventListener('click', function() {
+            openHealthcheckModal().catch(function(err) {
+                alert(err.message || 'Kunde inte uppdatera systemstatus.');
+            });
+        });
         document.getElementById('statisticsToolIcon').addEventListener('click', function() {
             openComingSoonModal();
         });
         document.getElementById('settingsToolIcon').addEventListener('click', function() {
+            if (currentUserCanManage) {
+                openHealthcheckModal().catch(function(err) {
+                    alert(err.message || 'Kunde inte öppna systemstatus.');
+                });
+                return;
+            }
             openComingSoonModal();
         });
         document.getElementById('qnaToolIcon').addEventListener('click', function() {
