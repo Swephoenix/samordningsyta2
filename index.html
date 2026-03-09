@@ -7606,10 +7606,21 @@
             if (bestId > 0) jumpToChatMessage(bestId);
         }
 
+        function isChatFeedNearBottom(feed, thresholdPx) {
+            const el = feed || document.getElementById('groupChatFeed');
+            if (!el) return true;
+            const threshold = Number.isFinite(Number(thresholdPx)) ? Math.max(0, Number(thresholdPx)) : 48;
+            const remaining = el.scrollHeight - el.clientHeight - el.scrollTop;
+            return remaining <= threshold;
+        }
+
         function renderChatFeed(messages) {
             const feed = document.getElementById('groupChatFeed');
+            if (!feed) return;
             const isSharedGroupThread = !composeState.active &&
                 (messengerState.activeThreadId || MESSENGER_GROUP_THREAD_ID) === MESSENGER_GROUP_THREAD_ID;
+            const shouldStickToBottom = isChatFeedNearBottom(feed, 64);
+            const distanceFromBottom = Math.max(0, feed.scrollHeight - feed.scrollTop);
             if (!messages.length && !isSharedGroupThread) {
                 feed.innerHTML = '<div class=\"date-divider\"><span>Inga meddelanden</span></div>';
                 return;
@@ -7790,7 +7801,11 @@
                 }
                 feed.appendChild(post);
             });
-            feed.scrollTop = feed.scrollHeight;
+            if (shouldStickToBottom) {
+                feed.scrollTop = feed.scrollHeight;
+                return;
+            }
+            feed.scrollTop = Math.max(0, feed.scrollHeight - distanceFromBottom);
         }
 
         async function deleteChatMessage(messageId) {
