@@ -7823,8 +7823,21 @@
         }
 
         async function toggleChatMessageLike(messageId) {
-            await apiSend(`/api/chat/messages/${Number(messageId)}/like`, 'PUT', {});
+            const id = Number(messageId || 0);
+            if (!id) return;
+            const feed = document.getElementById('groupChatFeed');
+            const anchorBefore = feed
+                ? feed.querySelector(`.chat-post[data-chat-message-id="${id}"]`)
+                : null;
+            const beforeTop = anchorBefore ? anchorBefore.getBoundingClientRect().top : null;
+            const beforeScrollTop = feed ? feed.scrollTop : 0;
+            await apiSend(`/api/chat/messages/${id}/like`, 'PUT', {});
             await loadChatMessages();
+            if (!feed || beforeTop === null) return;
+            const anchorAfter = feed.querySelector(`.chat-post[data-chat-message-id="${id}"]`);
+            if (!anchorAfter) return;
+            const afterTop = anchorAfter.getBoundingClientRect().top;
+            feed.scrollTop = beforeScrollTop + (afterTop - beforeTop);
         }
 
         function renderActiveThreadInMainChat() {
