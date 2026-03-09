@@ -7013,6 +7013,17 @@
             return !!thread && !thread.isGroup && String(thread.email || '').trim().toLowerCase() === '__system__';
         }
 
+        function composeRecipientLabel(thread) {
+            if (!thread) return 'Mottagare';
+            if (isSystemChatThread(thread)) return 'System';
+            const fullName = String(thread.name || '').trim();
+            if (/\S+\s+\S+/.test(fullName)) return fullName;
+            const identifier = String(thread.email || fullName || '').trim();
+            const local = String(identifier.split('@')[0] || '').trim();
+            const initial = String(local || identifier || '?').charAt(0).toUpperCase();
+            return initial || '?';
+        }
+
         async function requireAuth() {
             try {
                 const resp = await fetch('/api/me', { credentials: 'include' });
@@ -12567,7 +12578,7 @@
             const candidates = getComposeCandidates();
             const selected = candidates.filter(function(t) { return composeState.selectedIds.includes(String(t.id)); });
             const chips = selected.map(function(t) {
-                return `<span class="chat-compose-chip">${escapeHtml(chatVisibleThreadName(t))}<button type="button" data-remove-compose-id="${t.id}" title="Ta bort">×</button></span>`;
+                return `<span class="chat-compose-chip">${escapeHtml(composeRecipientLabel(t))}<button type="button" data-remove-compose-id="${t.id}" title="Ta bort">×</button></span>`;
             }).join('');
             recipients.innerHTML = chips + `<input id="chatComposeInput" class="chat-compose-input" type="text" placeholder="Sök mottagare..." value="${escapeHtml(composeState.query)}">`;
             renderComposeStage();
@@ -12650,7 +12661,7 @@
             }
             sendBtn.disabled = false;
             if (selected.length === 1) {
-                title.textContent = `Nytt chattinlägg till ${chatVisibleThreadName(selected[0])}`;
+                title.textContent = `Nytt chattinlägg till ${composeRecipientLabel(selected[0])}`;
                 text.textContent = 'Det här stora skrivläget är tänkt för längre meddelanden. Shift+Enter lägger till radbrytning, Enter skickar.';
                 sendBtn.textContent = 'Skicka till chatten';
                 return;
@@ -12713,7 +12724,7 @@
                 return;
             }
             box.innerHTML = filtered.slice(0, 8).map(function(t) {
-                return `<button class="chat-compose-suggestion" type="button" data-compose-id="${t.id}">${escapeHtml(chatVisibleThreadName(t))}</button>`;
+                return `<button class="chat-compose-suggestion" type="button" data-compose-id="${t.id}">${escapeHtml(composeRecipientLabel(t))}</button>`;
             }).join('');
             box.style.display = 'block';
             box.querySelectorAll('[data-compose-id]').forEach(function(btn) {
