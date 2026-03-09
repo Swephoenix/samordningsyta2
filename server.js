@@ -225,6 +225,15 @@ CREATE TABLE IF NOT EXISTS chat_reads (
   FOREIGN KEY(user_id) REFERENCES users(id)
 );
 
+CREATE TABLE IF NOT EXISTS chat_message_likes (
+  message_id INTEGER NOT NULL,
+  user_id INTEGER NOT NULL,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY(message_id, user_id),
+  FOREIGN KEY(message_id) REFERENCES chat_messages(id),
+  FOREIGN KEY(user_id) REFERENCES users(id)
+);
+
 CREATE TABLE IF NOT EXISTS direct_messages (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   sender_id INTEGER NOT NULL,
@@ -590,6 +599,24 @@ function syncConfiguredAdminContactEmail(identifier, contactEmail) {
     return;
   }
   db.prepare("UPDATE users SET contact_email = ? WHERE id = ?").run(mail, Number(owner.id));
+}
+
+function trySetUserContactEmail(userId, contactEmail, ownerIdentifier) {
+  const normalizedEmail = normalizeEmail(contactEmail || "");
+  const id = Number(userId);
+  const owner = normalizeEmail(ownerIdentifier || "");
+  if (!id || !normalizedEmail) return false;
+  const conflict = db
+    .prepare("SELECT email FROM users WHERE lower(contact_email) = ? AND id != ? LIMIT 1")
+    .get(normalizedEmail, id);
+  if (conflict && conflict.email) {
+    console.warn(
+      `Hoppar över kontaktmail-sync för ${owner || id}: ${normalizedEmail} används redan av ${String(conflict.email || "").trim().toLowerCase()}.`
+    );
+    return false;
+  }
+  db.prepare("UPDATE users SET contact_email = ? WHERE id = ?").run(normalizedEmail, id);
+  return true;
 }
 
 function seedEventsIfEmpty() {
@@ -1745,6 +1772,8 @@ db.exec(`
 CREATE UNIQUE INDEX IF NOT EXISTS idx_important_messages_source_external_id
   ON important_messages(source, external_id)
   WHERE external_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_chat_message_likes_message_id
+  ON chat_message_likes(message_id);
 `);
 
 const isProduction = ENV_IS_PRODUCTION;
@@ -1981,6 +2010,7 @@ const PUBLIC_FILE_ROUTES = new Set([
   "newgroup.png",
   "qna.png",
   "cards_icon.png",
+  "featherink.png",
   "tiktok-logo.svg",
   "x-logo.avif",
   "folder.svg",
@@ -2644,7 +2674,7 @@ app.post("/api/login/code/request", async (req, res) => {
     if (configuredTestContact) {
       recipientEmail = configuredTestContact;
       if (recipientEmail !== normalizeEmail(user.contact_email || "")) {
-        db.prepare("UPDATE users SET contact_email = ? WHERE id = ?").run(recipientEmail, Number(user.id));
+        trySetUserContactEmail(user.id, recipientEmail, user.email);
       }
     }
   } else if (!recipientEmail) {
@@ -2654,7 +2684,7 @@ app.post("/api/login/code/request", async (req, res) => {
     );
     if (maybeAdmin && configuredMail) {
       recipientEmail = configuredMail;
-      db.prepare("UPDATE users SET contact_email = ? WHERE id = ?").run(recipientEmail, Number(user.id));
+      trySetUserContactEmail(user.id, recipientEmail, user.email);
     }
   }
   if (!recipientEmail || !recipientEmail.endsWith(REGISTER_ALLOWED_DOMAIN)) {
@@ -3294,6 +3324,7 @@ app.delete("/api/admin/users/:id", (req, res) => {
     db.prepare("DELETE FROM sessions WHERE user_id = ?").run(id);
     db.prepare("DELETE FROM notes WHERE user_id = ?").run(id);
     db.prepare("DELETE FROM chat_reads WHERE user_id = ?").run(id);
+    db.prepare("DELETE FROM chat_message_likes WHERE user_id = ?").run(id);
     db.prepare("DELETE FROM chat_group_reads WHERE user_id = ?").run(id);
     db.prepare("DELETE FROM chat_group_members WHERE user_id = ?").run(id);
     db.prepare("DELETE FROM chat_group_invites WHERE inviter_id = ? OR invitee_id = ?").run(id, id);
@@ -3905,11 +3936,22 @@ app.get("/api/chat/messages", (req, res) => {
        JOIN users u ON u.id = r.user_id`
     )
     .all();
+  const likeRows = rows.length
+    ? db
+        .prepare(
+          `SELECT l.message_id, l.user_id, u.email
+           FROM chat_message_likes l
+           JOIN users u ON u.id = l.user_id
+           WHERE l.message_id IN (${rows.map(() => "?").join(",")})`
+        )
+        .all(...rows.map((row) => row.id))
+    : [];
 
   const messages = rows.map((m) => {
     const seenBy = readRows
       .filter((r) => r.last_read_message_id >= m.id)
       .map((r) => r.email);
+    const likes = likeRows.filter((r) => Number(r.message_id) === Number(m.id));
     const authorEmail = String(m.email || "");
     return {
       ...m,
@@ -3922,7 +3964,10 @@ app.get("/api/chat/messages", (req, res) => {
       author_is_admin: isAdmin({ email: authorEmail }),
       profile_image_url: String(m.user_profile_image_url || ""),
       seen_by: seenBy,
-      seen_count: seenBy.length
+      seen_count: seenBy.length,
+      like_count: likes.length,
+      liked_by_me: likes.some((entry) => Number(entry.user_id) === Number(user.id)),
+      liked_by: likes.map((entry) => String(entry.email || ""))
     };
   });
 
@@ -3950,6 +3995,43 @@ app.post("/api/chat/messages", (req, res) => {
   return res.status(201).json({ ok: true });
 });
 
+app.put("/api/chat/messages/:id/like", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+
+  const id = Number(req.params.id || 0);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ error: "Ogiltigt meddelande-id." });
+  }
+
+  const existing = db.prepare("SELECT id FROM chat_messages WHERE id = ?").get(id);
+  if (!existing) {
+    return res.status(404).json({ error: "Meddelandet finns inte." });
+  }
+
+  const alreadyLiked = db
+    .prepare("SELECT 1 FROM chat_message_likes WHERE message_id = ? AND user_id = ?")
+    .get(id, user.id);
+
+  if (alreadyLiked) {
+    db.prepare("DELETE FROM chat_message_likes WHERE message_id = ? AND user_id = ?").run(id, user.id);
+  } else {
+    db.prepare(
+      "INSERT INTO chat_message_likes(message_id, user_id, created_at) VALUES (?, ?, ?)"
+    ).run(id, user.id, nowTs());
+  }
+
+  const countRow = db
+    .prepare("SELECT COUNT(*) AS count FROM chat_message_likes WHERE message_id = ?")
+    .get(id);
+
+  return res.json({
+    ok: true,
+    liked: !alreadyLiked,
+    like_count: Number(countRow?.count || 0)
+  });
+});
+
 app.delete("/api/chat/messages/:id", (req, res) => {
   const user = requireAuth(req, res);
   if (!user) return;
@@ -3972,6 +4054,7 @@ app.delete("/api/chat/messages/:id", (req, res) => {
   }
 
   const uploadPaths = getLocalChatUploadPathsFromMessage(existing.message);
+  db.prepare("DELETE FROM chat_message_likes WHERE message_id = ?").run(id);
   db.prepare("DELETE FROM chat_messages WHERE id = ?").run(id);
   uploadPaths.forEach((targetPath) => {
     try {

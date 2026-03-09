@@ -897,6 +897,11 @@
             background: var(--panel-bg);
             padding-bottom: 0;
         }
+        .chat-main-pane.is-compose-expanded {
+            background:
+                radial-gradient(circle at top right, rgba(79, 70, 229, 0.1), transparent 34%),
+                linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        }
         .chat-feed {
             flex: 1;
             overflow-y: auto;
@@ -1153,6 +1158,30 @@
             pointer-events: auto;
             transform: translateY(0);
         }
+        .chat-like-btn {
+            border: 1px solid #cbd5e1;
+            background: rgba(255,255,255,0.82);
+            color: #334155;
+            border-radius: 999px;
+            font-size: 0.74rem;
+            font-weight: 700;
+            padding: 4px 9px;
+            cursor: pointer;
+            line-height: 1.2;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 8px;
+        }
+        .chat-like-btn:hover {
+            background: #f8fafc;
+            border-color: #94a3b8;
+        }
+        .chat-like-btn.is-liked {
+            border-color: #f59e0b;
+            background: #fef3c7;
+            color: #92400e;
+        }
         .chat-post-header strong {
             font-weight: 700;
             color: inherit;
@@ -1234,11 +1263,42 @@
             font-size: 0.78rem;
             flex-shrink: 0;
         }
+        .chat-attachment-draft-main {
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+        }
         .chat-attachment-draft-text {
             min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .chat-attachment-draft-title {
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .chat-attachment-draft-subtitle {
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+        }
+        .chat-attachment-draft-preview {
+            flex-shrink: 0;
+        }
+        .chat-attachment-draft-preview .chat-attachment,
+        .chat-attachment-draft-preview .chat-attachment-file {
+            margin: 0;
+            cursor: pointer;
+        }
+        .chat-attachment-draft-preview .chat-attachment-thumb {
+            width: 54px;
+            height: 54px;
+            border-radius: 12px;
+            object-fit: cover;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
         }
         .chat-attachment-draft-remove {
             border: none;
@@ -1246,6 +1306,84 @@
             color: #4f46e5;
             cursor: pointer;
             font-weight: 700;
+        }
+        .chat-format-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .chat-format-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            color: #475569;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        .chat-format-btn img {
+            width: 24px;
+            height: 24px;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+        }
+        .chat-format-btn:hover,
+        .chat-format-btn.is-open {
+            background: #eef2ff;
+            border-color: #818cf8;
+            color: #4338ca;
+        }
+        .chat-format-popup {
+            position: absolute;
+            right: 0;
+            bottom: 44px;
+            width: 220px;
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+            padding: 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            background: #ffffff;
+            box-shadow: 0 18px 34px rgba(15, 23, 42, 0.16);
+            z-index: 5;
+        }
+        .chat-format-popup.is-open {
+            display: flex;
+        }
+        .chat-format-popup-title {
+            font-size: 0.74rem;
+            font-weight: 700;
+            color: #475569;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+        }
+        .chat-format-actions {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 6px;
+        }
+        .chat-format-action {
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            background: #f8fafc;
+            color: #0f172a;
+            min-height: 38px;
+            padding: 6px 8px;
+            cursor: pointer;
+            font-size: 0.86rem;
+            font-weight: 700;
+        }
+        .chat-format-action:hover {
+            background: #eef2ff;
+            border-color: #818cf8;
+        }
+        .chat-format-hint {
+            font-size: 0.74rem;
+            color: #64748b;
+            line-height: 1.35;
         }
         .chat-reply-preview {
             margin-bottom: 6px;
@@ -1312,6 +1450,24 @@
             background: rgba(74,163,255,0.14);
             border-color: rgba(74,163,255,0.28);
         }
+        .chat-post-body {
+            margin: 0;
+            line-height: 1.45;
+        }
+        .chat-post-body p {
+            margin: 0 0 8px;
+        }
+        .chat-post-body p:last-child,
+        .chat-post-body ul:last-child {
+            margin-bottom: 0;
+        }
+        .chat-post-body ul {
+            margin: 0 0 8px 18px;
+            padding: 0;
+        }
+        .chat-post-body li + li {
+            margin-top: 4px;
+        }
         .chat-preview-overlay {
             position: fixed;
             inset: 0;
@@ -1364,6 +1520,100 @@
             border-radius: 8px;
             background: #fff;
         }
+        .chat-longpost-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.46);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 320;
+            padding: 20px;
+        }
+        .chat-longpost-dialog {
+            width: min(92vw, 980px);
+            height: min(84vh, 760px);
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            border: 1px solid #dbe4f0;
+            border-radius: 24px;
+            box-shadow: 0 28px 72px rgba(15, 23, 42, 0.24);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .chat-longpost-head {
+            padding: 20px 24px 14px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+        }
+        .chat-longpost-head h3 {
+            margin: 0;
+            font-size: 1.2rem;
+            color: #111827;
+        }
+        .chat-longpost-head p {
+            margin: 6px 0 0;
+            color: #64748b;
+            font-size: 0.92rem;
+        }
+        .chat-longpost-close {
+            border: none;
+            background: #eef2ff;
+            color: #4338ca;
+            width: 38px;
+            height: 38px;
+            border-radius: 999px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+        .chat-longpost-body {
+            flex: 1;
+            padding: 20px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            min-height: 0;
+        }
+        .chat-longpost-textarea {
+            flex: 1;
+            width: 100%;
+            resize: none;
+            border: 1px solid #dbe4f0;
+            border-radius: 18px;
+            padding: 18px 20px;
+            font: inherit;
+            font-size: 1rem;
+            line-height: 1.65;
+            color: #0f172a;
+            background: #ffffff;
+            outline: none;
+        }
+        .chat-longpost-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+        .chat-longpost-hint {
+            color: #64748b;
+            font-size: 0.85rem;
+        }
+        .chat-longpost-send {
+            border: none;
+            border-radius: 999px;
+            background: #4f46e5;
+            color: #ffffff;
+            font-weight: 700;
+            padding: 12px 18px;
+            cursor: pointer;
+        }
+        .chat-longpost-send:hover {
+            background: #4338ca;
+        }
         #groupChatInput {
             flex: 1;
             min-height: 52px;
@@ -1382,6 +1632,43 @@
             z-index: 2;
         }
         #groupChatInput::placeholder { color: #6b7280; }
+        .chat-main-pane.is-compose-expanded .chat-feed,
+        .chat-main-pane.is-compose-expanded .chat-reply-bar,
+        .chat-main-pane.is-compose-expanded .chat-attachment-draft {
+            display: none !important;
+        }
+        .chat-main-pane.is-compose-expanded .chat-input-area {
+            margin: 18px;
+            padding: 16px;
+            display: grid;
+            grid-template-columns: auto auto minmax(0, 1fr) auto auto;
+            grid-template-areas:
+                "attach tools spacer format send"
+                "input input input input input";
+            align-items: end;
+            gap: 12px;
+            border-radius: 22px;
+            box-shadow: 0 20px 44px rgba(15, 23, 42, 0.08);
+        }
+        .chat-main-pane.is-compose-expanded .chat-input-area::after {
+            content: "";
+            grid-area: spacer;
+        }
+        .chat-main-pane.is-compose-expanded #chatAttachBtn { grid-area: attach; }
+        .chat-main-pane.is-compose-expanded .chat-input-tools { grid-area: tools; }
+        .chat-main-pane.is-compose-expanded .chat-format-wrap { grid-area: format; }
+        .chat-main-pane.is-compose-expanded .chat-send-btn { grid-area: send; }
+        .chat-main-pane.is-compose-expanded .chat-input-logo-wrap {
+            grid-area: input;
+            width: 100%;
+        }
+        .chat-main-pane.is-compose-expanded #groupChatInput {
+            min-height: 320px;
+            max-height: min(52vh, 620px);
+            padding: 18px 18px 22px;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
         .chat-input-logo-wrap {
             position: relative;
             flex: 1;
@@ -1587,6 +1874,64 @@
             font-size: 0.74rem;
             color: #6b7280;
             line-height: 1.35;
+        }
+        .chat-compose-stage {
+            display: none;
+            padding: 18px 18px 0;
+        }
+        .chat-main-pane.is-compose-expanded .chat-compose-stage {
+            display: block;
+        }
+        .chat-compose-stage-card {
+            border: 1px solid rgba(79, 70, 229, 0.14);
+            border-radius: 22px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.96), rgba(238,242,255,0.94));
+            box-shadow: 0 22px 48px rgba(15, 23, 42, 0.08);
+            padding: 22px 24px;
+        }
+        .chat-compose-stage-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+        }
+        .chat-compose-stage-title {
+            margin: 0;
+            font-size: 1.2rem;
+            color: #111827;
+        }
+        .chat-compose-stage-text {
+            margin: 6px 0 0;
+            color: #475569;
+            font-size: 0.94rem;
+            line-height: 1.5;
+            max-width: 64ch;
+        }
+        .chat-compose-stage-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 18px;
+        }
+        .chat-compose-stage-btn {
+            border: 1px solid #cbd5e1;
+            border-radius: 999px;
+            background: #ffffff;
+            color: #334155;
+            font-weight: 700;
+            padding: 10px 16px;
+            cursor: pointer;
+        }
+        .chat-compose-stage-btn.primary {
+            border-color: #4f46e5;
+            background: #4f46e5;
+            color: #ffffff;
+        }
+        .chat-compose-stage-btn:hover {
+            background: #f8fafc;
+        }
+        .chat-compose-stage-btn.primary:hover {
+            background: #4338ca;
         }
         .group-create-content {
             background: #ffffff;
@@ -5289,10 +5634,10 @@
                 padding: 8px;
                 gap: 6px;
                 display: grid;
-                grid-template-columns: auto auto minmax(0, 1fr) auto;
+                grid-template-columns: auto auto minmax(0, 1fr) auto auto;
                 grid-template-areas:
-                    "input input input input"
-                    "attach tools spacer send";
+                    "input input input input input"
+                    "attach tools spacer format send";
                 align-items: end;
                 position: sticky;
                 bottom: 0;
@@ -5306,6 +5651,9 @@
             .chat-input-area::after {
                 content: "";
                 grid-area: spacer;
+            }
+            .chat-format-wrap {
+                grid-area: format;
             }
             .btn-icon {
                 width: 34px;
@@ -5340,6 +5688,47 @@
             }
             .chat-compose-top {
                 padding: 8px 10px;
+            }
+            .chat-longpost-overlay {
+                padding: 0;
+            }
+            .chat-longpost-dialog {
+                width: 100%;
+                height: 100%;
+                border-radius: 0;
+            }
+            .chat-longpost-head,
+            .chat-longpost-body {
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+            .chat-compose-stage {
+                padding: 12px 12px 0;
+            }
+            .chat-compose-stage-card {
+                padding: 16px;
+                border-radius: 18px;
+            }
+            .chat-compose-stage-head {
+                flex-direction: column;
+            }
+            .chat-compose-stage-actions {
+                width: 100%;
+                flex-direction: column-reverse;
+                align-items: stretch;
+            }
+            .chat-compose-stage-btn {
+                width: 100%;
+            }
+            .chat-main-pane.is-compose-expanded .chat-input-area {
+                margin: 12px;
+                padding: 12px;
+                gap: 8px;
+            }
+            .chat-main-pane.is-compose-expanded #groupChatInput {
+                min-height: 240px;
+                max-height: 46vh;
+                padding: 14px;
             }
             .chat-compose-row {
                 flex-wrap: wrap;
@@ -5730,13 +6119,30 @@
                     </div>
                     <div class="chat-compose-suggestions" id="chatComposeSuggestions"></div>
                 </div>
+                    <div class="chat-compose-stage" id="chatComposeStage">
+                        <div class="chat-compose-stage-card">
+                            <div class="chat-compose-stage-head">
+                                <div>
+                                    <h3 class="chat-compose-stage-title" id="chatComposeStageTitle">Nytt chattinlägg</h3>
+                                    <p class="chat-compose-stage-text" id="chatComposeStageText">Välj mottagare och skriv ett längre inlägg. Enter skickar, Shift+Enter lägger till radbrytning.</p>
+                                </div>
+                                <button class="chat-compose-stage-btn" id="chatComposeCancelBtn" type="button">Avbryt</button>
+                            </div>
+                            <div class="chat-compose-stage-actions">
+                                <button class="chat-compose-stage-btn primary" id="chatComposeSendBtn" type="button">Skicka chattinlägg</button>
+                            </div>
+                        </div>
+                    </div>
                     <div class="chat-feed" id="groupChatFeed"></div>
                     <div class="chat-reply-bar" id="chatReplyBar">
                         <span class="chat-reply-text" id="chatReplyText"></span>
                         <button class="chat-reply-cancel" id="chatReplyCancelBtn" type="button">Avbryt</button>
                     </div>
                     <div class="chat-attachment-draft" id="chatAttachmentDraftBar">
-                        <span class="chat-attachment-draft-text" id="chatAttachmentDraftText"></span>
+                        <div class="chat-attachment-draft-main">
+                            <div class="chat-attachment-draft-preview" id="chatAttachmentDraftPreview"></div>
+                            <span class="chat-attachment-draft-text" id="chatAttachmentDraftText"></span>
+                        </div>
                         <button class="chat-attachment-draft-remove" id="chatAttachmentDraftRemoveBtn" type="button">Ta bort</button>
                     </div>
                     <div class="chat-input-area">
@@ -5749,6 +6155,20 @@
                         <input id="chatImageInput" type="file" accept="image/*,application/pdf" style="display:none;">
                         <div class="chat-input-logo-wrap">
                             <textarea id="groupChatInput" rows="2" placeholder="Skriv ett inlägg eller ladda upp fil..."></textarea>
+                        </div>
+                        <div class="chat-format-wrap">
+                            <button id="chatFormatToggleBtn" class="chat-format-btn" type="button" title="Stort skrivfönster">
+                                <img src="featherink.png" alt="Stort skrivfönster">
+                            </button>
+                            <div class="chat-format-popup" id="chatFormatPopup">
+                                <div class="chat-format-popup-title">Formatera</div>
+                                <div class="chat-format-actions">
+                                    <button class="chat-format-action" type="button" data-chat-format="bold"><strong>B</strong></button>
+                                    <button class="chat-format-action" type="button" data-chat-format="italic"><em>I</em></button>
+                                    <button class="chat-format-action" type="button" data-chat-format="list">• Lista</button>
+                                </div>
+                                <div class="chat-format-hint">Markerad text omsluts med fet eller kursiv stil. Lista lägger till punktlistor rad för rad.</div>
+                            </div>
                         </div>
                         <button id="groupChatSendBtn" class="chat-send-btn" title="Skicka">➤</button>
                         <div class="chat-emoji-picker" id="chatEmojiPicker"></div>
@@ -6005,7 +6425,7 @@
             <h2 id="modalDate" style="margin-bottom: 10px;">Datum</h2>
             <p><strong>Händelse:</strong> <span id="modalTitle">Titel</span></p>
             <p style="color: var(--text-muted); font-size: 0.9em; margin-top: 10px;">Detta är ett online-möte.</p>
-            <a href="#" id="modalLink" target="_blank" class="zoom-btn">Anslut till mötet (Zoom)</a>
+            <a href="#" id="modalLink" target="_blank" class="zoom-btn">Anslut till mötet</a>
             <div id="modalAttachmentsWrap" class="event-modal-attachments" style="display:none;">
                 <h4>Filer</h4>
                 <ul id="modalAttachmentsList" class="event-modal-attachment-list"></ul>
@@ -6431,6 +6851,25 @@
         </div>
     </div>
 
+    <div class="chat-longpost-overlay" id="chatLongPostOverlay">
+        <div class="chat-longpost-dialog">
+            <div class="chat-longpost-head">
+                <div>
+                    <h3>Stort chattinlägg</h3>
+                    <p>Skriv längre inlägg här. Enter, Ctrl+Enter och Cmd+Enter ger radbrytning. Skicka med knappen.</p>
+                </div>
+                <button class="chat-longpost-close" id="chatLongPostCloseBtn" type="button" aria-label="Stäng">✕</button>
+            </div>
+            <div class="chat-longpost-body">
+                <textarea id="chatLongPostInput" class="chat-longpost-textarea" placeholder="Skriv ett längre chattinlägg..."></textarea>
+                <div class="chat-longpost-actions">
+                    <span class="chat-longpost-hint" id="chatLongPostHint">Texten skickas till den chatt du har öppen.</span>
+                    <button class="chat-longpost-send" id="chatLongPostSendBtn" type="button">Skicka inlägg</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         let currentUserEmail = '';
         let currentUserDisplayName = '';
@@ -6446,6 +6885,67 @@
         let eventEditorAttachments = [];
         let eventAttendanceDraft = [];
         let loginHistoryEntries = [];
+
+        function isLongPostComposerOpen() {
+            const overlay = document.getElementById('chatLongPostOverlay');
+            return !!(overlay && overlay.style.display === 'flex');
+        }
+
+        function getActiveChatInput() {
+            if (isLongPostComposerOpen()) {
+                const longInput = document.getElementById('chatLongPostInput');
+                if (longInput) return longInput;
+            }
+            return document.getElementById('groupChatInput');
+        }
+
+        function syncLongPostDraftFromMainInput() {
+            const input = document.getElementById('groupChatInput');
+            const longInput = document.getElementById('chatLongPostInput');
+            if (input && longInput) longInput.value = input.value || '';
+        }
+
+        function syncMainDraftFromLongPostInput() {
+            const input = document.getElementById('groupChatInput');
+            const longInput = document.getElementById('chatLongPostInput');
+            if (input && longInput) input.value = longInput.value || '';
+        }
+
+        function updateLongPostHint() {
+            const hint = document.getElementById('chatLongPostHint');
+            if (!hint) return;
+            if (composeState.active) {
+                hint.textContent = 'Texten skickas till mottagare du väljer i To-fältet.';
+                return;
+            }
+            const thread = getThreadById(messengerState.activeThreadId || MESSENGER_GROUP_THREAD_ID);
+            if (!thread || thread.id === MESSENGER_GROUP_THREAD_ID) {
+                hint.textContent = 'Texten skickas till den öppna gruppchatten.';
+                return;
+            }
+            hint.textContent = `Texten skickas till ${thread.name}.`;
+        }
+
+        function openLongPostComposer() {
+            const overlay = document.getElementById('chatLongPostOverlay');
+            const input = document.getElementById('chatLongPostInput');
+            if (!overlay || !input) return;
+            syncLongPostDraftFromMainInput();
+            updateLongPostHint();
+            overlay.style.display = 'flex';
+            input.focus();
+            if (typeof input.setSelectionRange === 'function') {
+                const end = String(input.value || '').length;
+                input.setSelectionRange(end, end);
+            }
+        }
+
+        function closeLongPostComposer() {
+            const overlay = document.getElementById('chatLongPostOverlay');
+            if (!overlay) return;
+            syncMainDraftFromLongPostInput();
+            overlay.style.display = 'none';
+        }
 
         function currentUserTitle() {
             return String(currentUserDisplayName || '').trim() || (currentUserEmail || '-');
@@ -6675,6 +7175,12 @@
                 .filter(function(m) { return !!m.pinned; })
                 .map(function(m) { return `${Number(m.id || 0)}:${Number(m.pinned_at || 0)}`; })
                 .join(',');
+            const likeSig = list
+                .slice(Math.max(0, list.length - 50))
+                .map(function(m) {
+                    return `${Number(m.id || 0)}:${Number(m.like_count || 0)}:${m.liked_by_me ? '1' : '0'}`;
+                })
+                .join(',');
             return [
                 String(list.length),
                 String(last.id || ''),
@@ -6683,6 +7189,7 @@
                 seen,
                 profileSig,
                 pinSig,
+                likeSig,
                 String(currentUser || '')
             ].join('|');
         }
@@ -6757,6 +7264,72 @@
             const body = document.getElementById('chatPreviewBody');
             if (modal) modal.style.display = 'none';
             if (body) body.innerHTML = '';
+        }
+
+        function renderFormattedChatInline(text) {
+            const placeholders = [];
+            let html = escapeHtml(String(text || ''));
+            html = html.replace(/\*\*([^*\n][\s\S]*?)\*\*/g, function(_, value) {
+                const token = `__CHAT_TOKEN_${placeholders.length}__`;
+                placeholders.push(`<strong>${value}</strong>`);
+                return token;
+            });
+            html = html.replace(/(^|[^*])\*([^*\n][^*\n]*?)\*(?!\*)/g, function(_, lead, value) {
+                const token = `__CHAT_TOKEN_${placeholders.length}__`;
+                placeholders.push(`${lead}<em>${value}</em>`);
+                return token;
+            });
+            placeholders.forEach(function(replacement, index) {
+                html = html.replace(`__CHAT_TOKEN_${index}__`, replacement);
+            });
+            return html;
+        }
+
+        function renderFormattedChatBody(text) {
+            const lines = String(text || '').split(/\r?\n/);
+            const blocks = [];
+            let paragraphLines = [];
+            let listItems = [];
+
+            function flushParagraph() {
+                if (!paragraphLines.length) return;
+                const html = paragraphLines.map(function(line) {
+                    return renderFormattedChatInline(line);
+                }).join('<br>');
+                blocks.push(`<p>${html}</p>`);
+                paragraphLines = [];
+            }
+
+            function flushList() {
+                if (!listItems.length) return;
+                blocks.push(`<ul>${listItems.map(function(item) { return `<li>${renderFormattedChatInline(item)}</li>`; }).join('')}</ul>`);
+                listItems = [];
+            }
+
+            lines.forEach(function(rawLine) {
+                const line = String(rawLine || '');
+                const listMatch = line.match(/^\s*[-*]\s+(.*)$/);
+                if (listMatch) {
+                    flushParagraph();
+                    listItems.push(listMatch[1]);
+                    return;
+                }
+                if (!line.trim()) {
+                    flushParagraph();
+                    flushList();
+                    return;
+                }
+                flushList();
+                paragraphLines.push(line);
+            });
+
+            flushParagraph();
+            flushList();
+
+            if (!blocks.length) {
+                return `<p>${renderFormattedChatInline(String(text || ''))}</p>`;
+            }
+            return blocks.join('');
         }
 
         function fileToBase64(file) {
@@ -6872,6 +7445,28 @@
                 ...original,
                 preview_url: preview && preview.url ? preview.url : original.url
             };
+        }
+
+        function extensionForMimeType(mime) {
+            const normalized = String(mime || '').trim().toLowerCase();
+            if (normalized === 'image/png') return '.png';
+            if (normalized === 'image/jpeg') return '.jpg';
+            if (normalized === 'image/gif') return '.gif';
+            if (normalized === 'image/webp') return '.webp';
+            if (normalized === 'image/bmp') return '.bmp';
+            if (normalized === 'image/heic') return '.heic';
+            if (normalized === 'application/pdf') return '.pdf';
+            return '';
+        }
+
+        function normalizeClipboardAttachmentFile(file) {
+            if (!file) return null;
+            const originalName = String(file.name || '').trim();
+            if (originalName) return file;
+            const mime = String(file.type || '').trim().toLowerCase();
+            const ext = extensionForMimeType(mime) || '.bin';
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            return new File([file], `clipboard_${timestamp}${ext}`, { type: file.type || 'application/octet-stream' });
         }
 
         function formatDateKey(year, month, day) {
@@ -7083,6 +7678,11 @@
                 const replyBtn = !isMine
                     ? `<button class=\"chat-reply-btn\" type=\"button\" title=\"Svara\">↩</button>`
                     : '';
+                const likeCount = Number(msg.like_count || 0);
+                const supportsLikes = isSharedGroupThread && messageId > 0;
+                const likeBtn = supportsLikes
+                    ? `<button class=\"chat-like-btn ${msg.liked_by_me ? 'is-liked' : ''}\" type=\"button\" data-chat-like-id=\"${messageId}\" title=\"${msg.liked_by_me ? 'Ta bort gillning' : 'Gilla inlägget'}\">👍 <span>${likeCount > 0 ? String(likeCount) : 'Gilla'}</span></button>`
+                    : '';
                 const deleteBtn = (isMine || currentUserIsAdmin)
                     ? `<button class=\"chat-delete-btn\" type=\"button\" data-chat-delete-id=\"${Number(msg.id)}\" title=\"Ta bort inlägget\">Ta bort</button>`
                     : '';
@@ -7100,8 +7700,9 @@
                     </div>
                     ${replyPreview}
                     ${attachmentHtml}
-                    <p>${escapeHtml(parsed.body)}</p>
+                    <div class="chat-post-body">${renderFormattedChatBody(parsed.body)}</div>
                     ${replyBtn}
+                    ${likeBtn}
                     ${seenText}
                 `;
                 const replyBtnEl = post.querySelector('.chat-reply-btn');
@@ -7176,6 +7777,17 @@
                         });
                     });
                 }
+                const likeBtnEl = post.querySelector('[data-chat-like-id]');
+                if (likeBtnEl) {
+                    likeBtnEl.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const id = Number(likeBtnEl.getAttribute('data-chat-like-id') || 0);
+                        if (!id) return;
+                        toggleChatMessageLike(id).catch(function(err) {
+                            alert(err.message || 'Kunde inte gilla inlägget.');
+                        });
+                    });
+                }
                 feed.appendChild(post);
             });
             feed.scrollTop = feed.scrollHeight;
@@ -7195,7 +7807,13 @@
             await loadChatMessages();
         }
 
+        async function toggleChatMessageLike(messageId) {
+            await apiSend(`/api/chat/messages/${Number(messageId)}/like`, 'PUT', {});
+            await loadChatMessages();
+        }
+
         function renderActiveThreadInMainChat() {
+            updateLongPostHint();
             if (composeState.active) {
                 const titleEl = document.querySelector('.chat-title-main');
                 const presenceEl = document.getElementById('groupChatPresence');
@@ -7279,7 +7897,9 @@
                     profile_image_url: m.from === 'me'
                         ? (m.profile_image_url || currentUserProfileImageUrl || '')
                         : (m.profile_image_url || (!thread.isGroup ? thread.avatar : '')),
-                    seen_by: []
+                    seen_by: [],
+                    like_count: 0,
+                    liked_by_me: false
                 };
             });
             renderChatFeed(mapped);
@@ -7345,7 +7965,8 @@
         }
 
         async function sendGroupChatMessage() {
-            const input = document.getElementById('groupChatInput');
+            const input = getActiveChatInput();
+            if (!input) return;
             const message = input.value.trim();
             const hasAttachment = !!(pendingChatAttachment && pendingChatAttachment.url);
             if (!message && !hasAttachment) return;
@@ -7391,6 +8012,8 @@
                     renderActiveThreadInMainChat();
                 }
                 input.value = '';
+                syncMainDraftFromLongPostInput();
+                closeLongPostComposer();
                 return;
             }
             const activeId = messengerState.activeThreadId || MESSENGER_GROUP_THREAD_ID;
@@ -7399,6 +8022,9 @@
             const payloadMessage = buildReplyPayload(message, activeReply, pendingChatAttachment);
             await sendPayloadToCurrentThread(payloadMessage, thread);
             input.value = '';
+            const mainInput = document.getElementById('groupChatInput');
+            if (mainInput && mainInput !== input) mainInput.value = '';
+            closeLongPostComposer();
             setActiveReply(null);
             clearPendingChatAttachment();
             await refreshAfterThreadSend(activeId);
@@ -10082,7 +10708,8 @@
                 if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
                     e.preventDefault();
                     const text = String(e.target.value || '').trim();
-                    if (!text) return;
+                    const hasAttachment = !!(pendingChatAttachment && pendingChatAttachment.url);
+                    if (!text && !hasAttachment) return;
                     sendGroupChatMessage().catch(function() {});
                 }
             });
@@ -10096,6 +10723,8 @@
             const imageInput = document.getElementById('chatImageInput');
             const previewModal = document.getElementById('chatPreviewModal');
             const previewClose = document.getElementById('chatPreviewCloseBtn');
+            const formatBtn = document.getElementById('chatFormatToggleBtn');
+            const formatPopup = document.getElementById('chatFormatPopup');
 
             if (attachBtn && fileInput) {
                 attachBtn.addEventListener('click', function() { fileInput.click(); });
@@ -10125,10 +10754,55 @@
                     });
                 });
             }
+            document.getElementById('groupChatInput').addEventListener('paste', function(e) {
+                const clipboard = e.clipboardData;
+                const items = Array.from(clipboard && clipboard.items || []);
+                const imageItem = items.find(function(item) {
+                    return item && item.kind === 'file' && String(item.type || '').toLowerCase().startsWith('image/');
+                });
+                if (!imageItem) return;
+                const rawFile = imageItem.getAsFile();
+                const file = normalizeClipboardAttachmentFile(rawFile);
+                if (!file) return;
+                e.preventDefault();
+                handleAttachmentSelection(file).catch(function(err) {
+                    alert(err.message || 'Kunde inte bifoga bilden från urklipp.');
+                });
+            });
             if (previewClose) previewClose.addEventListener('click', closeChatPreview);
             if (previewModal) {
                 previewModal.addEventListener('click', function(e) {
                     if (e.target === previewModal) closeChatPreview();
+                });
+            }
+            if (formatBtn) {
+                formatBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    openLongPostComposer();
+                });
+            }
+            const longPostOverlay = document.getElementById('chatLongPostOverlay');
+            const longPostCloseBtn = document.getElementById('chatLongPostCloseBtn');
+            const longPostSendBtn = document.getElementById('chatLongPostSendBtn');
+            const longPostInput = document.getElementById('chatLongPostInput');
+            if (longPostCloseBtn) {
+                longPostCloseBtn.addEventListener('click', function() {
+                    closeLongPostComposer();
+                });
+            }
+            if (longPostSendBtn) {
+                longPostSendBtn.addEventListener('click', function() {
+                    sendGroupChatMessage().catch(function() {});
+                });
+            }
+            if (longPostOverlay) {
+                longPostOverlay.addEventListener('click', function(e) {
+                    if (e.target === longPostOverlay) closeLongPostComposer();
+                });
+            }
+            if (longPostInput) {
+                longPostInput.addEventListener('input', function() {
+                    syncMainDraftFromLongPostInput();
                 });
             }
             initEmojiPicker();
@@ -10172,6 +10846,59 @@
 
             const attachment = await uploadAttachmentWithPreview(file);
             setPendingChatAttachment(attachment);
+        }
+
+        function toggleChatFormatPopup(forceOpen) {
+            const popup = document.getElementById('chatFormatPopup');
+            const btn = document.getElementById('chatFormatToggleBtn');
+            if (!popup || !btn) return;
+            const shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : !popup.classList.contains('is-open');
+            popup.classList.toggle('is-open', shouldOpen);
+            btn.classList.toggle('is-open', shouldOpen);
+        }
+
+        function replaceChatInputSelection(nextValue, selectionStart, selectionEnd) {
+            const input = document.getElementById('groupChatInput');
+            if (!input) return;
+            input.value = nextValue;
+            input.focus();
+            if (typeof input.setSelectionRange === 'function') {
+                input.setSelectionRange(selectionStart, selectionEnd);
+            }
+        }
+
+        function applyChatFormat(format) {
+            const input = document.getElementById('groupChatInput');
+            if (!input) return;
+            const value = String(input.value || '');
+            const start = Number(input.selectionStart || 0);
+            const end = Number(input.selectionEnd || 0);
+            const selected = value.slice(start, end);
+
+            if (format === 'bold' || format === 'italic') {
+                const token = format === 'bold' ? '**' : '*';
+                const fallback = format === 'bold' ? 'fet text' : 'kursiv text';
+                const inner = selected || fallback;
+                const nextValue = `${value.slice(0, start)}${token}${inner}${token}${value.slice(end)}`;
+                const cursorStart = start + token.length;
+                replaceChatInputSelection(nextValue, cursorStart, cursorStart + inner.length);
+                toggleChatFormatPopup(false);
+                return;
+            }
+
+            if (format === 'list') {
+                const sliceStart = start === end ? value.lastIndexOf('\n', Math.max(0, start - 1)) + 1 : start;
+                const sliceEnd = start === end ? end : end;
+                const segment = value.slice(sliceStart, sliceEnd) || 'Punkt';
+                const formatted = segment.split('\n').map(function(line) {
+                    const trimmed = String(line || '').trim();
+                    if (!trimmed) return '- ';
+                    return /^\s*[-*]\s+/.test(line) ? line : `- ${line}`;
+                }).join('\n');
+                const nextValue = `${value.slice(0, sliceStart)}${formatted}${value.slice(sliceEnd)}`;
+                replaceChatInputSelection(nextValue, sliceStart, sliceStart + formatted.length);
+                toggleChatFormatPopup(false);
+            }
         }
 
         function initEmojiPicker() {
@@ -11571,7 +12298,7 @@
         }
 
         function focusChatInput() {
-            const input = document.getElementById('groupChatInput');
+            const input = getActiveChatInput();
             if (input) {
                 input.focus();
                 if (typeof input.setSelectionRange === 'function') {
@@ -11593,22 +12320,34 @@
             pendingChatAttachment = null;
             const bar = document.getElementById('chatAttachmentDraftBar');
             const text = document.getElementById('chatAttachmentDraftText');
+            const preview = document.getElementById('chatAttachmentDraftPreview');
             if (bar) bar.style.display = 'none';
             if (text) text.innerText = '';
+            if (preview) preview.innerHTML = '';
         }
 
         function setPendingChatAttachment(attachment) {
             pendingChatAttachment = attachment && attachment.url ? attachment : null;
             const bar = document.getElementById('chatAttachmentDraftBar');
             const text = document.getElementById('chatAttachmentDraftText');
-            if (!bar || !text) return;
+            const preview = document.getElementById('chatAttachmentDraftPreview');
+            if (!bar || !text || !preview) return;
             if (!pendingChatAttachment) {
                 bar.style.display = 'none';
                 text.innerText = '';
+                preview.innerHTML = '';
                 return;
             }
             const label = attachmentLabel(pendingChatAttachment) || 'Bilaga';
-            text.innerText = `Bilaga klar: ${label} (skriv ev. meddelande och skicka)`;
+            text.innerHTML = `<span class="chat-attachment-draft-title">${escapeHtml(label)}</span><span class="chat-attachment-draft-subtitle">Bilaga klar. Skriv ev. meddelande och skicka.</span>`;
+            preview.innerHTML = renderAttachmentHtml(pendingChatAttachment);
+            const previewBtn = preview.querySelector('[data-attachment-preview="1"]');
+            if (previewBtn) {
+                previewBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    openChatPreview(pendingChatAttachment);
+                });
+            }
             bar.style.display = 'flex';
         }
 
@@ -11641,13 +12380,17 @@
         function renderComposeBar() {
             const top = document.getElementById('chatComposeTop');
             const recipients = document.getElementById('chatComposeRecipients');
+            const mainPane = document.querySelector('.chat-main-pane');
             if (!top || !recipients) return;
 
             if (!composeState.active) {
                 top.style.display = 'none';
                 recipients.innerHTML = '';
+                if (mainPane) mainPane.classList.remove('is-compose-expanded');
+                renderComposeStage();
                 return;
             }
+            if (mainPane) mainPane.classList.add('is-compose-expanded');
             top.style.display = 'block';
             const candidates = getComposeCandidates();
             const selected = candidates.filter(function(t) { return composeState.selectedIds.includes(String(t.id)); });
@@ -11655,6 +12398,7 @@
                 return `<span class="chat-compose-chip">${escapeHtml(t.name)}<button type="button" data-remove-compose-id="${t.id}" title="Ta bort">×</button></span>`;
             }).join('');
             recipients.innerHTML = chips + `<input id="chatComposeInput" class="chat-compose-input" type="text" placeholder="Skriv ett namn..." value="${escapeHtml(composeState.query)}">`;
+            renderComposeStage();
 
             recipients.querySelectorAll('[data-remove-compose-id]').forEach(function(btn) {
                 btn.addEventListener('click', function() {
@@ -11711,6 +12455,37 @@
             });
             input.focus();
             renderComposeSuggestions();
+        }
+
+        function renderComposeStage() {
+            const stage = document.getElementById('chatComposeStage');
+            const title = document.getElementById('chatComposeStageTitle');
+            const text = document.getElementById('chatComposeStageText');
+            const sendBtn = document.getElementById('chatComposeSendBtn');
+            if (!stage || !title || !text || !sendBtn) return;
+            if (!composeState.active) {
+                stage.style.display = 'none';
+                return;
+            }
+            stage.style.display = 'block';
+            const selected = composeState.selectedIds.map(function(id) { return getThreadById(id); }).filter(Boolean);
+            if (!selected.length) {
+                title.textContent = 'Nytt chattinlägg';
+                text.textContent = 'Välj mottagare i To-fältet och skriv sedan ditt inlägg i det stora fönstret nedan.';
+                sendBtn.textContent = 'Välj mottagare först';
+                sendBtn.disabled = true;
+                return;
+            }
+            sendBtn.disabled = false;
+            if (selected.length === 1) {
+                title.textContent = `Nytt chattinlägg till ${selected[0].name}`;
+                text.textContent = 'Det här stora skrivläget är tänkt för längre meddelanden. Shift+Enter lägger till radbrytning, Enter skickar.';
+                sendBtn.textContent = 'Skicka till chatten';
+                return;
+            }
+            title.textContent = `Ny gruppchatt med ${selected.length} mottagare`;
+            text.textContent = 'Första meddelandet skapar gruppchatten. Skriv hela inlägget här innan du skickar.';
+            sendBtn.textContent = 'Skapa grupp och skicka';
         }
 
         function filterComposeCandidates() {
@@ -12587,6 +13362,19 @@
             if (newComposeBtn) {
                 newComposeBtn.addEventListener('click', function() {
                     openComposeMode();
+                });
+            }
+            const composeCancelBtn = document.getElementById('chatComposeCancelBtn');
+            if (composeCancelBtn) {
+                composeCancelBtn.addEventListener('click', function() {
+                    closeComposeMode();
+                    renderActiveThreadInMainChat();
+                });
+            }
+            const composeSendBtn = document.getElementById('chatComposeSendBtn');
+            if (composeSendBtn) {
+                composeSendBtn.addEventListener('click', function() {
+                    sendGroupChatMessage().catch(function() {});
                 });
             }
 
