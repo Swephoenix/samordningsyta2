@@ -7195,8 +7195,13 @@
         }
 
         function chatVisibleAuthorLabel(options) {
+            const explicitName = String(options && options.displayName || '').trim();
             const roleLabel = String(options && options.roleLabel || '').trim();
-            if (options && options.isSelf) return currentUserTitle();
+            if (explicitName) return explicitName;
+            if (options && options.isSelf) {
+                const ownName = String(currentUserDisplayName || '').trim();
+                return ownName || 'Du';
+            }
             if (roleLabel) return roleLabel;
             if (options && options.isAdmin) return 'Admin';
             return 'Medlem';
@@ -8003,7 +8008,8 @@
                 const authorLabel = chatVisibleAuthorLabel({
                     isSelf: isMine,
                     isAdmin: isAdminAuthor,
-                    roleLabel: authorRoleLabel
+                    roleLabel: authorRoleLabel,
+                    displayName: String(msg.author_display_name || '')
                 });
                 const authorEmail = String(msg.email || '').trim().toLowerCase();
                 const canOpenAuthorProfile = false;
@@ -8026,7 +8032,7 @@
                     : '';
                 const attachmentHtml = parsed.attachment ? renderAttachmentHtml(parsed.attachment) : '';
                 const replyPreview = parsed.replyTo
-                    ? `<div class=\"chat-reply-preview is-jumpable\" ${parsed.replyTo.messageId ? `data-chat-jump-id=\"${Number(parsed.replyTo.messageId)}\"` : ''} data-chat-reply-author=\"\" data-chat-reply-snippet=\"${escapeHtml(String(parsed.replyTo.snippet || ''))}\">Svar på tidigare inlägg: ${escapeHtml(parsed.replyTo.snippet || '')}</div>`
+                    ? `<div class=\"chat-reply-preview is-jumpable\" ${parsed.replyTo.messageId ? `data-chat-jump-id=\"${Number(parsed.replyTo.messageId)}\"` : ''} data-chat-reply-author=\"${escapeHtml(String(parsed.replyTo.author || ''))}\" data-chat-reply-snippet=\"${escapeHtml(String(parsed.replyTo.snippet || ''))}\">Svar på ${escapeHtml(parsed.replyTo.author || 'tidigare inlägg')}: ${escapeHtml(parsed.replyTo.snippet || '')}</div>`
                     : '';
                 const replyBtn = !isMine
                     ? `<button class=\"chat-reply-btn\" type=\"button\" title=\"Svara\">↩</button>`
@@ -13737,7 +13743,7 @@
                     : '';
                 const attachmentHtml = parsed.attachment ? renderAttachmentHtml(parsed.attachment) : '';
                 const sender = thread.isGroup && message.from !== 'me'
-                    ? `<div class="msgp-sender">${escapeHtml(chatVisibleAuthorLabel({ isSelf: false, isAdmin: false, roleLabel: String(message.sender_role_label || '') }))}</div>`
+                    ? `<div class="msgp-sender">${escapeHtml(chatVisibleAuthorLabel({ isSelf: false, isAdmin: false, roleLabel: String(message.sender_role_label || ''), displayName: String(message.sender_display_name || '') }))}</div>`
                     : '';
                 return `
                     <div class="msgp-bubble ${message.from === 'me' ? 'me' : 'them'}">
