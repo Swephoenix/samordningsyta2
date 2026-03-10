@@ -2247,6 +2247,73 @@
             text-transform: uppercase;
             letter-spacing: 0.02em;
         }
+        .member-manage-edit-content {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            width: min(92vw, 460px);
+            border-radius: 12px;
+            padding: 22px;
+            box-shadow: 0 16px 34px rgba(0,0,0,0.28);
+            color: #1f2937;
+            position: relative;
+        }
+        .member-manage-edit-content h3 {
+            margin: 0 0 14px;
+            font-size: 1.08rem;
+        }
+        .member-manage-edit-grid {
+            display: grid;
+            gap: 12px;
+        }
+        .member-manage-edit-field label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+        }
+        .member-manage-edit-field input {
+            width: 100%;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 10px 12px;
+            font: inherit;
+            color: #111827;
+            background: #fff;
+        }
+        .member-manage-edit-readonly {
+            min-height: 42px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 10px 12px;
+            background: #f8fafc;
+            color: #475569;
+            word-break: break-word;
+        }
+        .member-manage-edit-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 16px;
+        }
+        .member-manage-edit-save,
+        .member-manage-edit-cancel {
+            border: none;
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .member-manage-edit-save {
+            background: #1d4ed8;
+            color: #fff;
+        }
+        .member-manage-edit-cancel {
+            background: #e5e7eb;
+            color: #1f2937;
+        }
         .login-history-content {
             background: #ffffff;
             border: 1px solid #e5e7eb;
@@ -6964,6 +7031,31 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="memberManageEditModal">
+        <div class="member-manage-edit-content">
+            <button class="modal-close" type="button" onclick="closeMemberManageEditModal()">✖</button>
+            <h3>Redigera namn</h3>
+            <div class="member-manage-edit-grid">
+                <div class="member-manage-edit-field">
+                    <label for="memberManageEditUsername">Användarnamn</label>
+                    <div class="member-manage-edit-readonly" id="memberManageEditUsername">-</div>
+                </div>
+                <div class="member-manage-edit-field">
+                    <label for="memberManageEditFirstName">Förnamn</label>
+                    <input id="memberManageEditFirstName" type="text" autocomplete="off">
+                </div>
+                <div class="member-manage-edit-field">
+                    <label for="memberManageEditLastName">Efternamn</label>
+                    <input id="memberManageEditLastName" type="text" autocomplete="off">
+                </div>
+            </div>
+            <div class="member-manage-edit-actions">
+                <button class="member-manage-edit-cancel" type="button" onclick="closeMemberManageEditModal()">Avbryt</button>
+                <button class="member-manage-edit-save" type="button" id="memberManageEditSaveBtn">Spara</button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="loginHistoryModal">
         <div class="login-history-content">
             <button class="modal-close" type="button" onclick="closeLoginHistoryModal()">✖</button>
@@ -7243,6 +7335,7 @@
         let memberManageUsers = [];
         let memberManageCities = [];
         let memberManageSelectedId = 0;
+        let memberManageEditUserId = 0;
         let profileCities = [];
         let chatUserProfileCache = {};
         let notesSaveTimer = null;
@@ -8607,37 +8700,37 @@
         async function memberManageEditUser(userId) {
             const user = memberManageUsers.find(function(u) { return Number(u.id) === Number(userId); });
             if (!user) return;
-            const newFirstNameRaw = prompt('Förnamn:', String(user.first_name || ''));
-            if (newFirstNameRaw === null) return;
-            const newLastNameRaw = prompt('Efternamn:', String(user.last_name || ''));
-            if (newLastNameRaw === null) return;
-            const newEmailRaw = prompt('Användarnamn:', String(user.email || ''));
-            if (newEmailRaw === null) return;
-            const newContactRaw = prompt('Kontaktmail (@ambitionsverige.se):', String(user.contact_email || ''));
-            if (newContactRaw === null) return;
-            const cityPrompt = memberManageCities.length
-                ? `Ort (${memberManageCities.join(', ')}):`
-                : 'Ort:';
-            const newCityRaw = prompt(cityPrompt, String(user.city || ''));
-            if (newCityRaw === null) return;
-            let nextRole = String(user.role || (user.is_secretary ? 'secretary' : 'user'));
-            if (currentUserIsAdmin && !user.is_admin) {
-                const roleRaw = prompt('Roll (användare/sekreterare):', nextRole === 'secretary' ? 'sekreterare' : 'användare');
-                if (roleRaw === null) return;
-                const roleNorm = String(roleRaw || '').trim().toLowerCase();
-                if (roleNorm === 'sekreterare' || roleNorm === 'secretary') nextRole = 'secretary';
-                else nextRole = 'user';
-            }
+            const modal = document.getElementById('memberManageEditModal');
+            const usernameEl = document.getElementById('memberManageEditUsername');
+            const firstNameInput = document.getElementById('memberManageEditFirstName');
+            const lastNameInput = document.getElementById('memberManageEditLastName');
+            if (!modal || !usernameEl || !firstNameInput || !lastNameInput) return;
+            memberManageEditUserId = Number(user.id || 0);
+            usernameEl.textContent = String(user.email || '-');
+            firstNameInput.value = String(user.first_name || '');
+            lastNameInput.value = String(user.last_name || '');
+            modal.style.display = 'flex';
+            firstNameInput.focus();
+            firstNameInput.select();
+        }
 
+        async function saveMemberManageEditModal() {
+            const userId = Number(memberManageEditUserId || 0);
+            if (!userId) return;
+            const user = memberManageUsers.find(function(u) { return Number(u.id) === userId; });
+            const firstNameInput = document.getElementById('memberManageEditFirstName');
+            const lastNameInput = document.getElementById('memberManageEditLastName');
+            if (!user || !firstNameInput || !lastNameInput) return;
             const payload = {
-                first_name: String(newFirstNameRaw || '').trim(),
-                last_name: String(newLastNameRaw || '').trim(),
-                email: String(newEmailRaw || '').trim().toLowerCase(),
-                contact_email: String(newContactRaw || '').trim().toLowerCase(),
-                city: String(newCityRaw || '').trim(),
-                role: nextRole
+                first_name: String(firstNameInput.value || '').trim(),
+                last_name: String(lastNameInput.value || '').trim(),
+                email: String(user.email || '').trim().toLowerCase(),
+                contact_email: String(user.contact_email || '').trim().toLowerCase(),
+                city: String(user.city || '').trim(),
+                role: String(user.role || (user.is_secretary ? 'secretary' : 'user'))
             };
             await apiSend(`/api/admin/users/${Number(userId)}`, 'PUT', payload);
+            closeMemberManageEditModal();
             await openMemberManageModal();
         }
 
@@ -8780,6 +8873,12 @@
         function closeMemberManageModal() {
             const modal = document.getElementById('memberManageModal');
             if (modal) modal.style.display = 'none';
+        }
+
+        function closeMemberManageEditModal() {
+            const modal = document.getElementById('memberManageEditModal');
+            if (modal) modal.style.display = 'none';
+            memberManageEditUserId = 0;
         }
 
         function openComingSoonModal() {
@@ -15056,11 +15155,26 @@
         document.getElementById('memberManageModal').addEventListener('click', function(e) {
             if (e.target === this) closeMemberManageModal();
         });
+        document.getElementById('memberManageEditModal').addEventListener('click', function(e) {
+            if (e.target === this) closeMemberManageEditModal();
+        });
         document.getElementById('profileModal').addEventListener('click', function(e) {
             if (e.target === this) closeProfileModal();
         });
         document.getElementById('chatUserProfileModal').addEventListener('click', function(e) {
             if (e.target === this) closeChatUserProfileModal();
+        });
+        document.getElementById('memberManageEditSaveBtn').addEventListener('click', function() {
+            saveMemberManageEditModal().catch(function(err) {
+                alert(err.message || 'Kunde inte spara namnet.');
+            });
+        });
+        document.getElementById('memberManageEditLastName').addEventListener('keydown', function(e) {
+            if (e.key !== 'Enter') return;
+            e.preventDefault();
+            saveMemberManageEditModal().catch(function(err) {
+                alert(err.message || 'Kunde inte spara namnet.');
+            });
         });
         document.getElementById('memberManageSearch').addEventListener('input', function() {
             filterMemberManageList();
