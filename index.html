@@ -8607,6 +8607,10 @@
         async function memberManageEditUser(userId) {
             const user = memberManageUsers.find(function(u) { return Number(u.id) === Number(userId); });
             if (!user) return;
+            const newFirstNameRaw = prompt('Förnamn:', String(user.first_name || ''));
+            if (newFirstNameRaw === null) return;
+            const newLastNameRaw = prompt('Efternamn:', String(user.last_name || ''));
+            if (newLastNameRaw === null) return;
             const newEmailRaw = prompt('Användarnamn:', String(user.email || ''));
             if (newEmailRaw === null) return;
             const newContactRaw = prompt('Kontaktmail (@ambitionsverige.se):', String(user.contact_email || ''));
@@ -8626,6 +8630,8 @@
             }
 
             const payload = {
+                first_name: String(newFirstNameRaw || '').trim(),
+                last_name: String(newLastNameRaw || '').trim(),
                 email: String(newEmailRaw || '').trim().toLowerCase(),
                 contact_email: String(newContactRaw || '').trim().toLowerCase(),
                 city: String(newCityRaw || '').trim(),
