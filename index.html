@@ -768,6 +768,15 @@
             background: #dcfce7;
             border-color: #86efac;
         }
+        .chat-members-chip.leave-group {
+            border-color: #fecdd3;
+            background: #fff1f2;
+            color: #be123c;
+        }
+        .chat-members-chip.leave-group:hover {
+            background: #ffe4e6;
+            border-color: #fda4af;
+        }
         .group-members-content {
             background: #ffffff;
             width: min(92vw, 460px);
@@ -6203,6 +6212,7 @@
                         <div class="chat-title-tools">
                             <button class="chat-members-chip online-only" id="onlineMembersChip" type="button">Medlemmar online</button>
                             <button class="chat-members-chip" id="groupMembersChip" type="button">Gruppmedlemmar</button>
+                            <button class="chat-members-chip leave-group" id="leaveGroupChip" type="button">Lämna grupp</button>
                         </div>
                     </div>
                     <span class="chat-notify-badge" id="mainChatUnreadBadge">0</span>
@@ -8088,6 +8098,7 @@
                 const inputEl = document.getElementById('groupChatInput');
                 const membersChip = document.getElementById('groupMembersChip');
                 const onlineChip = document.getElementById('onlineMembersChip');
+                const leaveChip = document.getElementById('leaveGroupChip');
                 const selected = composeState.selectedIds.map(function(id) { return getThreadById(id); }).filter(Boolean);
                 if (titleEl) titleEl.innerText = 'Chatt';
                 if (presenceEl) presenceEl.innerText = 'Välj mottagare';
@@ -8095,6 +8106,7 @@
                 if (inputEl) inputEl.placeholder = 'Skriv ett meddelande...';
                 if (membersChip) membersChip.style.display = 'none';
                 if (onlineChip) onlineChip.style.display = 'none';
+                if (leaveChip) leaveChip.style.display = 'none';
                 if (selected.length === 0) {
                     document.getElementById('groupChatFeed').innerHTML = '<div class=\"date-divider\"><span>Välj en eller flera mottagare i To:</span></div>';
                 } else if (selected.length === 1 && !hasExistingConversation(selected[0])) {
@@ -8118,6 +8130,7 @@
             const userBadge = document.getElementById('chatCurrentUserBadge');
             const membersChip = document.getElementById('groupMembersChip');
             const onlineChip = document.getElementById('onlineMembersChip');
+            const leaveChip = document.getElementById('leaveGroupChip');
             const readOnlySystemThread = isSystemChatThread(thread);
 
             if (titleEl) {
@@ -8155,6 +8168,9 @@
             }
             if (onlineChip) {
                 onlineChip.style.display = isMembersEligibleThread(thread) ? 'inline-flex' : 'none';
+            }
+            if (leaveChip) {
+                leaveChip.style.display = canLeaveGroupThread(thread) ? 'inline-flex' : 'none';
             }
             setActiveReply(null);
             renderComposeBar();
@@ -13198,6 +13214,10 @@
             return !!thread && (thread.id === MESSENGER_GROUP_THREAD_ID || !!thread.isGroup);
         }
 
+        function canLeaveGroupThread(thread) {
+            return !!thread && !!thread.isGroup && String(thread.id || '') !== MESSENGER_GROUP_THREAD_ID;
+        }
+
         function normalizeMembersForModal(members) {
             return (Array.isArray(members) ? members : []).map(function(member) {
                 const displayName = String(member && member.display_name || '').trim();
@@ -13374,6 +13394,22 @@
             if (Number(thread.updatedAt || 0) > 0) return true;
             const preview = String(thread.lastPreview || '').trim().toLowerCase();
             return !!preview && preview !== 'inga meddelanden än.';
+        }
+
+        async function leaveCurrentGroupThread() {
+            const thread = getThreadById(messengerState.activeThreadId || MESSENGER_GROUP_THREAD_ID);
+            if (!canLeaveGroupThread(thread)) return;
+            if (!window.confirm(`Vill du lämna gruppchatten "${String(thread.name || 'Gruppchatt')}"?`)) return;
+            await apiSend(`/api/messenger/groups/${encodeURIComponent(String(thread.id || ''))}/membership`, 'DELETE', {});
+            delete groupMembersCache[String(thread.id || '')];
+            messengerState.activeThreadId = MESSENGER_GROUP_THREAD_ID;
+            await loadMessengerUsers();
+            renderMainChatThreadList();
+            renderActiveThreadInMainChat();
+            const popup = document.getElementById('msgPopup');
+            if (popup && popup.style.display === 'flex') {
+                openMessengerList();
+            }
         }
 
         function formatMessengerTime(ts) {
@@ -13852,6 +13888,14 @@
                 onlineMembersChip.addEventListener('click', function() {
                     openOnlineMembersModal().catch(function(err) {
                         alert(err.message || 'Kunde inte läsa online-medlemmar.');
+                    });
+                });
+            }
+            const leaveGroupChip = document.getElementById('leaveGroupChip');
+            if (leaveGroupChip) {
+                leaveGroupChip.addEventListener('click', function() {
+                    leaveCurrentGroupThread().catch(function(err) {
+                        alert(err.message || 'Kunde inte lämna gruppchatten.');
                     });
                 });
             }

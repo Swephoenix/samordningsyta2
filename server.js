@@ -3802,6 +3802,31 @@ app.post("/api/messenger/groups/:groupId/messages", (req, res) => {
   return res.status(201).json({ ok: true });
 });
 
+app.delete("/api/messenger/groups/:groupId/membership", (req, res) => {
+  const user = requireAuth(req, res);
+  if (!user) return;
+
+  const groupId = String(req.params.groupId || "").trim();
+  if (!groupId || groupId === "group-all") {
+    return res.status(400).json({ error: "Den här gruppen kan inte lämnas." });
+  }
+
+  const membership = db
+    .prepare("SELECT 1 FROM chat_group_members WHERE group_id = ? AND user_id = ?")
+    .get(groupId, user.id);
+  if (!membership) {
+    return res.status(404).json({ error: "Du är inte medlem i gruppen." });
+  }
+
+  const tx = db.transaction(() => {
+    db.prepare("DELETE FROM chat_group_members WHERE group_id = ? AND user_id = ?").run(groupId, user.id);
+    db.prepare("DELETE FROM chat_group_reads WHERE group_id = ? AND user_id = ?").run(groupId, user.id);
+  });
+  tx();
+
+  return res.json({ ok: true, group_id: groupId });
+});
+
 app.post("/api/messenger/groups", (req, res) => {
   const user = requireAuth(req, res);
   if (!user) return;
