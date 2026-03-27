@@ -3858,6 +3858,24 @@
             color: #6b7280;
             font-size: 0.82rem;
         }
+        .event-attendance-textarea {
+            width: 100%;
+            min-height: 200px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 10px;
+            background: #fff;
+            color: #1f2937;
+            font-size: 0.9rem;
+            resize: vertical;
+            font-family: inherit;
+            line-height: 1.5;
+        }
+        .event-attendance-textarea:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
         .event-editor-content {
             background: #ffffff;
             width: min(92vw, 500px);
@@ -6644,10 +6662,8 @@
             <div id="modalAttendanceWrap" class="event-modal-attendance">
                 <h4>Närvarolista</h4>
                 <div id="modalAttendanceAdminRow" class="event-attendance-admin-row" style="display:none;">
-                    <input id="modalAttendanceNameInput" type="text" placeholder="Lägg till namn...">
-                    <button id="modalAttendanceAddBtn" class="event-editor-btn" type="button">Lägg till</button>
+                    <textarea id="modalAttendanceTextarea" class="event-attendance-textarea" placeholder="Klistra in eller skriv namn här (ett namn per rad)..."></textarea>
                 </div>
-                <ul id="modalAttendanceList" class="event-attendance-list"></ul>
                 <div id="modalAttendanceSummary" class="event-attendance-summary"></div>
                 <button id="modalAttendanceSaveBtn" class="event-editor-btn primary" style="display:none; margin-top:10px;" type="button">Spara närvarolista</button>
             </div>
@@ -11607,32 +11623,20 @@
         }
 
         function renderEventAttendance() {
-            const list = document.getElementById('modalAttendanceList');
+            const textarea = document.getElementById('modalAttendanceTextarea');
             const summary = document.getElementById('modalAttendanceSummary');
             const adminRow = document.getElementById('modalAttendanceAdminRow');
             const saveBtn = document.getElementById('modalAttendanceSaveBtn');
-            if (!list || !summary || !adminRow || !saveBtn) return;
+            if (!textarea || !summary || !adminRow || !saveBtn) return;
 
             const attendance = normalizeEventAttendance(eventAttendanceDraft);
             eventAttendanceDraft = attendance;
-            const presentCount = attendance.filter(function(row) { return !!row.present; }).length;
+            
+            // Uppdatera textarea med sparad text
+            const savedText = attendance.length > 0 ? attendance.map(function(row) { return row.name; }).join('\n') : '';
+            textarea.value = savedText;
 
-            if (!attendance.length) {
-                list.innerHTML = '<li class="event-attendance-item">Inga namn i listan ännu.</li>';
-            } else {
-                list.innerHTML = attendance.map(function(row, idx) {
-                    const removeBtn = currentUserCanManage
-                        ? `<button class="event-editor-btn" type="button" data-attendance-remove="${idx}" style="padding:2px 8px; font-size:0.74rem;">Ta bort</button>`
-                        : '';
-                    const checked = row.present ? 'checked' : '';
-                    const toggleInput = currentUserCanManage
-                        ? `<label><input type="checkbox" data-attendance-toggle="${idx}" ${checked}> ${escapeHtml(row.name)}</label>`
-                        : `<span>${row.present ? '✓ ' : '○ '}${escapeHtml(row.name)}</span>`;
-                    return `<li class="event-attendance-item">${toggleInput}${removeBtn}</li>`;
-                }).join('');
-            }
-
-            summary.innerText = `${presentCount}/${attendance.length} markerade som närvarande`;
+            summary.innerText = `${attendance.length} rader`;
             adminRow.style.display = currentUserCanManage ? 'flex' : 'none';
             saveBtn.style.display = currentUserCanManage ? 'inline-block' : 'none';
         }
@@ -11641,7 +11645,15 @@
             if (!activeModalEvent || !currentUserCanManage) return;
             const eventId = Number(activeModalEvent.id || 0);
             if (!eventId) return;
-            const normalized = normalizeEventAttendance(eventAttendanceDraft);
+            
+            // Läs text från textarea
+            const textarea = document.getElementById('modalAttendanceTextarea');
+            const textValue = textarea ? textarea.value : '';
+            
+            // Spara varje rad som ett objekt
+            const lines = textValue.split('\n');
+            const normalized = lines.map(function(line) { return { name: line, present: false }; });
+            
             await apiSend(`/api/events/${eventId}/attendance`, 'PUT', {
                 attendance: normalized
             });
@@ -14092,38 +14104,6 @@
             deleteEventById(eventId).catch(function(err) {
                 alert(err.message || 'Kunde inte ta bort mötet.');
             });
-        });
-        document.getElementById('modalAttendanceAddBtn').addEventListener('click', function() {
-            if (!currentUserCanManage) return;
-            const input = document.getElementById('modalAttendanceNameInput');
-            const name = String(input && input.value || '').trim();
-            if (!name) return;
-            eventAttendanceDraft = normalizeEventAttendance((eventAttendanceDraft || []).concat([{ name: name, present: false }]));
-            if (input) input.value = '';
-            renderEventAttendance();
-        });
-        document.getElementById('modalAttendanceNameInput').addEventListener('keydown', function(e) {
-            if (e.key !== 'Enter') return;
-            e.preventDefault();
-            document.getElementById('modalAttendanceAddBtn').click();
-        });
-        document.getElementById('modalAttendanceList').addEventListener('click', function(e) {
-            if (!currentUserCanManage) return;
-            const removeBtn = e.target && e.target.closest ? e.target.closest('[data-attendance-remove]') : null;
-            if (!removeBtn) return;
-            const idx = Number(removeBtn.getAttribute('data-attendance-remove'));
-            if (!Number.isInteger(idx) || idx < 0 || idx >= eventAttendanceDraft.length) return;
-            eventAttendanceDraft.splice(idx, 1);
-            renderEventAttendance();
-        });
-        document.getElementById('modalAttendanceList').addEventListener('change', function(e) {
-            if (!currentUserCanManage) return;
-            const toggle = e.target && e.target.matches && e.target.matches('[data-attendance-toggle]');
-            if (!toggle) return;
-            const idx = Number(e.target.getAttribute('data-attendance-toggle'));
-            if (!Number.isInteger(idx) || idx < 0 || idx >= eventAttendanceDraft.length) return;
-            eventAttendanceDraft[idx].present = !!e.target.checked;
-            renderEventAttendance();
         });
         document.getElementById('modalAttendanceSaveBtn').addEventListener('click', function() {
             saveEventAttendance().catch(function(err) {
