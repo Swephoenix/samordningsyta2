@@ -140,6 +140,7 @@ const REGISTER_CITIES = [
   "Ljusdal",
   "Malmö",
   "Malå",
+  "Mark",
   "Motala",
   "Norrköping",
   "Nynäshamn",
